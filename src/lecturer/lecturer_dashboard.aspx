@@ -10,13 +10,13 @@
             <div class="max-w-xl">
                 <div class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 backdrop-blur" style="font-size:12px;font-weight:500">
                     <i data-lucide="sparkles" class="h-3.5 w-3.5 text-amber-200"></i>
-                    Sunday, 3 May 2026 &middot; Week 9 of Trimester 1
+                    <%= CurrentDateLabel %> &middot; Week <%= SemesterWeek %> of <%= SemesterName %>
                 </div>
                 <h1 class="mt-4 text-white" style="font-size:32px;font-weight:700;letter-spacing:-0.015em;line-height:1.15">
-                    Good morning, Dr. Lim &#128075;
+                    <%= Greeting %>, <%= LecturerName %> &#128075;
                 </h1>
                 <p class="mt-2 text-white/75" style="font-size:15px;line-height:1.6">
-                    You have <span class="text-white font-semibold">4 classes</span> today and <span class="text-white font-semibold">12 submissions</span> awaiting your review. Keep your students on track.
+                    You have <span class="text-white font-semibold"><%= ClassesTodayLabel %></span> today and <span class="text-white font-semibold"><%= SubmissionsToReviewLabel %></span> awaiting your review. Keep your students on track.
                 </p>
             </div>
             <div class="flex flex-wrap gap-3">
