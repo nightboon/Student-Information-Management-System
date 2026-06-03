@@ -36,12 +36,8 @@
             <div class="flex items-start justify-between">
                 <div>
                     <p class="text-slate-500" style="font-size:12.5px;font-weight:500">Active Courses</p>
-                    <p class="mt-1.5 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em">6</p>
+                    <p class="mt-1.5 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em"><%= ActiveCoursesCount %></p>
                 </div>
-                <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 bg-emerald-50 text-emerald-700" style="font-size:11px;font-weight:600">
-                    <i data-lucide="trending-up" class="h-3 w-3"></i>
-                    +1 new
-                </span>
             </div>
             <p class="mt-3 text-slate-400" style="font-size:12px">this trimester</p>
         </div>
@@ -51,12 +47,8 @@
             <div class="flex items-start justify-between">
                 <div>
                     <p class="text-slate-500" style="font-size:12.5px;font-weight:500">Attendance</p>
-                    <p class="mt-1.5 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em">94%</p>
+                    <p class="mt-1.5 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em"><%= AttendanceDisplay %></p>
                 </div>
-                <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 bg-emerald-50 text-emerald-700" style="font-size:11px;font-weight:600">
-                    <i data-lucide="trending-up" class="h-3 w-3"></i>
-                    +2.4%
-                </span>
             </div>
             <p class="mt-3 text-slate-400" style="font-size:12px">this term</p>
         </div>
@@ -66,11 +58,8 @@
             <div class="flex items-start justify-between">
                 <div>
                     <p class="text-slate-500" style="font-size:12.5px;font-weight:500">Students Taught</p>
-                    <p class="mt-1.5 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em">205</p>
+                    <p class="mt-1.5 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em"><%= StudentsTaughtCount %></p>
                 </div>
-                <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 bg-slate-100 text-slate-600" style="font-size:11px;font-weight:600">
-                    across 6 courses
-                </span>
             </div>
             <p class="mt-3 text-slate-400" style="font-size:12px">all enrolled</p>
         </div>
@@ -80,7 +69,7 @@
             <div class="flex items-start justify-between">
                 <div>
                     <p class="text-slate-500" style="font-size:12.5px;font-weight:500">Pending Grading</p>
-                    <p class="mt-1.5 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em">3</p>
+                    <p class="mt-1.5 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em"><%= PendingGradingCount %></p>
                 </div>
                 <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 bg-slate-100 text-slate-600" style="font-size:11px;font-weight:600">
                     Due soon
@@ -99,83 +88,37 @@
             <header class="flex items-center justify-between p-6 pb-4">
                 <div>
                     <h2 class="text-slate-900" style="font-size:16px;font-weight:600">Today's Schedule</h2>
-                    <p class="text-slate-500 mt-0.5" style="font-size:13px">4 classes &middot; 6h 30m total</p>
+                    <p class="text-slate-500 mt-0.5" style="font-size:13px"><%= TodayScheduleSubtitle %></p>
                 </div>
                 <a href="#" class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors" style="font-size:13px;font-weight:600">
                     Full week <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>
                 </a>
             </header>
-            <ul class="divide-y divide-slate-100">
-
-                <%-- Software Engineering — status: now --%>
-                <li class="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/60 transition-colors">
-                    <div class="w-1.5 h-12 rounded-full" style="background-color:#e0162b"></div>
-                    <div class="min-w-0 flex-1">
-                        <div class="flex items-center gap-2">
-                            <span class="text-slate-900 truncate" style="font-size:14px;font-weight:600">Software Engineering</span>
-                            <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-600" style="font-size:10.5px;font-weight:600">CSC2104</span>
-                            <span class="inline-flex items-center gap-1 rounded-md bg-[#e0162b]/10 px-1.5 py-0.5 text-[#a01020]" style="font-size:10.5px;font-weight:600">
-                                <span class="h-1.5 w-1.5 rounded-full bg-[#e0162b] animate-pulse"></span>
-                                LIVE
-                            </span>
+            <asp:Repeater ID="scheduleRepeater" runat="server">
+                <HeaderTemplate><ul class="divide-y divide-slate-100"></HeaderTemplate>
+                <ItemTemplate>
+                    <li class="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/60 transition-colors">
+                        <div class="w-1.5 h-12 rounded-full" style="background-color:<%# ClassColor(Eval("Color") as string) %>"></div>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-2">
+                                <span class="text-slate-900 truncate" style="font-size:14px;font-weight:600"><%# Server.HtmlEncode(Eval("CourseName").ToString()) %></span>
+                                <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-600" style="font-size:10.5px;font-weight:600"><%# Server.HtmlEncode(Eval("CourseCode").ToString()) %></span>
+                                <asp:Literal runat="server" Visible='<%# IsLiveNow((TimeSpan)Eval("StartTime"), (TimeSpan)Eval("EndTime")) %>'
+                                    Text='<span class="inline-flex items-center gap-1 rounded-md bg-[#e0162b]/10 px-1.5 py-0.5 text-[#a01020]" style="font-size:10.5px;font-weight:600"><span class="h-1.5 w-1.5 rounded-full bg-[#e0162b] animate-pulse"></span>LIVE</span>' />
+                            </div>
+                            <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-500" style="font-size:12.5px">
+                                <span class="inline-flex items-center gap-1"><i data-lucide="clock" class="h-3.5 w-3.5"></i><%# FormatTimeRange((TimeSpan)Eval("StartTime"), (TimeSpan)Eval("EndTime")) %></span>
+                                <span class="inline-flex items-center gap-1"><i data-lucide="map-pin" class="h-3.5 w-3.5"></i><%# Server.HtmlEncode(Eval("Venue").ToString()) %></span>
+                            </div>
                         </div>
-                        <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-500" style="font-size:12.5px">
-                            <span class="inline-flex items-center gap-1"><i data-lucide="clock" class="h-3.5 w-3.5"></i>09:00 &ndash; 10:30</span>
-                            <span class="inline-flex items-center gap-1"><i data-lucide="map-pin" class="h-3.5 w-3.5"></i>Block C &middot; Lab 3</span>
-                        </div>
-                    </div>
-                    <i data-lucide="chevron-right" class="h-4 w-4 text-slate-300"></i>
-                </li>
-
-                <%-- Data Structures — status: next --%>
-                <li class="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/60 transition-colors">
-                    <div class="w-1.5 h-12 rounded-full" style="background-color:#3b82f6"></div>
-                    <div class="min-w-0 flex-1">
-                        <div class="flex items-center gap-2">
-                            <span class="text-slate-900 truncate" style="font-size:14px;font-weight:600">Data Structures</span>
-                            <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-600" style="font-size:10.5px;font-weight:600">CSC2103</span>
-                        </div>
-                        <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-500" style="font-size:12.5px">
-                            <span class="inline-flex items-center gap-1"><i data-lucide="clock" class="h-3.5 w-3.5"></i>11:00 &ndash; 12:30</span>
-                            <span class="inline-flex items-center gap-1"><i data-lucide="map-pin" class="h-3.5 w-3.5"></i>Block A &middot; Hall 2</span>
-                        </div>
-                    </div>
-                    <i data-lucide="chevron-right" class="h-4 w-4 text-slate-300"></i>
-                </li>
-
-                <%-- Discrete Mathematics — status: later --%>
-                <li class="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/60 transition-colors">
-                    <div class="w-1.5 h-12 rounded-full" style="background-color:#f59e0b"></div>
-                    <div class="min-w-0 flex-1">
-                        <div class="flex items-center gap-2">
-                            <span class="text-slate-900 truncate" style="font-size:14px;font-weight:600">Discrete Mathematics</span>
-                            <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-600" style="font-size:10.5px;font-weight:600">MTH2101</span>
-                        </div>
-                        <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-500" style="font-size:12.5px">
-                            <span class="inline-flex items-center gap-1"><i data-lucide="clock" class="h-3.5 w-3.5"></i>14:00 &ndash; 15:30</span>
-                            <span class="inline-flex items-center gap-1"><i data-lucide="map-pin" class="h-3.5 w-3.5"></i>Block B &middot; 2.04</span>
-                        </div>
-                    </div>
-                    <i data-lucide="chevron-right" class="h-4 w-4 text-slate-300"></i>
-                </li>
-
-                <%-- Career Workshop — status: later --%>
-                <li class="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/60 transition-colors">
-                    <div class="w-1.5 h-12 rounded-full" style="background-color:#10b981"></div>
-                    <div class="min-w-0 flex-1">
-                        <div class="flex items-center gap-2">
-                            <span class="text-slate-900 truncate" style="font-size:14px;font-weight:600">Career Workshop</span>
-                            <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-600" style="font-size:10.5px;font-weight:600">CAR101</span>
-                        </div>
-                        <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-500" style="font-size:12.5px">
-                            <span class="inline-flex items-center gap-1"><i data-lucide="clock" class="h-3.5 w-3.5"></i>16:00 &ndash; 17:00</span>
-                            <span class="inline-flex items-center gap-1"><i data-lucide="map-pin" class="h-3.5 w-3.5"></i>Auditorium</span>
-                        </div>
-                    </div>
-                    <i data-lucide="chevron-right" class="h-4 w-4 text-slate-300"></i>
-                </li>
-
-            </ul>
+                        <i data-lucide="chevron-right" class="h-4 w-4 text-slate-300"></i>
+                    </li>
+                </ItemTemplate>
+                <FooterTemplate></ul></FooterTemplate>
+            </asp:Repeater>
+            <% if (TodayClassCount == 0) { %>
+                <p class="px-6 py-8 text-center text-slate-400" style="font-size:13px">No classes scheduled today.</p>
+            <% } %>
         </div>
 
         <%-- To Grade --%>
@@ -183,51 +126,33 @@
             <header class="flex items-center justify-between p-6 pb-4">
                 <div>
                     <h2 class="text-slate-900" style="font-size:16px;font-weight:600">To Grade</h2>
-                    <p class="text-slate-500 mt-0.5" style="font-size:13px">3 due this week</p>
+                    <p class="text-slate-500 mt-0.5" style="font-size:13px"><%= ToGradeCount %> awaiting grading</p>
                 </div>
             </header>
-            <ul class="space-y-2 px-3 pb-4">
-
-                <%-- ER Diagram Design — urgent --%>
-                <li class="flex items-start gap-3 rounded-xl px-3 py-3 hover:bg-slate-50 transition-colors">
-                    <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#e0162b]/10 text-[#e0162b]">
-                        <i data-lucide="alert-circle" class="h-4 w-4"></i>
-                    </span>
-                    <div class="min-w-0 flex-1">
-                        <p class="text-slate-900 truncate" style="font-size:13.5px;font-weight:600">ER Diagram Design</p>
-                        <p class="text-slate-500 mt-0.5" style="font-size:12px">
-                            CSC2104 &middot; <span class="text-[#e0162b] font-semibold">Tomorrow &middot; 11:59 PM</span>
-                        </p>
-                    </div>
-                </li>
-
-                <%-- Linked List Implementation — soon --%>
-                <li class="flex items-start gap-3 rounded-xl px-3 py-3 hover:bg-slate-50 transition-colors">
-                    <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-                        <i data-lucide="check-circle-2" class="h-4 w-4"></i>
-                    </span>
-                    <div class="min-w-0 flex-1">
-                        <p class="text-slate-900 truncate" style="font-size:13.5px;font-weight:600">Linked List Implementation</p>
-                        <p class="text-slate-500 mt-0.5" style="font-size:12px">
-                            CSC2103 &middot; In 3 days
-                        </p>
-                    </div>
-                </li>
-
-                <%-- Logic Proofs Worksheet — ok --%>
-                <li class="flex items-start gap-3 rounded-xl px-3 py-3 hover:bg-slate-50 transition-colors">
-                    <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-                        <i data-lucide="check-circle-2" class="h-4 w-4"></i>
-                    </span>
-                    <div class="min-w-0 flex-1">
-                        <p class="text-slate-900 truncate" style="font-size:13.5px;font-weight:600">Logic Proofs Worksheet</p>
-                        <p class="text-slate-500 mt-0.5" style="font-size:12px">
-                            MTH2101 &middot; In 5 days
-                        </p>
-                    </div>
-                </li>
-
-            </ul>
+            <asp:Repeater ID="gradeRepeater" runat="server">
+                <HeaderTemplate><ul class="space-y-2 px-3 pb-4"></HeaderTemplate>
+                <ItemTemplate>
+                    <li class="flex items-start gap-3 rounded-xl px-3 py-3 hover:bg-slate-50 transition-colors">
+                        <span class='mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg <%# DueBadgeClass((DateTime)Eval("DueDate")) %>'>
+                            <i data-lucide='<%# DueIcon((DateTime)Eval("DueDate")) %>' class="h-4 w-4"></i>
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-slate-900 truncate" style="font-size:13.5px;font-weight:600"><%# Server.HtmlEncode(Eval("Title").ToString()) %></p>
+                            <p class="mt-0.5" style="font-size:12px">
+                                <span class="text-slate-500"><%# Server.HtmlEncode(Eval("CourseCode").ToString()) %></span>
+                                <span class="text-slate-400"> &middot; </span>
+                                <span class='<%# DueTextClass((DateTime)Eval("DueDate")) %>'><%# FormatRelativeDue((DateTime)Eval("DueDate")) %></span>
+                                <span class="text-slate-400"> &middot; </span>
+                                <span class="text-slate-500"><%# Eval("PendingCount") %> to mark</span>
+                            </p>
+                        </div>
+                    </li>
+                </ItemTemplate>
+                <FooterTemplate></ul></FooterTemplate>
+            </asp:Repeater>
+            <% if (ToGradeCount == 0) { %>
+                <p class="px-6 py-8 text-center text-slate-400" style="font-size:13px">Nothing awaiting grading.</p>
+            <% } %>
             <div class="border-t border-slate-100 p-3">
                 <button class="w-full rounded-xl py-2.5 text-slate-700 hover:bg-slate-50 transition-colors" style="font-size:13px;font-weight:600">
                     View all submissions
@@ -245,63 +170,31 @@
             <header class="flex items-center justify-between mb-5">
                 <div>
                     <h2 class="text-slate-900" style="font-size:16px;font-weight:600">My Courses</h2>
-                    <p class="text-slate-500 mt-0.5" style="font-size:13px">Trimester 1 &middot; 2025/26</p>
+                    <p class="text-slate-500 mt-0.5" style="font-size:13px"><%= MyCoursesSubtitle %></p>
                 </div>
-                <a href="/lecturer/academic/courses.aspx" class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors" style="font-size:13px;font-weight:600">
+                <a href='<%= ResolveUrl("~/lecturer/lecturer_courses.aspx") %>' class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors" style="font-size:13px;font-weight:600">
                     See all <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>
                 </a>
             </header>
-            <ul class="grid gap-3 sm:grid-cols-2">
-
-                <%-- CSC2104 Software Engineering --%>
-                <li class="group rounded-xl border border-slate-200 p-4 hover:border-slate-300 hover:shadow-sm transition-all cursor-pointer">
-                    <div class="flex items-center justify-between">
-                        <div class="flex h-9 w-9 items-center justify-center rounded-lg" style="background-color:#e0162b15;color:#e0162b">
-                            <i data-lucide="book-open" class="h-4 w-4"></i>
+            <asp:Repeater ID="coursesRepeater" runat="server">
+                <HeaderTemplate><ul class="grid gap-3 sm:grid-cols-2"></HeaderTemplate>
+                <ItemTemplate>
+                    <li class="group rounded-xl border border-slate-200 p-4 hover:border-slate-300 hover:shadow-sm transition-all cursor-pointer">
+                        <div class="flex items-center justify-between">
+                            <div class="flex h-9 w-9 items-center justify-center rounded-lg" style="background-color:<%# AccentColor(Eval("Color") as string) %>15;color:<%# AccentColor(Eval("Color") as string) %>">
+                                <i data-lucide="book-open" class="h-4 w-4"></i>
+                            </div>
+                            <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-600" style="font-size:10.5px;font-weight:600"><%# Server.HtmlEncode(Eval("CourseCode").ToString()) %></span>
                         </div>
-                        <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-600" style="font-size:10.5px;font-weight:600">CSC2104</span>
-                    </div>
-                    <p class="mt-3 text-slate-900 line-clamp-1" style="font-size:14px;font-weight:600">Software Engineering</p>
-                    <p class="mt-0.5 text-slate-500" style="font-size:12px">60 students enrolled</p>
-                </li>
-
-                <%-- CSC2103 Data Structures & Algorithms --%>
-                <li class="group rounded-xl border border-slate-200 p-4 hover:border-slate-300 hover:shadow-sm transition-all cursor-pointer">
-                    <div class="flex items-center justify-between">
-                        <div class="flex h-9 w-9 items-center justify-center rounded-lg" style="background-color:#3b82f615;color:#3b82f6">
-                            <i data-lucide="book-open" class="h-4 w-4"></i>
-                        </div>
-                        <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-600" style="font-size:10.5px;font-weight:600">CSC2103</span>
-                    </div>
-                    <p class="mt-3 text-slate-900 line-clamp-1" style="font-size:14px;font-weight:600">Data Structures &amp; Algorithms</p>
-                    <p class="mt-0.5 text-slate-500" style="font-size:12px">60 students enrolled</p>
-                </li>
-
-                <%-- MTH2101 Discrete Mathematics --%>
-                <li class="group rounded-xl border border-slate-200 p-4 hover:border-slate-300 hover:shadow-sm transition-all cursor-pointer">
-                    <div class="flex items-center justify-between">
-                        <div class="flex h-9 w-9 items-center justify-center rounded-lg" style="background-color:#f59e0b15;color:#f59e0b">
-                            <i data-lucide="book-open" class="h-4 w-4"></i>
-                        </div>
-                        <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-600" style="font-size:10.5px;font-weight:600">MTH2101</span>
-                    </div>
-                    <p class="mt-3 text-slate-900 line-clamp-1" style="font-size:14px;font-weight:600">Discrete Mathematics</p>
-                    <p class="mt-0.5 text-slate-500" style="font-size:12px">Dr. Rajesh K.</p>
-                </li>
-
-                <%-- ENG2001 Professional Communication --%>
-                <li class="group rounded-xl border border-slate-200 p-4 hover:border-slate-300 hover:shadow-sm transition-all cursor-pointer">
-                    <div class="flex items-center justify-between">
-                        <div class="flex h-9 w-9 items-center justify-center rounded-lg" style="background-color:#10b98115;color:#10b981">
-                            <i data-lucide="book-open" class="h-4 w-4"></i>
-                        </div>
-                        <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-600" style="font-size:10.5px;font-weight:600">ENG2001</span>
-                    </div>
-                    <p class="mt-3 text-slate-900 line-clamp-1" style="font-size:14px;font-weight:600">Professional Communication</p>
-                    <p class="mt-0.5 text-slate-500" style="font-size:12px">60 students enrolled</p>
-                </li>
-
-            </ul>
+                        <p class="mt-3 text-slate-900 line-clamp-1" style="font-size:14px;font-weight:600"><%# Server.HtmlEncode(Eval("CourseName").ToString()) %></p>
+                        <p class="mt-0.5 text-slate-500" style="font-size:12px"><%# EnrolledLabel((int)Eval("EnrolledCount")) %></p>
+                    </li>
+                </ItemTemplate>
+                <FooterTemplate></ul></FooterTemplate>
+            </asp:Repeater>
+            <% if (MyCoursesCount == 0) { %>
+                <p class="py-8 text-center text-slate-400" style="font-size:13px">No courses this semester.</p>
+            <% } %>
         </div>
 
         <%-- Announcements --%>
@@ -314,39 +207,22 @@
                     <h2 class="text-slate-900" style="font-size:16px;font-weight:600">Announcements</h2>
                 </div>
             </header>
-            <ul class="space-y-4">
-
-                <%-- Academic --%>
-                <li class="border-b border-slate-100 pb-4">
-                    <div class="flex items-center gap-2">
-                        <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-600" style="font-size:10.5px;font-weight:600">Academic</span>
-                        <span class="text-slate-400" style="font-size:11.5px">2h ago</span>
-                    </div>
-                    <p class="mt-2 text-slate-900" style="font-size:13.5px;font-weight:600;line-height:1.45">Mid-semester break: 10&ndash;14 June 2026</p>
-                    <p class="mt-1 text-slate-500" style="font-size:12.5px;line-height:1.55">Classes resume Monday, 17 June. Library remains open.</p>
-                </li>
-
-                <%-- Event --%>
-                <li class="border-b border-slate-100 pb-4">
-                    <div class="flex items-center gap-2">
-                        <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-600" style="font-size:10.5px;font-weight:600">Event</span>
-                        <span class="text-slate-400" style="font-size:11.5px">Yesterday</span>
-                    </div>
-                    <p class="mt-2 text-slate-900" style="font-size:13.5px;font-weight:600;line-height:1.45">INTI Career Fair 2026 &mdash; Register now</p>
-                    <p class="mt-1 text-slate-500" style="font-size:12.5px;line-height:1.55">Over 80 employers. Earn 2 co-curricular points.</p>
-                </li>
-
-                <%-- System --%>
-                <li class="pb-0">
-                    <div class="flex items-center gap-2">
-                        <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-600" style="font-size:10.5px;font-weight:600">System</span>
-                        <span class="text-slate-400" style="font-size:11.5px">2 days ago</span>
-                    </div>
-                    <p class="mt-2 text-slate-900" style="font-size:13.5px;font-weight:600;line-height:1.45">Portal maintenance Sunday 1&ndash;3 AM</p>
-                    <p class="mt-1 text-slate-500" style="font-size:12.5px;line-height:1.55">Brief downtime expected. Save your work in advance.</p>
-                </li>
-
-            </ul>
+            <asp:Repeater ID="announcementsRepeater" runat="server">
+                <HeaderTemplate><ul class="space-y-4"></HeaderTemplate>
+                <ItemTemplate>
+                    <li class="border-b border-slate-100 pb-4 last:border-b-0 last:pb-0">
+                        <div class="flex items-center gap-2">
+                            <span class="text-slate-400" style="font-size:11.5px"><%# Server.HtmlEncode(FormatRelativeTime((DateTime)Eval("CreatedAt"))) %></span>
+                        </div>
+                        <p class="mt-2 text-slate-900" style="font-size:13.5px;font-weight:600;line-height:1.45"><%# Server.HtmlEncode(Eval("Title").ToString()) %></p>
+                        <p class="mt-1 text-slate-500 line-clamp-2" style="font-size:12.5px;line-height:1.55"><%# Server.HtmlEncode(Eval("Content").ToString()) %></p>
+                    </li>
+                </ItemTemplate>
+                <FooterTemplate></ul></FooterTemplate>
+            </asp:Repeater>
+            <% if (AnnouncementCount == 0) { %>
+                <p class="py-8 text-center text-slate-400" style="font-size:13px">No announcements.</p>
+            <% } %>
         </div>
 
     </section>
