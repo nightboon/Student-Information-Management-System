@@ -108,6 +108,7 @@
     <Content Include="js\lecturer\courses\courses.js" />
     <Content Include="lecturer\lecturer_dashboard.aspx" />
     <Content Include="lecturer\lecturer_courses.aspx" />
+    <Content Include="lecturer\lecturer_account.aspx" />
     <Content Include="shared\account.aspx" />
     <Content Include="shared\login.aspx" />
     <Content Include="shared\notifications.aspx" />
@@ -291,6 +292,13 @@
     </Compile>
     <Compile Include="lecturer\lecturer_courses.aspx.designer.cs">
       <DependentUpon>lecturer_courses.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="lecturer\lecturer_account.aspx.cs">
+      <DependentUpon>lecturer_account.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="lecturer\lecturer_account.aspx.designer.cs">
+      <DependentUpon>lecturer_account.aspx</DependentUpon>
     </Compile>
     <Compile Include="shared\account.aspx.cs">
       <DependentUpon>account.aspx</DependentUpon>

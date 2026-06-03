@@ -13,6 +13,11 @@ namespace src.services
         public int UserId { get; set; }
         public string FullName { get; set; }
         public string Department { get; set; }
+        public string Email { get; set; }
+        public string Username { get; set; }
+        public string Phone { get; set; }
+        public string MailingAddress { get; set; }
+        public string IconPath { get; set; }
     }
 
     /// <summary>
@@ -23,8 +28,14 @@ namespace src.services
     public static class LecturerService
     {
         private const string SelectByUser =
-            "SELECT lecturer_id, user_id, full_name, department " +
-            "FROM LECTURERS WHERE user_id = @userId";
+            "SELECT l.lecturer_id, l.user_id, l.full_name, l.department, " +
+            "u.email, u.username, " +
+            "ISNULL(u.phone, '') AS phone, " +
+            "ISNULL(u.mailing_address, '') AS mailing_address, " +
+            "ISNULL(u.icon_path, '') AS icon_path " +
+            "FROM LECTURERS l " +
+            "JOIN USERS u ON u.user_id = l.user_id " +
+            "WHERE l.user_id = @userId";
 
         public static Lecturer GetByUserId(int userId)
         {
@@ -40,7 +51,12 @@ namespace src.services
                         LecturerId = (int)reader["lecturer_id"],
                         UserId = (int)reader["user_id"],
                         FullName = reader["full_name"].ToString(),
-                        Department = reader["department"].ToString()
+                        Department = reader["department"].ToString(),
+                        Email = reader["email"].ToString(),
+                        Username = reader["username"].ToString(),
+                        Phone = reader["phone"].ToString(),
+                        MailingAddress = reader["mailing_address"].ToString(),
+                        IconPath = reader["icon_path"].ToString()
                     };
                 }
             }
