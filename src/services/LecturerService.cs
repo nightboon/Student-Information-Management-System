@@ -237,6 +237,56 @@ namespace src.services
             }
         }
 
+        // The lecturer's full week of class meetings (current semester), ordered
+        // Monday-first then by start time. Same ClassSession shape as the day view.
+        private const string SelectWeeklyClasses =
+            "SELECT tt.timetable_id, o.offering_id, c.course_code, c.course_name, c.credit_hours, " +
+            "ISNULL(l.full_name, '') AS lecturer_name, " +
+            "tt.venue, tt.day_of_week, tt.start_time, tt.end_time, ISNULL(c.color, '') AS color " +
+            "FROM TEACHINGS tg " +
+            "JOIN LECTURERS l ON tg.lecturer_id = l.lecturer_id " +
+            "JOIN COURSE_OFFERINGS o ON tg.offering_id = o.offering_id " +
+            "JOIN COURSES c ON o.course_id = c.course_id " +
+            "JOIN SEMESTERS sem ON o.semester_id = sem.semester_id " +
+            "JOIN TIMETABLES tt ON tt.offering_id = o.offering_id " +
+            "WHERE tg.lecturer_id = @lecturerId AND sem.is_current = 1 " +
+            "ORDER BY CASE tt.day_of_week " +
+            "WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2 WHEN 'Wednesday' THEN 3 " +
+            "WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 WHEN 'Saturday' THEN 6 " +
+            "WHEN 'Sunday' THEN 7 ELSE 8 END, tt.start_time";
+
+        /// <summary>Every class the lecturer teaches this week (current semester), Monday first.</summary>
+        public static List<ClassSession> GetWeeklyClasses(int lecturerId)
+        {
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(SelectWeeklyClasses, conn))
+            {
+                cmd.Parameters.AddWithValue("@lecturerId", lecturerId);
+                var sessions = new List<ClassSession>();
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        sessions.Add(new ClassSession
+                        {
+                            TimetableId = (int)reader["timetable_id"],
+                            OfferingId = (int)reader["offering_id"],
+                            CourseCode = reader["course_code"].ToString(),
+                            CourseName = reader["course_name"].ToString(),
+                            CreditHours = (int)reader["credit_hours"],
+                            LecturerName = reader["lecturer_name"].ToString(),
+                            Venue = reader["venue"].ToString(),
+                            DayOfWeek = reader["day_of_week"].ToString(),
+                            StartTime = (TimeSpan)reader["start_time"],
+                            EndTime = (TimeSpan)reader["end_time"],
+                            Color = reader["color"].ToString()
+                        });
+                    }
+                }
+                return sessions;
+            }
+        }
+
         // Assignments by the lecturer that still have unmarked submissions, with
         // how many remain, soonest due first. The INNER JOIN on unmarked
         // submissions excludes anything already fully graded.
