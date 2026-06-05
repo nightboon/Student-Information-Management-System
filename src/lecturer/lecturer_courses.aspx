@@ -57,7 +57,7 @@
                             <i data-lucide="book-open" class="h-4 w-4"></i>
                         </div>
                         <button type="button" data-action="toggle-pin" aria-label="Toggle pin"
-                            class="rounded-lg p-2 transition-all text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+                            class="relative z-10 rounded-lg p-2 transition-all text-slate-400 hover:bg-slate-100 hover:text-slate-700">
                             <i data-lucide="pin" data-pinned-icon class="h-4 w-4"></i>
                         </button>
                     </div>
@@ -75,8 +75,8 @@
                     </div>
                     <div class="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between">
                         <span class="text-slate-500" style="font-size:11.5px;font-weight:500"><%# Server.HtmlEncode(Eval("SemesterName").ToString()) %></span>
-                        <a href="#"
-                            class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors"
+                        <a href='<%# CourseUrl(Eval("OfferingId")) %>'
+                            class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors before:absolute before:inset-0 before:content-['']"
                             style="font-size:12.5px;font-weight:600">
                             Open course <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
                         </a>

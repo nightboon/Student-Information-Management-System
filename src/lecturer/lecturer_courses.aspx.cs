@@ -85,5 +85,11 @@ namespace src.lecturer
         {
             return ((code ?? "") + " " + (name ?? "")).ToLowerInvariant();
         }
+
+        /// <summary>Course dashboard URL for an offering, used by the card link.</summary>
+        protected string CourseUrl(object offeringId)
+        {
+            return ResolveUrl("~/lecturer/lecturer_course_dashboard.aspx") + "?offering=" + offeringId;
+        }
     }
 }
