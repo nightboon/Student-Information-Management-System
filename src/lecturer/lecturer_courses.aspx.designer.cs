@@ -7,30 +7,21 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace student_information_management_system
+namespace src.lecturer
 {
 
 
-    public partial class lecturer_dashboard
+    public partial class lecturer_courses
     {
 
         /// <summary>
-        /// scheduleRepeater control.
+        /// semesterRepeater control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater scheduleRepeater;
-
-        /// <summary>
-        /// gradeRepeater control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater gradeRepeater;
+        protected global::System.Web.UI.WebControls.Repeater semesterRepeater;
 
         /// <summary>
         /// coursesRepeater control.
@@ -40,14 +31,5 @@ namespace student_information_management_system
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Repeater coursesRepeater;
-
-        /// <summary>
-        /// announcementsRepeater control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater announcementsRepeater;
     }
 }

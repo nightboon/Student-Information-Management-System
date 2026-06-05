@@ -7,47 +7,56 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace student_information_management_system
+namespace src.lecturer
 {
 
 
-    public partial class lecturer_dashboard
+    public partial class lecturer_take_attendance
     {
 
         /// <summary>
-        /// scheduleRepeater control.
+        /// savedBanner control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater scheduleRepeater;
+        protected global::System.Web.UI.WebControls.PlaceHolder savedBanner;
 
         /// <summary>
-        /// gradeRepeater control.
+        /// savedMessage control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater gradeRepeater;
+        protected global::System.Web.UI.WebControls.Label savedMessage;
 
         /// <summary>
-        /// coursesRepeater control.
+        /// rosterRepeater control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater coursesRepeater;
+        protected global::System.Web.UI.WebControls.Repeater rosterRepeater;
 
         /// <summary>
-        /// announcementsRepeater control.
+        /// emptyPanel control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater announcementsRepeater;
+        protected global::System.Web.UI.WebControls.PlaceHolder emptyPanel;
+
+        /// <summary>
+        /// attendanceData control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField attendanceData;
     }
 }
