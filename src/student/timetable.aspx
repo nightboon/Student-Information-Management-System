@@ -13,10 +13,10 @@
         </div>
         <div class="flex items-center gap-2">
             <span class="rounded-full bg-slate-100 px-3 py-1 text-slate-700" style="font-size:12px;font-weight:600"><%: SemesterDisplay %></span>
-            <button class="inline-flex items-center gap-2 rounded-xl bg-[#e0162b] px-4 h-10 text-white hover:bg-[#a01020] transition-colors shadow-[0_8px_20px_-8px_rgba(224,22,43,0.55)]"
-                style="font-size:13px;font-weight:600">
-                <i data-lucide="download" class="h-4 w-4"></i> Download PDF
-            </button>
+                <button type="button" id="btnDownloadPdf" class="inline-flex items-center gap-2 rounded-xl bg-[#e0162b] px-4 h-10 text-white hover:bg-[#a01020] transition-colors shadow-[0_8px_20px_-8px_rgba(224,22,43,0.55)]"
+                    style="font-size:13px;font-weight:600">
+                    <i data-lucide="download" class="h-4 w-4"></i> Download PDF
+                </button>
         </div>
     </div>
 
@@ -113,7 +113,7 @@
         </header>
 
         <div class="overflow-x-auto">
-            <div class="min-w-[920px] rounded-md border border-slate-200 bg-white p-3">
+            <div class="w-full rounded-md border border-slate-200 bg-white p-3">
                 <div id="studentTimetable"></div>
             </div>
         </div>
@@ -232,8 +232,41 @@
     </style>
 
 
-</asp:Content>
+    </asp:Content>
 
-<asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/student/timetable/timetable.js") %>"></script>
-</asp:Content>
+    <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
+        <script src="<%= ResolveUrl("~/js/student/timetable/timetable.js") %>"></script>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                var downloadBtn = document.getElementById('btnDownloadPdf');
+            
+                if (downloadBtn) {
+                    downloadBtn.addEventListener('click', function () {
+                        // Targets your crisp calendar box container layout
+                        var element = document.querySelector('.w-full.rounded-md.border'); 
+                    
+                        if (!element) {
+                            console.error("Calendar container element not found.");
+                            return;
+                        }
+
+                        // Configuration optimized for a high-quality A3 Landscape document sheet
+                        var opt = {
+                            margin:       10, // 10mm margins for edge spacing
+                            filename:     'My_Timetable.pdf',
+                            image:        { type: 'jpeg', quality: 0.98 },
+                            html2canvas:  { scale: 2, useCORS: true, logging: false },
+                            jsPDF:        { unit: 'mm', format: 'a3', orientation: 'landscape' },
+                            pagebreak:    { mode: ['avoid-all'] }
+                        };
+
+                        // Execute generation and download cleanly
+                        html2pdf().set(opt).from(element).save();
+                    });
+                }
+            });
+        </script>
+    </asp:Content>
