@@ -229,7 +229,7 @@
     </button>
 
     <div id="assistant-panel"
-         class="fixed bottom-24 right-6 z-50 hidden h-[30rem] w-[22rem] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+         class="fixed bottom-24 right-6 z-50 hidden h-[45rem] max-h-[80vh] w-[33rem] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
         <header class="flex items-center justify-between bg-[#e0162b] px-4 py-3 text-white">
             <div class="flex items-center gap-2">
                 <i data-lucide="sparkles" class="h-4 w-4"></i>
@@ -258,5 +258,14 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
+    <%-- Markdown rendering for assistant replies (marked) --%>
+    <style>
+        #assistant-messages .assistant-md ul,
+        #assistant-messages .assistant-md ol { padding-left: 1.1rem; list-style: revert; }
+        #assistant-messages .assistant-md table { display: block; overflow-x: auto; border-collapse: collapse; font-size: 12px; }
+        #assistant-messages .assistant-md th,
+        #assistant-messages .assistant-md td { border: 1px solid #e2e8f0; padding: 3px 6px; white-space: nowrap; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
     <script src="<%= ResolveUrl("~/js/student/assistant/assistant.js") %>"></script>
 </asp:Content>

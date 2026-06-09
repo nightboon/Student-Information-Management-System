@@ -50,6 +50,18 @@
         return bubble;
     }
 
+    // Render an assistant reply as Markdown. Falls back to plain text if the
+    // marked CDN failed to load.
+    function renderReply(bubble, markdown) {
+        if (typeof marked !== 'undefined') {
+            bubble.classList.add('assistant-md');
+            bubble.style.whiteSpace = 'normal';
+            bubble.innerHTML = marked.parse(markdown);
+        } else {
+            bubble.textContent = markdown;
+        }
+    }
+
     function setBusy(value) {
         busy = value;
         sendBtn.disabled = value;
@@ -82,7 +94,7 @@
                 // ASP.NET page methods wrap the payload in { "d": ... }.
                 var result = (data && typeof data.d !== 'undefined') ? data.d : data;
                 var reply = (result && result.reply) ? result.reply : '(no reply)';
-                pending.textContent = reply;
+                renderReply(pending, reply);
                 history.push({ role: 'user', content: text });
                 history.push({ role: 'assistant', content: reply });
                 messagesEl.scrollTop = messagesEl.scrollHeight;
