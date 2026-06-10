@@ -85,3 +85,6 @@ Desktop.ini
 *docs/
 **/*doc/
 **/*docs/
+
+# AI assistant config (holds the API key; use src/ai.config.example as template)
+src/ai.config

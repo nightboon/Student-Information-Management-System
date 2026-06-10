@@ -240,7 +240,7 @@ namespace src.student
         /// model answers in plain text. The userId comes only from the session.
         /// </summary>
         [WebMethod(EnableSession = true)]
-        public static object Chat(List<Dictionary<string, object>> history, string message)
+        public static object Chat(List<Dictionary<string, object>> history, string message, string conversationId)
         {
             var ctx = HttpContext.Current;
 
@@ -254,6 +254,10 @@ namespace src.student
             }
 
             int userId = (int)ctx.Session["user_id"];
+
+            // One log row per widget session; an unparseable id degrades to per-call rows.
+            Guid convId;
+            if (!Guid.TryParse(conversationId, out convId)) convId = Guid.NewGuid();
 
             // System prompt + prior turns + the new user message.
             var messages = new List<object>
@@ -284,6 +288,8 @@ namespace src.student
             });
 
             var tools = AssistantTools.Definitions();
+            var toolsUsed = new List<string>();
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
             try
             {
@@ -301,7 +307,9 @@ namespace src.student
                     {
                         object content;
                         aiMessage.TryGetValue("content", out content);
-                        return new { reply = content as string ?? "" };
+                        var reply = content as string ?? "";
+                        WriteChatLog(convId, userId, message, reply, toolsUsed, stopwatch);
+                        return new { reply };
                     }
 
                     // Run every requested tool and append its result for the next round.
@@ -311,6 +319,7 @@ namespace src.student
                         var function = (Dictionary<string, object>)call["function"];
                         var name = function["name"] as string;
 
+                        toolsUsed.Add(name);
                         string result = AssistantTools.Execute(name, userId);
 
                         messages.Add(new Dictionary<string, object>
@@ -322,7 +331,9 @@ namespace src.student
                     }
                 }
 
-                return new { reply = "Sorry, I couldn't complete that request." };
+                var fallback = "Sorry, I couldn't complete that request.";
+                WriteChatLog(convId, userId, message, fallback, toolsUsed, stopwatch);
+                return new { reply = fallback };
             }
             catch (Exception ex)
             {
@@ -330,6 +341,22 @@ namespace src.student
                 ctx.Response.StatusCode = 500;
                 ctx.Response.SuppressContent = true;
                 return null;
+            }
+        }
+
+        /// <summary>Best-effort chat logging; never lets a logging failure break the reply.</summary>
+        private static void WriteChatLog(Guid conversationId, int userId, string question,
+            string reply, List<string> toolsUsed, System.Diagnostics.Stopwatch stopwatch)
+        {
+            try
+            {
+                stopwatch.Stop();
+                AiConsoleService.AppendLog(conversationId, userId, question, reply,
+                    string.Join(", ", toolsUsed), (int)stopwatch.ElapsedMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Chat log write failed: " + ex.Message);
             }
         }
 

@@ -85,6 +85,8 @@
     <Content Include="controls\lecturer_topbar.ascx" />
     <Content Include="css\site.css" />
     <Content Include="Global.asax" />
+    <Content Include="devtools\ai_console.aspx" />
+    <Content Include="db\ai_console.sql" />
     <Content Include="db\enrollment.sql" />
     <Content Include="db\notification_reads.sql" />
     <Content Include="db\user1_demo_data.sql" />
@@ -273,6 +275,14 @@
     <Compile Include="security\AdminPage.cs">
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
+    <Compile Include="devtools\ai_console.aspx.cs">
+      <DependentUpon>ai_console.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="devtools\ai_console.aspx.designer.cs">
+      <DependentUpon>ai_console.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="services\AiConsoleService.cs" />
     <Compile Include="services\AnnouncementService.cs" />
     <Compile Include="services\AssignmentService.cs" />
     <Compile Include="services\AttendanceService.cs" />
@@ -423,6 +433,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="ai.config.example" />
     <None Include="packages.config" />
     <Content Include="shared\site.master" />
     <Content Include="shared\LoginLayout.master" />

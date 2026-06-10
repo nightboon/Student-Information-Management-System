@@ -12,6 +12,14 @@
     var history = [];
     var busy = false;
 
+    // One conversation id per page load, so all exchanges land in one log row.
+    var conversationId = (window.crypto && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            var r = Math.random() * 16 | 0;
+            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+
     function openPanel() {
         panel.classList.remove('hidden');
         panel.classList.add('flex');
@@ -82,7 +90,7 @@
         fetch('/student/student_dashboard.aspx/Chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json; charset=utf-8' },
-            body: JSON.stringify({ history: history, message: text })
+            body: JSON.stringify({ history: history, message: text, conversationId: conversationId })
         })
             .then(function (resp) {
                 if (!resp.ok) {
