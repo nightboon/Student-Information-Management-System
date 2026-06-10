@@ -78,12 +78,12 @@
                 <asp:Repeater ID="logsRepeater" runat="server">
                     <HeaderTemplate>
                         <table>
-                            <tr><th style="width:130px">Last active</th><th style="width:55px">User</th><th>First question</th><th style="width:55px">Turns</th><th style="width:200px">Tools</th><th style="width:80px">Total ms</th></tr>
+                            <tr><th style="width:130px">Last active</th><th style="width:140px">Student</th><th>First question</th><th style="width:55px">Turns</th><th style="width:200px">Tools</th><th style="width:80px">Total ms</th></tr>
                     </HeaderTemplate>
                     <ItemTemplate>
                         <tr class="summary" onclick="this.nextElementSibling.classList.toggle('open')">
                             <td><%# ((DateTime)Eval("UpdatedAt")).ToString("MM-dd HH:mm:ss") %></td>
-                            <td>#<%# Eval("UserId") %></td>
+                            <td class="clip"><%# Server.HtmlEncode((string)Eval("StudentLabel")) %></td>
                             <td class="clip"><%# Server.HtmlEncode((string)Eval("FirstQuestion")) %></td>
                             <td><%# Eval("Turns") %></td>
                             <td class="clip"><%# Server.HtmlEncode((string)Eval("ToolsUsed")) %></td>

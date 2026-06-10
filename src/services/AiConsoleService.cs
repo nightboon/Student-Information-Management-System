@@ -14,6 +14,8 @@ namespace src.services
         public int ChatLogId { get; set; }
         public Guid ConversationId { get; set; }
         public int UserId { get; set; }
+        public int? StudentId { get; set; }
+        public string StudentName { get; set; }
         public string Transcript { get; set; }
         public int Turns { get; set; }
         public string ToolsUsed { get; set; }
@@ -29,6 +31,20 @@ namespace src.services
                 if (string.IsNullOrEmpty(Transcript)) return "";
                 var firstLine = Transcript.Split('\n')[0];
                 return firstLine.StartsWith("Q: ") ? firstLine.Substring(3) : firstLine;
+            }
+        }
+
+        /// <summary>
+        /// Who had the conversation, for the console list row: student id + name
+        /// (e.g. "#1 Ong Zhi Bo"), falling back to the USERS id ("U4") when the
+        /// account has no STUDENTS row.
+        /// </summary>
+        public string StudentLabel
+        {
+            get
+            {
+                if (StudentId == null) return "U" + UserId;
+                return "#" + StudentId + " " + (StudentName ?? "");
             }
         }
     }
@@ -187,9 +203,12 @@ namespace src.services
             var logs = new List<ChatLog>();
             using (var conn = Db.OpenConnection())
             using (var cmd = new SqlCommand(
-                "SELECT TOP (@top) chat_log_id, conversation_id, user_id, transcript, turns, " +
-                "tools_used, duration_ms, created_at, updated_at " +
-                "FROM CHAT_LOGS ORDER BY updated_at DESC, chat_log_id DESC", conn))
+                "SELECT TOP (@top) cl.chat_log_id, cl.conversation_id, cl.user_id, " +
+                "s.student_id, s.full_name, cl.transcript, cl.turns, " +
+                "cl.tools_used, cl.duration_ms, cl.created_at, cl.updated_at " +
+                "FROM CHAT_LOGS cl " +
+                "LEFT JOIN STUDENTS s ON s.user_id = cl.user_id " +
+                "ORDER BY cl.updated_at DESC, cl.chat_log_id DESC", conn))
             {
                 cmd.Parameters.AddWithValue("@top", top);
                 using (var reader = cmd.ExecuteReader())
@@ -201,6 +220,8 @@ namespace src.services
                             ChatLogId = (int)reader["chat_log_id"],
                             ConversationId = (Guid)reader["conversation_id"],
                             UserId = (int)reader["user_id"],
+                            StudentId = reader["student_id"] == DBNull.Value ? (int?)null : (int)reader["student_id"],
+                            StudentName = reader["full_name"] == DBNull.Value ? null : reader["full_name"].ToString(),
                             Transcript = reader["transcript"].ToString(),
                             Turns = (int)reader["turns"],
                             ToolsUsed = reader["tools_used"] == DBNull.Value ? "" : reader["tools_used"].ToString(),
