@@ -1,17 +1,18 @@
 using System.Collections.Generic;
-using System.Configuration;
 using System.IO;
 using System.Net;
 using System.Text;
 using System.Web.Script.Serialization;
+using src.services;
 
 namespace src.assistant
 {
     /// <summary>
     /// Thin HTTP client for an OpenAI-compatible Chat Completions endpoint.
     /// Knows the wire protocol only; it has no knowledge of the portal's data.
-    /// Endpoint, key and model are read from Web.config appSettings:
-    /// "Ai:BaseUrl", "Ai:ApiKey", "Ai:Model".
+    /// Endpoint, key and model ("Ai:BaseUrl", "Ai:ApiKey", "Ai:Model") come from
+    /// AiConsoleService, which reads ai.config directly so AI Console edits
+    /// apply immediately without an app restart.
     /// </summary>
     public static class AiChatClient
     {
@@ -25,9 +26,9 @@ namespace src.assistant
         /// </summary>
         public static Dictionary<string, object> Send(List<object> messages, List<object> tools)
         {
-            string baseUrl = (ConfigurationManager.AppSettings["Ai:BaseUrl"] ?? "").TrimEnd('/');
-            string apiKey = ConfigurationManager.AppSettings["Ai:ApiKey"] ?? "";
-            string model = ConfigurationManager.AppSettings["Ai:Model"] ?? "";
+            string baseUrl = AiConsoleService.GetSetting("Ai:BaseUrl").TrimEnd('/');
+            string apiKey = AiConsoleService.GetSetting("Ai:ApiKey");
+            string model = AiConsoleService.GetSetting("Ai:Model");
 
             var payload = new Dictionary<string, object>
             {

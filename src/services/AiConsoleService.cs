@@ -36,19 +36,43 @@ namespace src.services
     /// <summary>
     /// Backing service for the AI Console page: reads/writes the AI settings in
     /// the external, gitignored ai.config file, and reads/writes CHAT_LOGS.
-    /// Settings changes take effect immediately (appSettings is declared
-    /// restartOnExternalChanges="false", and we refresh the section after save).
+    ///
+    /// Settings are read straight from ai.config on every call rather than via
+    /// ConfigurationManager: the merged appSettings section is cached in-memory
+    /// and RefreshSection does not reliably re-read a file=-referenced external
+    /// file, so going to the file is the only way edits apply immediately.
     /// </summary>
     public static class AiConsoleService
     {
         private static readonly string[] SettingKeys = { "Ai:BaseUrl", "Ai:ApiKey", "Ai:Model" };
 
+        /// <summary>
+        /// Reads one AI setting directly from ai.config; falls back to
+        /// ConfigurationManager (Web.config) when the file or key is absent.
+        /// </summary>
         public static string GetSetting(string key)
         {
+            try
+            {
+                string path = HostingEnvironment.MapPath("~/ai.config");
+                if (System.IO.File.Exists(path))
+                {
+                    var doc = new XmlDocument();
+                    doc.Load(path);
+                    var node = doc.DocumentElement == null
+                        ? null
+                        : (XmlElement)doc.DocumentElement.SelectSingleNode("add[@key='" + key + "']");
+                    if (node != null) return node.GetAttribute("value");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Reading ai.config failed: " + ex.Message);
+            }
             return ConfigurationManager.AppSettings[key] ?? "";
         }
 
-        /// <summary>Writes the three AI settings to ai.config and refreshes appSettings.</summary>
+        /// <summary>Writes the three AI settings to ai.config; effective immediately.</summary>
         public static void SaveSettings(string baseUrl, string apiKey, string model)
         {
             string path = HostingEnvironment.MapPath("~/ai.config");
@@ -82,7 +106,6 @@ namespace src.services
             }
 
             doc.Save(path);
-            ConfigurationManager.RefreshSection("appSettings");
         }
 
         /// <summary>Clears all three AI settings (the console's "Reset" button).</summary>
