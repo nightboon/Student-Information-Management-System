@@ -6,11 +6,41 @@ using src.db;
 
 namespace src.services
 {
+    public class UserProfile
+    {
+        public string Username { get; set; }
+        public string IconPath { get; set; }
+    }
+
     /// <summary>
-    /// Updates contact fields and passwords on the USERS table.
+    /// Reads profile fields and updates contact fields and passwords on the USERS table.
     /// </summary>
     public static class UserAccountService
     {
+        public static UserProfile GetProfile(int userId)
+        {
+            const string sql =
+                "SELECT username, ISNULL(icon_path, '') AS icon_path FROM USERS WHERE user_id = @userId";
+
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@userId", userId);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        return new UserProfile
+                        {
+                            Username = reader["username"].ToString(),
+                            IconPath = reader["icon_path"].ToString()
+                        };
+                    }
+                }
+            }
+            return null;
+        }
+
         public static bool UpdateContactInfo(int userId, string phone, string mailingAddress)
         {
             const string sql =
