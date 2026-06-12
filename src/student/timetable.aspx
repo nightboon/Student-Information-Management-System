@@ -229,44 +229,505 @@
             font-size: 9.5px;
             font-weight: 700;
         }
+
+        #pdfTimetableWrapper * {
+            box-sizing: border-box;
+        }
+
+        #pdfTimetableWrapper .fc-timegrid-slot {
+            height: 70px !important;
+        }
+
+        #pdfTimetableWrapper .fc {
+            width: 100% !important;
+        }
+
+        #pdfTimetableWrapper .fc-view-harness {
+            width: 100% !important;
+        }
+
+        #pdfTimetableWrapper .fc-scrollgrid {
+            width: 100% !important;
+        }
     </style>
 
 
     </asp:Content>
 
-    <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-        <script src="<%= ResolveUrl("~/js/student/timetable/timetable.js") %>"></script>
+  <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
 
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                var downloadBtn = document.getElementById('btnDownloadPdf');
-            
-                if (downloadBtn) {
-                    downloadBtn.addEventListener('click', function () {
-                        // Targets your crisp calendar box container layout
-                        var element = document.querySelector('.w-full.rounded-md.border'); 
-                    
-                        if (!element) {
-                            console.error("Calendar container element not found.");
-                            return;
-                        }
+    <script src="<%= ResolveUrl("~/js/student/timetable/timetable.js") %>"></script>
 
-                        // Configuration optimized for a high-quality A3 Landscape document sheet
-                        var opt = {
-                            margin:       10, // 10mm margins for edge spacing
-                            filename:     'My_Timetable.pdf',
-                            image:        { type: 'jpeg', quality: 0.98 },
-                            html2canvas:  { scale: 2, useCORS: true, logging: false },
-                            jsPDF:        { unit: 'mm', format: 'a3', orientation: 'landscape' },
-                            pagebreak:    { mode: ['avoid-all'] }
-                        };
+    <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
-                        // Execute generation and download cleanly
-                        html2pdf().set(opt).from(element).save();
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var downloadBtn = document.getElementById("btnDownloadPdf");
+
+            if (!downloadBtn) return;
+
+            downloadBtn.addEventListener("click", function () {
+                var originalBtnText = downloadBtn.innerHTML;
+                downloadBtn.innerHTML = "Generating PDF...";
+                downloadBtn.disabled = true;
+
+                try {
+                    generateTimetablePdf();
+                } catch (err) {
+                    console.error("PDF Error:", err);
+                    alert("PDF generation failed. Open Console to see the error.");
+                }
+
+                downloadBtn.innerHTML = originalBtnText;
+                downloadBtn.disabled = false;
+            });
+        });
+
+        function generateTimetablePdf() {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                alert("jsPDF is not loaded.");
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+
+            const doc = new jsPDF({
+                orientation: "landscape",
+                unit: "mm",
+                format: "a3"
+            });
+
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+
+            const margin = 8;
+            const titleHeight = 15;
+            const leftTimeWidth = 18;
+            const headerHeight = 12;
+
+            const gridX = margin + leftTimeWidth;
+            const gridY = margin + titleHeight + headerHeight;
+            const gridWidth = pageWidth - margin * 2 - leftTimeWidth;
+            const gridHeight = pageHeight - margin * 2 - titleHeight - headerHeight;
+
+            const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+            const startHour = 9;
+            const endHour = 21;
+            const totalHours = endHour - startHour;
+
+            const colWidth = gridWidth / days.length;
+            const hourHeight = gridHeight / totalHours;
+
+            drawBaseTimetable(doc, pageWidth, pageHeight, margin, titleHeight, leftTimeWidth, headerHeight, gridX, gridY, gridWidth, gridHeight, days, startHour, endHour, colWidth, hourHeight);
+
+            let events = getEventsFromVisibleTimetable();
+
+            if (events.length === 0) {
+                events = getEventsFromStudentData();
+            }
+
+            console.log("PDF events:", events);
+
+            events.forEach(function (event) {
+                drawEvent(doc, event, gridX, gridY, colWidth, hourHeight, startHour, endHour);
+            });
+
+            doc.save("Class_Timetable.pdf");
+        }
+
+        function drawBaseTimetable(doc, pageWidth, pageHeight, margin, titleHeight, leftTimeWidth, headerHeight, gridX, gridY, gridWidth, gridHeight, days, startHour, endHour, colWidth, hourHeight) {
+            doc.setFillColor(255, 255, 255);
+            doc.rect(0, 0, pageWidth, pageHeight, "F");
+
+            doc.setTextColor(15, 23, 42);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(16);
+            doc.text("Class Timetable", margin, margin + 6);
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            doc.setTextColor(100, 116, 139);
+            doc.text("Weekly schedule", margin, margin + 12);
+
+            doc.setFillColor(248, 250, 252);
+            doc.setDrawColor(226, 232, 240);
+            doc.rect(gridX, margin + titleHeight, gridWidth, headerHeight, "FD");
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
+            doc.setTextColor(15, 23, 42);
+
+            days.forEach(function (day, index) {
+                const x = gridX + index * colWidth;
+                doc.rect(x, margin + titleHeight, colWidth, headerHeight);
+                doc.text(day, x + colWidth / 2, margin + titleHeight + 7.5, {
+                    align: "center"
+                });
+            });
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(7);
+            doc.setTextColor(100, 116, 139);
+
+            for (let h = startHour; h <= endHour; h++) {
+                const y = gridY + (h - startHour) * hourHeight;
+
+                doc.setDrawColor(226, 232, 240);
+                doc.line(gridX, y, gridX + gridWidth, y);
+
+                if (h < endHour) {
+                    doc.text(formatHour(h), margin + 2, y + 3);
+                }
+            }
+
+            for (let i = 0; i <= days.length; i++) {
+                const x = gridX + i * colWidth;
+                doc.setDrawColor(226, 232, 240);
+                doc.line(x, gridY, x, gridY + gridHeight);
+            }
+
+            doc.setDrawColor(226, 232, 240);
+            doc.rect(gridX, gridY, gridWidth, gridHeight);
+        }
+
+        function getEventsFromStudentData() {
+            let raw = window.studentTimetableData;
+
+            if (!raw) return [];
+
+            if (raw.events && Array.isArray(raw.events)) {
+                raw = raw.events;
+            }
+
+            if (!Array.isArray(raw)) return [];
+
+            const result = [];
+
+            raw.forEach(function (event) {
+                const props = event.extendedProps || {};
+
+                const title = props.courseName || props.CourseName || event.courseName || event.CourseName || event.title || "Class";
+                const code = props.courseCode || props.CourseCode || event.courseCode || event.CourseCode || "";
+                const lecturer = props.lecturerName || props.LecturerName || event.lecturerName || event.LecturerName || "";
+                const room = props.roomName || props.RoomName || props.room || event.roomName || event.RoomName || "";
+                const type = props.type || props.Type || props.sessionType || props.SessionType || "Class";
+                const color = event.backgroundColor || event.borderColor || props.color || event.color || "#e0162b";
+
+                if (event.start && event.end) {
+                    const start = new Date(event.start);
+                    const end = new Date(event.end);
+
+                    if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+                        result.push({
+                            dayIndex: start.getDay() - 1,
+                            startDecimal: start.getHours() + start.getMinutes() / 60,
+                            endDecimal: end.getHours() + end.getMinutes() / 60,
+                            title: title,
+                            code: code,
+                            lecturer: lecturer,
+                            room: room,
+                            type: type,
+                            color: color
+                        });
+                    }
+                }
+
+                if (event.daysOfWeek && event.startTime && event.endTime) {
+                    event.daysOfWeek.forEach(function (dayValue) {
+                        result.push({
+                            dayIndex: Number(dayValue) - 1,
+                            startDecimal: timeStringToDecimal(event.startTime),
+                            endDecimal: timeStringToDecimal(event.endTime),
+                            title: title,
+                            code: code,
+                            lecturer: lecturer,
+                            room: room,
+                            type: type,
+                            color: color
+                        });
                     });
                 }
             });
-        </script>
-    </asp:Content>
+
+            return result.filter(function (event) {
+                return event.dayIndex >= 0 && event.dayIndex <= 4;
+            });
+        }
+
+        function getEventsFromVisibleTimetable() {
+            const eventNodes = document.querySelectorAll("#studentTimetable .fc-event");
+            const events = [];
+
+            eventNodes.forEach(function (node) {
+                const code = getText(node, ".tt-code");
+                const type = getText(node, ".tt-type") || "Class";
+                const title = getText(node, ".tt-title") || "Class";
+                const timeText = getText(node, ".tt-time");
+
+                const metaNodes = node.querySelectorAll(".tt-meta");
+                let lecturer = "";
+                let room = "";
+
+                metaNodes.forEach(function (metaNode) {
+                    const text = metaNode.innerText.trim();
+
+                    if (text.toLowerCase().startsWith("lecturer:")) {
+                        lecturer = text.replace(/lecturer:/i, "").trim();
+                    }
+
+                    if (text.toLowerCase().startsWith("room:")) {
+                        room = text.replace(/room:/i, "").trim();
+                    }
+                });
+
+                const timeRange = parseTimeRange(timeText);
+                const dayIndex = getDayIndexFromDom(node);
+
+                // Get exact colour from the course code badge
+                const codeBadge = node.querySelector(".tt-code");
+                let color = "#e0162b";
+
+                if (codeBadge) {
+                    color = window.getComputedStyle(codeBadge).backgroundColor;
+                } else {
+                    color = window.getComputedStyle(node).borderColor;
+                }
+
+                if (timeRange && dayIndex >= 0 && dayIndex <= 4) {
+                    events.push({
+                        dayIndex: dayIndex,
+                        startDecimal: timeRange.start,
+                        endDecimal: timeRange.end,
+                        title: title,
+                        code: code,
+                        lecturer: lecturer,
+                        room: room,
+                        type: type,
+                        color: color
+                    });
+                }
+            });
+
+            return events;
+        }
+
+        function drawEvent(doc, event, gridX, gridY, colWidth, hourHeight, startHour, endHour) {
+            if (event.endDecimal <= startHour || event.startDecimal >= endHour) return;
+
+            const safeStart = Math.max(event.startDecimal, startHour);
+            const safeEnd = Math.min(event.endDecimal, endHour);
+
+            const x = gridX + event.dayIndex * colWidth + 2;
+            const y = gridY + (safeStart - startHour) * hourHeight + 2;
+            const w = colWidth - 4;
+            const h = (safeEnd - safeStart) * hourHeight - 4;
+
+            const borderRgb = cssColorToRgb(event.color);
+            const bgRgb = lightenRgb(borderRgb, 0.92);
+
+            // Light pastel background like your original timetable
+            doc.setFillColor(bgRgb.r, bgRgb.g, bgRgb.b);
+            doc.setDrawColor(borderRgb.r, borderRgb.g, borderRgb.b);
+            doc.setLineWidth(0.5);
+            doc.roundedRect(x, y, w, h, 2, 2, "FD");
+
+            // Course code badge
+            doc.setFillColor(borderRgb.r, borderRgb.g, borderRgb.b);
+            doc.roundedRect(x + 3, y + 3, 15, 5, 1, 1, "F");
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(8);
+
+            doc.text(event.code || "", x + 10.5, y + 6.5, {
+                align: "center"
+            });
+
+            // Class badge
+            doc.setFillColor(255, 255, 255);
+            doc.setDrawColor(226, 232, 240);
+            doc.roundedRect(x + 20, y + 3, 13, 5, 1, 1, "FD");
+
+            doc.setTextColor(51, 65, 85);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(7.5);
+            doc.text(event.type || "Class", x + 26.5, y + 6.5, {
+                align: "center"
+            });
+
+            // Course name
+            doc.setTextColor(15, 23, 42);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
+
+            const titleLines = doc.splitTextToSize(event.title || "Class", w - 8);
+            doc.text(titleLines.slice(0, 2), x + 3, y + 13);
+
+            // Lecturer and room
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8);
+            doc.setTextColor(51, 65, 85);
+
+            let metaY = y + 21;
+
+            if (event.lecturer) {
+                doc.text("Lecturer: " + event.lecturer, x + 3, metaY);
+                metaY += 4;
+            }
+
+            if (event.room) {
+                doc.text("Room: " + event.room, x + 3, metaY);
+            }
+
+            // Time badge
+            const timeText = decimalToTime(event.startDecimal) + " - " + decimalToTime(event.endDecimal);
+            const timeBadgeWidth = 28;
+
+            doc.setFillColor(255, 255, 255);
+            doc.setDrawColor(226, 232, 240);
+            doc.roundedRect(x + w - timeBadgeWidth - 3, y + h - 8, timeBadgeWidth, 5, 1, 1, "FD");
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(7.5);
+            doc.setTextColor(15, 23, 42);
+            doc.text(timeText, x + w - 3 - timeBadgeWidth / 2, y + h - 4.5, {
+                align: "center"
+            });
+        }
+
+        function getText(parent, selector) {
+            const el = parent.querySelector(selector);
+            return el ? el.innerText.trim() : "";
+        }
+
+        function getDayIndexFromDom(node) {
+            let current = node;
+
+            while (current) {
+                if (current.getAttribute && current.getAttribute("data-date")) {
+                    const dateText = current.getAttribute("data-date");
+                    const date = new Date(dateText + "T00:00:00");
+                    return date.getDay() - 1;
+                }
+
+                current = current.parentElement;
+            }
+
+            const nodeRect = node.getBoundingClientRect();
+            const centerX = nodeRect.left + nodeRect.width / 2;
+
+            const headers = document.querySelectorAll("#studentTimetable .fc-col-header-cell");
+
+            for (let i = 0; i < headers.length; i++) {
+                const headerText = headers[i].innerText.toLowerCase();
+                const rect = headers[i].getBoundingClientRect();
+
+                if (centerX >= rect.left && centerX <= rect.right) {
+                    if (headerText.includes("monday")) return 0;
+                    if (headerText.includes("tuesday")) return 1;
+                    if (headerText.includes("wednesday")) return 2;
+                    if (headerText.includes("thursday")) return 3;
+                    if (headerText.includes("friday")) return 4;
+                }
+            }
+
+            return -1;
+        }
+
+        function parseTimeRange(text) {
+            if (!text) return null;
+
+            const match = text.match(/(\d{1,2}:\d{2}\s*[AP]M)\s*[-–—]\s*(\d{1,2}:\d{2}\s*[AP]M)/i);
+
+            if (!match) return null;
+
+            return {
+                start: timeStringToDecimal(match[1]),
+                end: timeStringToDecimal(match[2])
+            };
+        }
+
+        function timeStringToDecimal(timeText) {
+            if (!timeText) return 0;
+
+            const match = timeText.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+
+            if (!match) return 0;
+
+            let hour = parseInt(match[1], 10);
+            const minute = parseInt(match[2], 10);
+            const suffix = match[3] ? match[3].toUpperCase() : "";
+
+            if (suffix === "PM" && hour !== 12) hour += 12;
+            if (suffix === "AM" && hour === 12) hour = 0;
+
+            return hour + minute / 60;
+        }
+
+        function decimalToTime(value) {
+            let hour = Math.floor(value);
+            const minute = Math.round((value - hour) * 60);
+
+            const suffix = hour >= 12 ? "PM" : "AM";
+
+            let displayHour = hour % 12;
+            if (displayHour === 0) displayHour = 12;
+
+            return displayHour + ":" + String(minute).padStart(2, "0") + " " + suffix;
+        }
+
+        function formatHour(hour) {
+            const suffix = hour >= 12 ? "PM" : "AM";
+
+            let displayHour = hour % 12;
+            if (displayHour === 0) displayHour = 12;
+
+            return displayHour + ":00 " + suffix;
+        }
+
+        function lightenRgb(rgb, amount) {
+            return {
+                r: Math.round(rgb.r + (255 - rgb.r) * amount),
+                g: Math.round(rgb.g + (255 - rgb.g) * amount),
+                b: Math.round(rgb.b + (255 - rgb.b) * amount)
+            };
+        }
+
+        function cssColorToRgb(color) {
+            if (!color) return { r: 224, g: 22, b: 43 };
+
+            if (color.startsWith("#")) {
+                let hex = color.replace("#", "");
+
+                if (hex.length === 3) {
+                    hex = hex.split("").map(function (c) {
+                        return c + c;
+                    }).join("");
+                }
+
+                const value = parseInt(hex, 16);
+
+                if (isNaN(value)) return { r: 224, g: 22, b: 43 };
+
+                return {
+                    r: (value >> 16) & 255,
+                    g: (value >> 8) & 255,
+                    b: value & 255
+                };
+            }
+
+            const rgbMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+
+            if (rgbMatch) {
+                return {
+                    r: parseInt(rgbMatch[1], 10),
+                    g: parseInt(rgbMatch[2], 10),
+                    b: parseInt(rgbMatch[3], 10)
+                };
+            }
+
+            return { r: 224, g: 22, b: 43 };
+        }
+    </script>
+
+</asp:Content>
