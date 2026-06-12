@@ -39,6 +39,16 @@ namespace src.services
         }
     }
 
+    public class EnrolledStudentRow
+    {
+        public string FullName { get; set; }
+        public string StudentNo { get; set; }
+        public string Email { get; set; }
+        public string ProgrammeCode { get; set; }
+        public string ProgrammeName { get; set; }
+        public string Phone { get; set; }
+    }
+
     /// <summary>
     /// Read-only access to the courses a lecturer teaches. Returns an empty list
     /// when the lecturer teaches nothing. SQL exceptions are not caught here;
@@ -91,6 +101,45 @@ namespace src.services
                     }
                 }
                 return courses;
+            }
+        }
+
+        private const string SelectEnrolledStudents =
+            "SELECT st.full_name, u.username, u.email, " +
+            "p.programme_code, p.programme_name, ISNULL(u.phone, '') AS phone " +
+            "FROM ENROLMENTS e " +
+            "JOIN STUDENTS st ON st.student_id = e.student_id " +
+            "JOIN USERS u ON u.user_id = st.user_id " +
+            "JOIN PROGRAMMES p ON p.programme_id = st.programme_id " +
+            "WHERE e.offering_id = @offeringId AND e.status = 'ENROLLED' " +
+            "AND EXISTS (SELECT 1 FROM TEACHINGS t " +
+            "WHERE t.offering_id = e.offering_id AND t.lecturer_id = @lecturerId) " +
+            "ORDER BY st.full_name";
+
+        public static List<EnrolledStudentRow> GetEnrolledStudents(int offeringId, int lecturerId)
+        {
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(SelectEnrolledStudents, conn))
+            {
+                cmd.Parameters.AddWithValue("@offeringId", offeringId);
+                cmd.Parameters.AddWithValue("@lecturerId", lecturerId);
+                var students = new List<EnrolledStudentRow>();
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        students.Add(new EnrolledStudentRow
+                        {
+                            FullName = reader["full_name"].ToString(),
+                            StudentNo = reader["username"].ToString(),
+                            Email = reader["email"].ToString(),
+                            ProgrammeCode = reader["programme_code"].ToString(),
+                            ProgrammeName = reader["programme_name"].ToString(),
+                            Phone = reader["phone"].ToString()
+                        });
+                    }
+                }
+                return students;
             }
         }
     }

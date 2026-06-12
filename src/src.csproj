@@ -130,6 +130,7 @@
 		<Content Include="lecturer\lecturer_materials.aspx" />
 		<Content Include="lecturer\lecturer_take_attendance.aspx" />
 		<Content Include="lecturer\lecturer_course_dashboard.aspx" />
+		<Content Include="lecturer\lecturer_course_people.aspx" />
 		<Content Include="lecturer\lecturer_account.aspx" />
 		<Content Include="shared\account.aspx" />
 		<Content Include="shared\login.aspx" />
@@ -367,6 +368,13 @@
 		</Compile>
 		<Compile Include="lecturer\lecturer_course_dashboard.aspx.designer.cs">
 			<DependentUpon>lecturer_course_dashboard.aspx</DependentUpon>
+		</Compile>
+		<Compile Include="lecturer\lecturer_course_people.aspx.cs">
+			<DependentUpon>lecturer_course_people.aspx</DependentUpon>
+			<SubType>ASPXCodeBehind</SubType>
+		</Compile>
+		<Compile Include="lecturer\lecturer_course_people.aspx.designer.cs">
+			<DependentUpon>lecturer_course_people.aspx</DependentUpon>
 		</Compile>
 		<Compile Include="lecturer\lecturer_account.aspx.cs">
 			<DependentUpon>lecturer_account.aspx</DependentUpon>

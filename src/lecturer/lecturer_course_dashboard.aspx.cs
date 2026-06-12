@@ -131,10 +131,10 @@ namespace src.lecturer
 
         // ----- Sub-page links (carry the offering id) -----
 
-        protected string AnnouncementsUrl { get { return SubUrl("lecturer_course_announcements.aspx"); } }
+        protected string AnnouncementsUrl { get { return SubUrl("lecturer_announcement.aspx"); } }
         protected string PeopleUrl { get { return SubUrl("lecturer_course_people.aspx"); } }
-        protected string GradesUrl { get { return SubUrl("lecturer_course_grades.aspx"); } }
-        protected string MaterialsUrl { get { return SubUrl("lecturer_course_materials.aspx"); } }
+        protected string GradesUrl { get { return SubUrl("lecturer_grades.aspx"); } }
+        protected string MaterialsUrl { get { return SubUrl("lecturer_materials.aspx"); } }
 
         private string SubUrl(string page)
         {

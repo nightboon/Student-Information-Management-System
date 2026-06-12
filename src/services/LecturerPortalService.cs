@@ -54,9 +54,15 @@ namespace src.services
         public int AnnouncementId { get; set; }
         public string Title { get; set; }
         public string Content { get; set; }
+        public string FileUrl { get; set; }
         public DateTime CreatedAt { get; set; }
         public bool IsPinned { get; set; }
         public string TargetCourses { get; set; }
+
+        public bool HasAttachment
+        {
+            get { return !string.IsNullOrWhiteSpace(FileUrl); }
+        }
     }
 
     public class AtRiskStudentRow
@@ -265,7 +271,7 @@ namespace src.services
             }
         }
 
-        public static List<LecturerMaterialRow> GetMaterials(int lecturerId)
+        public static List<LecturerMaterialRow> GetMaterials(int lecturerId, int? offeringId = null)
         {
             const string sql =
                 "SELECT cm.material_id, cm.offering_id, c.course_code, c.course_name, cm.title, " +
@@ -274,12 +280,14 @@ namespace src.services
                 "JOIN COURSE_OFFERINGS o ON o.offering_id = cm.offering_id " +
                 "JOIN COURSES c ON c.course_id = o.course_id " +
                 "WHERE cm.lecturer_id = @lecturerId " +
+                "AND (@offeringId IS NULL OR cm.offering_id = @offeringId) " +
                 "ORDER BY cm.uploaded_at DESC";
 
             using (var conn = Db.OpenConnection())
             using (var cmd = new SqlCommand(sql, conn))
             {
                 cmd.Parameters.AddWithValue("@lecturerId", lecturerId);
+                cmd.Parameters.AddWithValue("@offeringId", offeringId.HasValue ? (object)offeringId.Value : DBNull.Value);
                 var list = new List<LecturerMaterialRow>();
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -324,10 +332,10 @@ namespace src.services
             }
         }
 
-        public static List<LecturerAnnouncementRow> GetLecturerAnnouncements(int lecturerId)
+        public static List<LecturerAnnouncementRow> GetLecturerAnnouncements(int lecturerId, int? offeringId = null)
         {
             const string sql =
-                "SELECT an.announcement_id, an.title, CAST(an.content AS varchar(max)) AS content, an.created_at, an.is_pinned, " +
+                "SELECT an.announcement_id, an.title, CAST(an.content AS varchar(max)) AS content, an.file_url, an.created_at, an.is_pinned, " +
                 "STUFF((SELECT DISTINCT ', ' + c2.course_code FROM ANNOUNCEMENT_TARGETS at2 " +
                 "JOIN COURSE_OFFERINGS o2 ON o2.offering_id = at2.offering_id " +
                 "JOIN COURSES c2 ON c2.course_id = o2.course_id " +
@@ -335,12 +343,15 @@ namespace src.services
                 "FROM ANNOUNCEMENTS an " +
                 "JOIN LECTURERS l ON l.user_id = an.created_by " +
                 "WHERE l.lecturer_id = @lecturerId " +
+                "AND (@offeringId IS NULL OR EXISTS (SELECT 1 FROM ANNOUNCEMENT_TARGETS atf " +
+                "WHERE atf.announcement_id = an.announcement_id AND atf.offering_id = @offeringId)) " +
                 "ORDER BY an.is_pinned DESC, an.created_at DESC";
 
             using (var conn = Db.OpenConnection())
             using (var cmd = new SqlCommand(sql, conn))
             {
                 cmd.Parameters.AddWithValue("@lecturerId", lecturerId);
+                cmd.Parameters.AddWithValue("@offeringId", offeringId.HasValue ? (object)offeringId.Value : DBNull.Value);
                 var list = new List<LecturerAnnouncementRow>();
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -351,6 +362,7 @@ namespace src.services
                             AnnouncementId = (int)reader["announcement_id"],
                             Title = reader["title"].ToString(),
                             Content = reader["content"].ToString(),
+                            FileUrl = reader["file_url"] == DBNull.Value ? "" : reader["file_url"].ToString(),
                             CreatedAt = (DateTime)reader["created_at"],
                             IsPinned = Convert.ToBoolean(reader["is_pinned"]),
                             TargetCourses = reader["targets"] == DBNull.Value ? "No course targets" : reader["targets"].ToString()
@@ -362,6 +374,11 @@ namespace src.services
         }
 
         public static void AddAnnouncement(int lecturerId, int userId, int offeringId, string title, string content, bool pinned)
+        {
+            AddAnnouncement(lecturerId, userId, offeringId, title, content, pinned, null);
+        }
+
+        public static void AddAnnouncement(int lecturerId, int userId, int offeringId, string title, string content, bool pinned, string fileUrl)
         {
             if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(content)) return;
             var offeringIds = new List<int>();
@@ -384,12 +401,13 @@ namespace src.services
             {
                 int announcementId;
                 using (var cmd = new SqlCommand(
-                    "INSERT INTO ANNOUNCEMENTS (created_by, title, content, created_at, is_pinned) " +
-                    "OUTPUT INSERTED.announcement_id VALUES (@userId, @title, @content, SYSDATETIME(), @pinned)", conn, tx))
+                    "INSERT INTO ANNOUNCEMENTS (created_by, title, content, file_url, created_at, is_pinned) " +
+                    "OUTPUT INSERTED.announcement_id VALUES (@userId, @title, @content, @fileUrl, SYSDATETIME(), @pinned)", conn, tx))
                 {
                     cmd.Parameters.AddWithValue("@userId", userId);
                     cmd.Parameters.AddWithValue("@title", title.Trim());
                     cmd.Parameters.AddWithValue("@content", content.Trim());
+                    cmd.Parameters.AddWithValue("@fileUrl", string.IsNullOrWhiteSpace(fileUrl) ? (object)DBNull.Value : fileUrl.Trim());
                     cmd.Parameters.AddWithValue("@pinned", pinned);
                     announcementId = Convert.ToInt32(cmd.ExecuteScalar());
                 }
@@ -402,6 +420,62 @@ namespace src.services
                         cmd.Parameters.AddWithValue("@offeringId", id);
                         cmd.ExecuteNonQuery();
                     }
+                }
+                tx.Commit();
+            }
+        }
+
+        public static void SetAnnouncementPinned(int lecturerId, int announcementId, bool pinned)
+        {
+            const string sql =
+                "UPDATE an SET is_pinned = @pinned " +
+                "FROM ANNOUNCEMENTS an " +
+                "JOIN LECTURERS l ON l.user_id = an.created_by " +
+                "WHERE an.announcement_id = @announcementId AND l.lecturer_id = @lecturerId";
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@lecturerId", lecturerId);
+                cmd.Parameters.AddWithValue("@announcementId", announcementId);
+                cmd.Parameters.AddWithValue("@pinned", pinned);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public static void DeleteAnnouncement(int lecturerId, int announcementId)
+        {
+            using (var conn = Db.OpenConnection())
+            using (var tx = conn.BeginTransaction())
+            {
+                const string ownsSql =
+                    "SELECT COUNT(*) FROM ANNOUNCEMENTS an " +
+                    "JOIN LECTURERS l ON l.user_id = an.created_by " +
+                    "WHERE an.announcement_id = @announcementId AND l.lecturer_id = @lecturerId";
+                using (var cmd = new SqlCommand(ownsSql, conn, tx))
+                {
+                    cmd.Parameters.AddWithValue("@lecturerId", lecturerId);
+                    cmd.Parameters.AddWithValue("@announcementId", announcementId);
+                    if (Convert.ToInt32(cmd.ExecuteScalar()) == 0)
+                    {
+                        tx.Rollback();
+                        return;
+                    }
+                }
+
+                using (var cmd = new SqlCommand("DELETE FROM NOTIFICATION_READS WHERE announcement_id = @announcementId", conn, tx))
+                {
+                    cmd.Parameters.AddWithValue("@announcementId", announcementId);
+                    cmd.ExecuteNonQuery();
+                }
+                using (var cmd = new SqlCommand("DELETE FROM ANNOUNCEMENT_TARGETS WHERE announcement_id = @announcementId", conn, tx))
+                {
+                    cmd.Parameters.AddWithValue("@announcementId", announcementId);
+                    cmd.ExecuteNonQuery();
+                }
+                using (var cmd = new SqlCommand("DELETE FROM ANNOUNCEMENTS WHERE announcement_id = @announcementId", conn, tx))
+                {
+                    cmd.Parameters.AddWithValue("@announcementId", announcementId);
+                    cmd.ExecuteNonQuery();
                 }
                 tx.Commit();
             }

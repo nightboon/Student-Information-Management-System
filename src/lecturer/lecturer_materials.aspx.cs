@@ -10,6 +10,7 @@ namespace student_information_management_system
     {
         private Lecturer _lecturer;
         private List<LecturerMaterialRow> _materials = new List<LecturerMaterialRow>();
+        private int? _offeringFilter;
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -20,12 +21,22 @@ namespace student_information_management_system
                 return;
             }
 
+            int offeringId;
+            if (int.TryParse(Request.QueryString["offering"], out offeringId) && offeringId > 0)
+                _offeringFilter = offeringId;
+
             if (!IsPostBack)
             {
                 courseSelect.DataSource = LecturerCourseService.GetCourses(_lecturer.UserId);
                 courseSelect.DataTextField = "CourseCode";
                 courseSelect.DataValueField = "OfferingId";
                 courseSelect.DataBind();
+                if (_offeringFilter.HasValue)
+                {
+                    var value = _offeringFilter.Value.ToString();
+                    if (courseSelect.Items.FindByValue(value) != null)
+                        courseSelect.SelectedValue = value;
+                }
             }
             LoadRows();
         }
@@ -52,7 +63,7 @@ namespace student_information_management_system
 
         private void LoadRows()
         {
-            _materials = LecturerPortalService.GetMaterials(_lecturer.LecturerId);
+            _materials = LecturerPortalService.GetMaterials(_lecturer.LecturerId, _offeringFilter);
             materialsRepeater.DataSource = _materials;
             materialsRepeater.DataBind();
             emptyPanel.Visible = _materials.Count == 0;

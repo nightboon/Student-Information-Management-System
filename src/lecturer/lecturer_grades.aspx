@@ -26,7 +26,7 @@
     </asp:Panel>
 
     <section class="mt-6 grid gap-4 md:grid-cols-4">
-        <div class="rounded-lg border border-slate-200 bg-white p-5"><p class="text-slate-500" style="font-size:12.5px">Students</p><p class="mt-1 text-slate-900" style="font-size:28px;font-weight:700"><%= gradeRepeater.Items.Count %></p></div>
+        <div class="rounded-lg border border-slate-200 bg-white p-5"><p class="text-slate-500" style="font-size:12.5px">Students</p><p class="mt-1 text-slate-900" style="font-size:28px;font-weight:700"><%= StudentCount %></p></div>
         <div class="rounded-lg border border-slate-200 bg-white p-5"><p class="text-slate-500" style="font-size:12.5px">Marked</p><p class="mt-1 text-emerald-700" style="font-size:28px;font-weight:700"><%= MarksDisplay %></p></div>
         <div class="rounded-lg border border-slate-200 bg-white p-5"><p class="text-slate-500" style="font-size:12.5px">Pending</p><p class="mt-1 text-amber-700" style="font-size:28px;font-weight:700"><%= PendingCount %></p></div>
         <div class="rounded-lg border border-slate-200 bg-white p-5"><p class="text-slate-500" style="font-size:12.5px">Average</p><p class="mt-1 text-slate-900" style="font-size:28px;font-weight:700"><%= AverageDisplay %></p></div>

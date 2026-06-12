@@ -13,6 +13,7 @@ namespace student_information_management_system
         private List<LecturerAssessmentOption> _assessments = new List<LecturerAssessmentOption>();
         private List<LecturerGradeRow> _rows = new List<LecturerGradeRow>();
         private int _assessmentId;
+        private int? _offeringFilter;
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -27,7 +28,13 @@ namespace student_information_management_system
                 return;
             }
 
+            int offeringId;
+            if (int.TryParse(Request.QueryString["offering"], out offeringId) && offeringId > 0)
+                _offeringFilter = offeringId;
+
             _assessments = LecturerPortalService.GetAssessments(_lecturer.LecturerId);
+            if (_offeringFilter.HasValue)
+                _assessments = _assessments.FindAll(a => a.OfferingId == _offeringFilter.Value);
             if (!IsPostBack)
             {
                 assessmentSelect.DataSource = _assessments;
@@ -91,6 +98,11 @@ namespace student_information_management_system
                     marks[studentId] = parsed;
             }
             return marks;
+        }
+
+        protected int StudentCount
+        {
+            get { return _rows.Count; }
         }
 
         protected string MarksDisplay
