@@ -98,6 +98,8 @@
 		<Content Include="controls\lecturer_topbar.ascx" />
 		<Content Include="css\site.css" />
 		<Content Include="Global.asax" />
+		<Content Include="devtools\ai_console.aspx" />
+		<Content Include="db\ai_console.sql" />
 		<Content Include="db\enrollment.sql" />
 		<Content Include="db\notification_reads.sql" />
 		<Content Include="db\user1_demo_data.sql" />
@@ -118,6 +120,7 @@
 		<Content Include="js\student\course-detail\course-detail.js" />
 		<Content Include="js\student\courses\courses.js" />
 		<Content Include="js\student\enrollment\enrollment.js" />
+		<Content Include="js\student\assistant\assistant.js" />
 		<Content Include="js\student\timetable\timetable.js" />
 		<Content Include="js\lecturer\courses\courses.js" />
 		<Content Include="js\lecturer\attendance\attendance.js" />
@@ -304,6 +307,8 @@
 			<DependentUpon>Global.asax</DependentUpon>
 		</Compile>
 		<Compile Include="Properties\AssemblyInfo.cs" />
+		<Compile Include="assistant\AiChatClient.cs" />
+		<Compile Include="assistant\AssistantTools.cs" />
 		<Compile Include="db\Db.cs" />
 		<Compile Include="security\RoleRoutes.cs" />
 		<Compile Include="security\SecurePage.cs">
@@ -318,6 +323,14 @@
 		<Compile Include="security\AdminPage.cs">
 			<SubType>ASPXCodeBehind</SubType>
 		</Compile>
+		<Compile Include="devtools\ai_console.aspx.cs">
+			<DependentUpon>ai_console.aspx</DependentUpon>
+			<SubType>ASPXCodeBehind</SubType>
+		</Compile>
+		<Compile Include="devtools\ai_console.aspx.designer.cs">
+			<DependentUpon>ai_console.aspx</DependentUpon>
+		</Compile>
+		<Compile Include="services\AiConsoleService.cs" />
 		<Compile Include="services\AnnouncementService.cs" />
 		<Compile Include="services\AssignmentService.cs" />
 		<Compile Include="services\AttendanceService.cs" />
@@ -468,6 +481,7 @@
 		</Compile>
 	</ItemGroup>
 	<ItemGroup>
+		<None Include="ai.config.example" />
 		<None Include="packages.config" />
 		<Content Include="shared\site.master" />
 		<Content Include="shared\LoginLayout.master" />

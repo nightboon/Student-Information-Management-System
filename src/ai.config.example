@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Template for ai.config (which is gitignored so API keys never reach git).
+  Copy this file to ai.config and fill in the values, or use the AI Console
+  page (devtools/ai_console.aspx) to edit them at runtime.
+-->
+<appSettings>
+    <add key="Ai:BaseUrl" value="https://api.openai.com/v1" />
+    <add key="Ai:ApiKey" value="" />
+    <add key="Ai:Model" value="gpt-4o-mini" />
+</appSettings>
