@@ -34,7 +34,9 @@ namespace src.lecturer
 
                 _weekly = LecturerService.GetWeeklyClasses(lecturerId);
                 _coursesTeaching = LecturerService.CountActiveCourses(lecturerId);
-                _studentsTaught = LecturerService.CountStudentsTaught(lecturerId);
+                _studentsTaught = _semester != null
+                    ? LecturerService.CountStudentsTaught(lecturerId, _semester.SemesterId)
+                    : 0;
 
                 // Courses teaching this semester: the lecturer's current-semester
                 // offerings (the service already orders newest semester first).

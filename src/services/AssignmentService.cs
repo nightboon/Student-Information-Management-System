@@ -21,6 +21,7 @@ namespace src.services
     /// <summary>One assignment on a course-detail page, with the student's submission state.</summary>
     public class CourseAssignment
     {
+        public int AssignmentId { get; set; }
         public string Title { get; set; }
         public decimal? Weight { get; set; }
         public string AssignmentType { get; set; }
@@ -30,6 +31,14 @@ namespace src.services
         /// <summary>"OPEN" (no submission), "SUBMITTED", or "MARKED".</summary>
         public string SubmissionStatus { get; set; }
         public decimal? Marks { get; set; }
+        public string SubmissionFileUrl { get; set; }
+        public DateTime? SubmittedAt { get; set; }
+        public string Feedback { get; set; }
+
+        public bool HasSubmission
+        {
+            get { return !string.IsNullOrWhiteSpace(SubmissionFileUrl); }
+        }
     }
 
     /// <summary>
@@ -123,8 +132,9 @@ namespace src.services
         // Assignments for one offering with the student's submission status/marks.
         // No submission row -> status defaults to OPEN.
         private const string SelectByOffering =
-            "SELECT a.title, a.description, a.due_date, a.weight, a.assignment_type, a.group_size, " +
-            "ISNULL(sub.status, 'OPEN') AS sub_status, sub.marks " +
+            "SELECT a.assignment_id, a.title, a.description, a.due_date, a.weight, a.assignment_type, a.group_size, " +
+            "ISNULL(sub.status, 'OPEN') AS sub_status, sub.marks, sub.file_url, sub.submit_date, " +
+            "ISNULL(sub.feedback, '') AS feedback " +
             "FROM ASSIGNMENTS a " +
             "JOIN COURSE_OFFERINGS o ON a.offering_id = o.offering_id " +
             "JOIN ENROLMENTS e ON e.offering_id = o.offering_id " +
@@ -140,6 +150,7 @@ namespace src.services
         /// </summary>
         public static List<CourseAssignment> GetByOffering(int offeringId, int userId)
         {
+            EnsureSubmissionFeedbackColumn();
             using (var conn = Db.OpenConnection())
             using (var cmd = new SqlCommand(SelectByOffering, conn))
             {
@@ -152,6 +163,7 @@ namespace src.services
                     {
                         list.Add(new CourseAssignment
                         {
+                            AssignmentId = (int)reader["assignment_id"],
                             Title = reader["title"].ToString(),
                             Description = reader["description"] == DBNull.Value ? "" : reader["description"].ToString(),
                             DueDate = (DateTime)reader["due_date"],
@@ -159,11 +171,55 @@ namespace src.services
                             AssignmentType = reader["assignment_type"] == DBNull.Value ? null : reader["assignment_type"].ToString(),
                             GroupSize = reader["group_size"] == DBNull.Value ? null : reader["group_size"].ToString(),
                             SubmissionStatus = reader["sub_status"].ToString(),
-                            Marks = reader["marks"] == DBNull.Value ? (decimal?)null : (decimal)reader["marks"]
+                            Marks = reader["marks"] == DBNull.Value ? (decimal?)null : (decimal)reader["marks"],
+                            SubmissionFileUrl = reader["file_url"] == DBNull.Value ? "" : reader["file_url"].ToString(),
+                            SubmittedAt = reader["submit_date"] == DBNull.Value ? (DateTime?)null : (DateTime)reader["submit_date"],
+                            Feedback = reader["feedback"].ToString()
                         });
                     }
                 }
                 return list;
+            }
+        }
+
+        public static bool SaveSubmission(int userId, int assignmentId, string fileUrl)
+        {
+            if (string.IsNullOrWhiteSpace(fileUrl)) return false;
+
+            const string sql =
+                "DECLARE @studentId int, @dueDate date; " +
+                "SELECT @studentId = s.student_id, @dueDate = a.due_date " +
+                "FROM STUDENTS s " +
+                "JOIN ENROLMENTS e ON e.student_id = s.student_id AND e.status = 'ENROLLED' " +
+                "JOIN ASSIGNMENTS a ON a.offering_id = e.offering_id " +
+                "WHERE s.user_id = @userId AND a.assignment_id = @assignmentId; " +
+                "IF @studentId IS NULL BEGIN SELECT 0; RETURN; END; " +
+                "IF EXISTS (SELECT 1 FROM SUBMISSIONS WHERE assignment_id = @assignmentId AND student_id = @studentId) " +
+                "UPDATE SUBMISSIONS SET file_url = @fileUrl, submit_date = SYSDATETIME(), status = CASE WHEN CAST(SYSDATETIME() AS date) > @dueDate THEN 'LATE' ELSE 'RESUBMITTED' END, marks = NULL " +
+                "WHERE assignment_id = @assignmentId AND student_id = @studentId; " +
+                "ELSE INSERT INTO SUBMISSIONS (assignment_id, student_id, file_url, submit_date, status) " +
+                "VALUES (@assignmentId, @studentId, @fileUrl, SYSDATETIME(), CASE WHEN CAST(SYSDATETIME() AS date) > @dueDate THEN 'LATE' ELSE 'SUBMITTED' END); " +
+                "SELECT @@ROWCOUNT;";
+
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@userId", userId);
+                cmd.Parameters.AddWithValue("@assignmentId", assignmentId);
+                cmd.Parameters.AddWithValue("@fileUrl", fileUrl.Trim());
+                return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+            }
+        }
+
+        private static void EnsureSubmissionFeedbackColumn()
+        {
+            const string sql =
+                "IF COL_LENGTH('SUBMISSIONS', 'feedback') IS NULL " +
+                "ALTER TABLE SUBMISSIONS ADD feedback varchar(max) NULL";
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                cmd.ExecuteNonQuery();
             }
         }
     }

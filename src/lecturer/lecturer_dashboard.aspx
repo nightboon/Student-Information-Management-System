@@ -61,7 +61,7 @@
                     <p class="mt-1.5 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em"><%= StudentsTaughtCount %></p>
                 </div>
             </div>
-            <p class="mt-3 text-slate-400" style="font-size:12px">all enrolled</p>
+            <p class="mt-3 text-slate-400" style="font-size:12px">this semester</p>
         </div>
 
         <%-- Pending Grading --%>

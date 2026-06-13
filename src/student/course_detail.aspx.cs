@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Web;
 using System.Web.UI;
+using System.Web.UI.WebControls;
 using src.services;
 
 namespace src.student
@@ -15,6 +17,7 @@ namespace src.student
             Response.Cache.SetCacheability(HttpCacheability.NoCache);
             Response.Cache.SetExpires(DateTime.UtcNow.AddDays(-1));
             Response.Cache.SetNoStore();
+            Page.Form.Enctype = "multipart/form-data";
 
             if (Session["user_id"] == null)
             {
@@ -54,6 +57,81 @@ namespace src.student
             assessmentsRepeater.DataBind();
             barsRepeater.DataSource = _gradebook.Items;
             barsRepeater.DataBind();
+        }
+
+        protected void assignmentsRepeater_ItemCommand(object source, RepeaterCommandEventArgs e)
+        {
+            if (e.CommandName != "SubmitAssignment") return;
+
+            int assignmentId;
+            if (!int.TryParse(Convert.ToString(e.CommandArgument), out assignmentId)) return;
+
+            var upload = e.Item.FindControl("submissionInput") as FileUpload;
+            if (upload == null || !upload.HasFile)
+            {
+                assignmentStatusMessage.Text = "Choose a file before submitting.";
+                assignmentStatusPanel.CssClass = "mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800";
+                assignmentStatusPanel.Visible = true;
+                return;
+            }
+
+            string fileUrl;
+            try
+            {
+                fileUrl = SaveUploadedSubmission(upload, assignmentId);
+            }
+            catch (InvalidOperationException ex)
+            {
+                assignmentStatusMessage.Text = ex.Message;
+                assignmentStatusPanel.CssClass = "mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800";
+                assignmentStatusPanel.Visible = true;
+                return;
+            }
+
+            bool saved = AssignmentService.SaveSubmission((int)Session["user_id"], assignmentId, fileUrl);
+            assignmentStatusMessage.Text = saved ? "Assignment submitted." : "Unable to submit this assignment.";
+            assignmentStatusPanel.CssClass = saved
+                ? "mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800"
+                : "mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800";
+            assignmentStatusPanel.Visible = true;
+
+            int offeringId;
+            if (int.TryParse(Request.QueryString["offering"], out offeringId))
+            {
+                assignmentsRepeater.DataSource = AssignmentService.GetByOffering(offeringId, (int)Session["user_id"]);
+                assignmentsRepeater.DataBind();
+            }
+        }
+
+        private string SaveUploadedSubmission(FileUpload upload, int assignmentId)
+        {
+            string extension = Path.GetExtension(upload.FileName);
+            if (string.IsNullOrWhiteSpace(extension)) extension = ".dat";
+            extension = extension.ToLowerInvariant();
+
+            string[] allowed = { ".pdf", ".doc", ".docx", ".zip", ".png", ".jpg", ".jpeg", ".txt" };
+            if (Array.IndexOf(allowed, extension) < 0) extension = ".dat";
+
+            int maxBytes = 10 * 1024 * 1024;
+            if (upload.PostedFile.ContentLength > maxBytes)
+            {
+                throw new InvalidOperationException("Submission file is larger than 10 MB.");
+            }
+
+            string folder = Server.MapPath("~/uploads/submissions");
+            Directory.CreateDirectory(folder);
+
+            string baseName = Path.GetFileNameWithoutExtension(upload.FileName);
+            foreach (char c in Path.GetInvalidFileNameChars())
+            {
+                baseName = baseName.Replace(c, '-');
+            }
+            if (string.IsNullOrWhiteSpace(baseName)) baseName = "submission";
+
+            string fileName = "a" + assignmentId + "-u" + Session["user_id"] + "-" + DateTime.Now.ToString("yyyyMMddHHmmss") + "-" + baseName + extension;
+            string physicalPath = Path.Combine(folder, fileName);
+            upload.SaveAs(physicalPath);
+            return "~/uploads/submissions/" + fileName;
         }
 
         private Gradebook _gradebook;

@@ -31,8 +31,28 @@ namespace src.services
         public string StudentNo { get; set; }
         public decimal? Marks { get; set; }
         public string LetterGrade { get; set; }
-        public decimal CurrentAverage { get; set; }
         public bool HasMarks { get; set; }
+        public int? SubmissionId { get; set; }
+        public int? AssignmentId { get; set; }
+        public string AssignmentTitle { get; set; }
+        public string SubmissionFileUrl { get; set; }
+        public string SubmissionStatus { get; set; }
+        public DateTime? SubmittedAt { get; set; }
+        public string Feedback { get; set; }
+        public string AnnotatedFileUrl { get; set; }
+
+        public bool HasSubmission
+        {
+            get { return SubmissionId.HasValue && !string.IsNullOrWhiteSpace(SubmissionFileUrl); }
+        }
+    }
+
+    public class LecturerGradeUpdate
+    {
+        public decimal? Marks { get; set; }
+        public int? SubmissionId { get; set; }
+        public string Feedback { get; set; }
+        public string AnnotatedFileUrl { get; set; }
     }
 
     public class LecturerMaterialRow
@@ -44,8 +64,12 @@ namespace src.services
         public string Title { get; set; }
         public string Description { get; set; }
         public int? Week { get; set; }
+        public string FileUrl { get; set; }
         public string FileType { get; set; }
         public int? FileSizeBytes { get; set; }
+        public string MaterialType { get; set; }
+        public DateTime? DueDate { get; set; }
+        public decimal? Weight { get; set; }
         public DateTime UploadedAt { get; set; }
     }
 
@@ -121,24 +145,37 @@ namespace src.services
 
         private const string SelectAssessmentRows =
             "SELECT st.student_id, st.full_name, u.email, u.username, sa.marks, " +
-            "progress.current_mark " +
+            "matched.assignment_id, matched.title AS assignment_title, " +
+            "sub.submission_id, sub.file_url, sub.submit_date, sub.status AS submission_status, " +
+            "ISNULL(sub.feedback, '') AS feedback, ISNULL(sub.annotated_file_url, '') AS annotated_file_url " +
             "FROM ASSESSMENTS target " +
             "JOIN ENROLMENTS e ON e.offering_id = target.offering_id AND e.status = 'ENROLLED' " +
             "JOIN STUDENTS st ON st.student_id = e.student_id " +
             "JOIN USERS u ON u.user_id = st.user_id " +
             "LEFT JOIN STUDENT_ASSESSMENTS sa ON sa.assessment_id = target.assessment_id AND sa.student_id = st.student_id " +
             "OUTER APPLY ( " +
-            "  SELECT SUM(CASE WHEN sa2.marks IS NOT NULL AND a2.max_marks > 0 THEN sa2.marks / a2.max_marks * a2.weight ELSE 0 END) AS current_mark " +
-            "  FROM ASSESSMENTS a2 " +
-            "  LEFT JOIN STUDENT_ASSESSMENTS sa2 ON sa2.assessment_id = a2.assessment_id AND sa2.student_id = st.student_id " +
-            "  WHERE a2.offering_id = target.offering_id " +
-            ") progress " +
+            "  SELECT TOP 1 asg.assignment_id, asg.title " +
+            "  FROM ASSIGNMENTS asg " +
+            "  WHERE asg.offering_id = target.offering_id " +
+            "  AND (LOWER(asg.title) = LOWER(target.name) " +
+            "    OR LOWER(asg.title) LIKE '%' + LOWER(target.name) + '%' " +
+            "    OR LOWER(target.name) LIKE '%' + LOWER(asg.title) + '%' " +
+            "    OR (target.type IN ('Assignment', 'Project') AND asg.weight = target.weight)) " +
+            "  ORDER BY CASE " +
+            "    WHEN LOWER(asg.title) = LOWER(target.name) THEN 0 " +
+            "    WHEN LOWER(asg.title) LIKE '%' + LOWER(target.name) + '%' THEN 1 " +
+            "    WHEN LOWER(target.name) LIKE '%' + LOWER(asg.title) + '%' THEN 2 " +
+            "    WHEN asg.weight = target.weight THEN 3 " +
+            "    ELSE 4 END, asg.due_date " +
+            ") matched " +
+            "LEFT JOIN SUBMISSIONS sub ON sub.assignment_id = matched.assignment_id AND sub.student_id = st.student_id " +
             "WHERE target.assessment_id = @assessmentId " +
             "AND EXISTS (SELECT 1 FROM TEACHINGS t WHERE t.offering_id = target.offering_id AND t.lecturer_id = @lecturerId) " +
             "ORDER BY st.full_name";
 
         public static List<LecturerGradeRow> GetGradeRows(int lecturerId, int assessmentId)
         {
+            EnsureSubmissionFeedbackColumn();
             using (var conn = Db.OpenConnection())
             using (var cmd = new SqlCommand(SelectAssessmentRows, conn))
             {
@@ -160,7 +197,14 @@ namespace src.services
                             Marks = marks,
                             HasMarks = marks.HasValue,
                             LetterGrade = marks.HasValue ? ToLetterGrade(marks.Value) : "N/A",
-                            CurrentAverage = reader["current_mark"] == DBNull.Value ? 0m : Math.Round(Convert.ToDecimal(reader["current_mark"]), 1)
+                            AssignmentId = reader["assignment_id"] == DBNull.Value ? (int?)null : Convert.ToInt32(reader["assignment_id"]),
+                            AssignmentTitle = reader["assignment_title"] == DBNull.Value ? "" : reader["assignment_title"].ToString(),
+                            SubmissionId = reader["submission_id"] == DBNull.Value ? (int?)null : Convert.ToInt32(reader["submission_id"]),
+                            SubmissionFileUrl = reader["file_url"] == DBNull.Value ? "" : reader["file_url"].ToString(),
+                            SubmittedAt = reader["submit_date"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(reader["submit_date"]),
+                            SubmissionStatus = reader["submission_status"] == DBNull.Value ? "NOT SUBMITTED" : reader["submission_status"].ToString(),
+                            Feedback = reader["feedback"].ToString(),
+                            AnnotatedFileUrl = reader["annotated_file_url"].ToString()
                         });
                     }
                 }
@@ -194,6 +238,90 @@ namespace src.services
                     }
                 }
                 tx.Commit();
+            }
+        }
+
+        public static void SaveAssessmentRows(int lecturerId, int assessmentId, IDictionary<int, LecturerGradeUpdate> updatesByStudent)
+        {
+            if (!LecturerOwnsAssessment(lecturerId, assessmentId)) return;
+            EnsureSubmissionFeedbackColumn();
+
+            using (var conn = Db.OpenConnection())
+            using (var tx = conn.BeginTransaction())
+            {
+                foreach (var pair in updatesByStudent)
+                {
+                    var update = pair.Value;
+                    if (update.Marks.HasValue && (update.Marks.Value < 0m || update.Marks.Value > 100m)) continue;
+
+                    using (var cmd = new SqlCommand(UpsertStudentAssessment, conn, tx))
+                    {
+                        cmd.Parameters.AddWithValue("@assessmentId", assessmentId);
+                        cmd.Parameters.AddWithValue("@studentId", pair.Key);
+                        cmd.Parameters.Add("@marks", SqlDbType.Decimal).Value = update.Marks.HasValue ? (object)update.Marks.Value : DBNull.Value;
+                        cmd.Parameters["@marks"].Precision = 5;
+                        cmd.Parameters["@marks"].Scale = 2;
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    if (update.SubmissionId.HasValue)
+                    {
+                        using (var cmd = new SqlCommand(
+                            "UPDATE sub SET marks = @marks, status = CASE WHEN @marks IS NULL THEN sub.status ELSE 'MARKED' END " +
+                            "FROM SUBMISSIONS sub " +
+                            "JOIN ASSIGNMENTS asg ON asg.assignment_id = sub.assignment_id " +
+                            "JOIN ASSESSMENTS a ON a.offering_id = asg.offering_id " +
+                            "WHERE sub.submission_id = @submissionId AND sub.student_id = @studentId AND a.assessment_id = @assessmentId " +
+                            "AND EXISTS (SELECT 1 FROM TEACHINGS t WHERE t.offering_id = a.offering_id AND t.lecturer_id = @lecturerId)", conn, tx))
+                        {
+                            cmd.Parameters.AddWithValue("@lecturerId", lecturerId);
+                            cmd.Parameters.AddWithValue("@assessmentId", assessmentId);
+                            cmd.Parameters.AddWithValue("@studentId", pair.Key);
+                            cmd.Parameters.AddWithValue("@submissionId", update.SubmissionId.Value);
+                            cmd.Parameters.Add("@marks", SqlDbType.Decimal).Value = update.Marks.HasValue ? (object)update.Marks.Value : DBNull.Value;
+                            cmd.Parameters["@marks"].Precision = 5;
+                            cmd.Parameters["@marks"].Scale = 2;
+                            cmd.ExecuteNonQuery();
+                        }
+                    }
+                }
+                tx.Commit();
+            }
+        }
+
+        private static void EnsureSubmissionFeedbackColumn()
+        {
+            const string sql =
+                "IF COL_LENGTH('SUBMISSIONS', 'feedback') IS NULL " +
+                "ALTER TABLE SUBMISSIONS ADD feedback varchar(max) NULL; " +
+                "IF COL_LENGTH('SUBMISSIONS', 'annotated_file_url') IS NULL " +
+                "ALTER TABLE SUBMISSIONS ADD annotated_file_url varchar(255) NULL";
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public static void SaveSubmissionReview(int lecturerId, int submissionId, string feedback, string annotatedFileUrl)
+        {
+            EnsureSubmissionFeedbackColumn();
+
+            const string sql =
+                "UPDATE sub SET feedback = @feedback, " +
+                "annotated_file_url = CASE WHEN @annotatedFileUrl IS NULL THEN annotated_file_url ELSE @annotatedFileUrl END " +
+                "FROM SUBMISSIONS sub " +
+                "JOIN ASSIGNMENTS asg ON asg.assignment_id = sub.assignment_id " +
+                "WHERE sub.submission_id = @submissionId " +
+                "AND EXISTS (SELECT 1 FROM TEACHINGS t WHERE t.offering_id = asg.offering_id AND t.lecturer_id = @lecturerId)";
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@lecturerId", lecturerId);
+                cmd.Parameters.AddWithValue("@submissionId", submissionId);
+                cmd.Parameters.AddWithValue("@feedback", string.IsNullOrWhiteSpace(feedback) ? (object)DBNull.Value : feedback.Trim());
+                cmd.Parameters.AddWithValue("@annotatedFileUrl", string.IsNullOrWhiteSpace(annotatedFileUrl) ? (object)DBNull.Value : annotatedFileUrl.Trim());
+                cmd.ExecuteNonQuery();
             }
         }
 
@@ -273,13 +401,17 @@ namespace src.services
 
         public static List<LecturerMaterialRow> GetMaterials(int lecturerId, int? offeringId = null)
         {
+            EnsureMaterialColumns();
             const string sql =
                 "SELECT cm.material_id, cm.offering_id, c.course_code, c.course_name, cm.title, " +
-                "CAST(ISNULL(cm.description, '') AS varchar(max)) AS description, cm.week, cm.file_type, cm.file_size_bytes, cm.uploaded_at " +
+                "CAST(ISNULL(cm.description, '') AS varchar(max)) AS description, cm.week, cm.file_url, " +
+                "cm.file_type, cm.file_size_bytes, cm.uploaded_at, " +
+                "ISNULL(cm.material_type, 'Lecture Notes') AS material_type, cm.due_date, cm.weight " +
                 "FROM COURSE_MATERIALS cm " +
                 "JOIN COURSE_OFFERINGS o ON o.offering_id = cm.offering_id " +
                 "JOIN COURSES c ON c.course_id = o.course_id " +
                 "WHERE cm.lecturer_id = @lecturerId " +
+                "AND cm.file_url IS NOT NULL AND LTRIM(RTRIM(cm.file_url)) <> '' " +
                 "AND (@offeringId IS NULL OR cm.offering_id = @offeringId) " +
                 "ORDER BY cm.uploaded_at DESC";
 
@@ -302,8 +434,12 @@ namespace src.services
                             Title = reader["title"].ToString(),
                             Description = reader["description"].ToString(),
                             Week = reader["week"] == DBNull.Value ? (int?)null : Convert.ToInt32(reader["week"]),
+                            FileUrl = reader["file_url"] == DBNull.Value ? "" : reader["file_url"].ToString(),
                             FileType = reader["file_type"] == DBNull.Value ? "" : reader["file_type"].ToString(),
                             FileSizeBytes = reader["file_size_bytes"] == DBNull.Value ? (int?)null : Convert.ToInt32(reader["file_size_bytes"]),
+                            MaterialType = reader["material_type"].ToString(),
+                            DueDate = reader["due_date"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(reader["due_date"]),
+                            Weight = reader["weight"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(reader["weight"]),
                             UploadedAt = (DateTime)reader["uploaded_at"]
                         });
                     }
@@ -312,12 +448,32 @@ namespace src.services
             }
         }
 
-        public static void AddMaterial(int lecturerId, int offeringId, string title, string description, int? week, string fileType, int? fileSizeBytes)
+        private static void EnsureMaterialColumns()
         {
-            if (!LecturerOwnsOffering(lecturerId, offeringId) || string.IsNullOrWhiteSpace(title)) return;
             const string sql =
-                "INSERT INTO COURSE_MATERIALS (offering_id, lecturer_id, title, description, week, file_type, file_size_bytes, uploaded_at) " +
-                "VALUES (@offeringId, @lecturerId, @title, @description, @week, @fileType, @fileSizeBytes, SYSDATETIME())";
+                "IF COL_LENGTH('COURSE_MATERIALS', 'material_type') IS NULL " +
+                "ALTER TABLE COURSE_MATERIALS ADD material_type varchar(30) NULL; " +
+                "IF COL_LENGTH('COURSE_MATERIALS', 'due_date') IS NULL " +
+                "ALTER TABLE COURSE_MATERIALS ADD due_date date NULL; " +
+                "IF COL_LENGTH('COURSE_MATERIALS', 'weight') IS NULL " +
+                "ALTER TABLE COURSE_MATERIALS ADD weight decimal(5,2) NULL";
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public static bool AddMaterial(int lecturerId, int offeringId, string title, string description, string materialType, DateTime? dueDate, decimal? weight, string fileUrl, string fileType, int? fileSizeBytes)
+        {
+            if (!LecturerOwnsOffering(lecturerId, offeringId) || string.IsNullOrWhiteSpace(title)) return false;
+            if (dueDate.HasValue && dueDate.Value.Date < DateTime.Today) return false;
+            if (weight.HasValue && (weight.Value < 0m || weight.Value > 100m)) return false;
+            EnsureMaterialColumns();
+            materialType = NormalizeMaterialType(materialType);
+            const string sql =
+                "INSERT INTO COURSE_MATERIALS (offering_id, lecturer_id, title, description, file_url, file_type, file_size_bytes, material_type, due_date, weight, uploaded_at) " +
+                "VALUES (@offeringId, @lecturerId, @title, @description, @fileUrl, @fileType, @fileSizeBytes, @materialType, @dueDate, @weight, SYSDATETIME())";
             using (var conn = Db.OpenConnection())
             using (var cmd = new SqlCommand(sql, conn))
             {
@@ -325,11 +481,87 @@ namespace src.services
                 cmd.Parameters.AddWithValue("@lecturerId", lecturerId);
                 cmd.Parameters.AddWithValue("@title", title.Trim());
                 cmd.Parameters.AddWithValue("@description", string.IsNullOrWhiteSpace(description) ? (object)DBNull.Value : description.Trim());
-                cmd.Parameters.AddWithValue("@week", week.HasValue ? (object)week.Value : DBNull.Value);
+                cmd.Parameters.AddWithValue("@fileUrl", string.IsNullOrWhiteSpace(fileUrl) ? (object)DBNull.Value : fileUrl.Trim());
                 cmd.Parameters.AddWithValue("@fileType", string.IsNullOrWhiteSpace(fileType) ? (object)DBNull.Value : fileType.Trim().ToLowerInvariant());
                 cmd.Parameters.AddWithValue("@fileSizeBytes", fileSizeBytes.HasValue ? (object)fileSizeBytes.Value : DBNull.Value);
+                cmd.Parameters.AddWithValue("@materialType", materialType);
+                cmd.Parameters.AddWithValue("@dueDate", dueDate.HasValue ? (object)dueDate.Value.Date : DBNull.Value);
+                cmd.Parameters.Add("@weight", SqlDbType.Decimal).Value = weight.HasValue ? (object)weight.Value : DBNull.Value;
+                cmd.Parameters["@weight"].Precision = 5;
+                cmd.Parameters["@weight"].Scale = 2;
                 cmd.ExecuteNonQuery();
             }
+            return true;
+        }
+
+        public static bool DeleteMaterial(int lecturerId, int materialId)
+        {
+            const string sql =
+                "DELETE cm FROM COURSE_MATERIALS cm " +
+                "WHERE cm.material_id = @materialId " +
+                "AND EXISTS (SELECT 1 FROM TEACHINGS t WHERE t.offering_id = cm.offering_id AND t.lecturer_id = @lecturerId)";
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@lecturerId", lecturerId);
+                cmd.Parameters.AddWithValue("@materialId", materialId);
+                return cmd.ExecuteNonQuery() > 0;
+            }
+        }
+
+        public static LecturerMaterialRow GetMaterialForPreview(int materialId, int userId, string role)
+        {
+            EnsureMaterialColumns();
+            const string sql =
+                "SELECT cm.material_id, cm.offering_id, c.course_code, c.course_name, cm.title, " +
+                "CAST(ISNULL(cm.description, '') AS varchar(max)) AS description, cm.week, cm.file_url, " +
+                "cm.file_type, cm.file_size_bytes, cm.uploaded_at, " +
+                "ISNULL(cm.material_type, 'Lecture Notes') AS material_type, cm.due_date, cm.weight " +
+                "FROM COURSE_MATERIALS cm " +
+                "JOIN COURSE_OFFERINGS o ON o.offering_id = cm.offering_id " +
+                "JOIN COURSES c ON c.course_id = o.course_id " +
+                "WHERE cm.material_id = @materialId " +
+                "AND cm.file_url IS NOT NULL AND LTRIM(RTRIM(cm.file_url)) <> '' " +
+                "AND ( " +
+                "  (@role = 'Lecturer' AND EXISTS (SELECT 1 FROM LECTURERS l JOIN TEACHINGS t ON t.lecturer_id = l.lecturer_id WHERE l.user_id = @userId AND t.offering_id = cm.offering_id)) " +
+                "  OR (@role = 'Student' AND EXISTS (SELECT 1 FROM STUDENTS s JOIN ENROLMENTS e ON e.student_id = s.student_id WHERE s.user_id = @userId AND e.offering_id = cm.offering_id AND e.status = 'ENROLLED')) " +
+                ")";
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@materialId", materialId);
+                cmd.Parameters.AddWithValue("@userId", userId);
+                cmd.Parameters.AddWithValue("@role", role ?? "");
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (!reader.Read()) return null;
+                    return new LecturerMaterialRow
+                    {
+                        MaterialId = (int)reader["material_id"],
+                        OfferingId = (int)reader["offering_id"],
+                        CourseCode = reader["course_code"].ToString(),
+                        CourseName = reader["course_name"].ToString(),
+                        Title = reader["title"].ToString(),
+                        Description = reader["description"].ToString(),
+                        Week = reader["week"] == DBNull.Value ? (int?)null : Convert.ToInt32(reader["week"]),
+                        FileUrl = reader["file_url"].ToString(),
+                        FileType = reader["file_type"] == DBNull.Value ? "" : reader["file_type"].ToString(),
+                        FileSizeBytes = reader["file_size_bytes"] == DBNull.Value ? (int?)null : Convert.ToInt32(reader["file_size_bytes"]),
+                        MaterialType = reader["material_type"].ToString(),
+                        DueDate = reader["due_date"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(reader["due_date"]),
+                        Weight = reader["weight"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(reader["weight"]),
+                        UploadedAt = (DateTime)reader["uploaded_at"]
+                    };
+                }
+            }
+        }
+
+        private static string NormalizeMaterialType(string materialType)
+        {
+            if (string.Equals(materialType, "Assignment", StringComparison.OrdinalIgnoreCase)) return "Assignment";
+            if (string.Equals(materialType, "Quiz", StringComparison.OrdinalIgnoreCase)) return "Quiz";
+            if (string.Equals(materialType, "Test", StringComparison.OrdinalIgnoreCase)) return "Test";
+            return "Lecture Notes";
         }
 
         public static List<LecturerAnnouncementRow> GetLecturerAnnouncements(int lecturerId, int? offeringId = null)

@@ -38,7 +38,9 @@ namespace student_information_management_system
                 _announcements = LecturerService.GetAnnouncements(lecturerId);
                 _submissionsToReview = LecturerService.CountSubmissionsToReview(lecturerId);
                 _activeCourses = LecturerService.CountActiveCourses(lecturerId);
-                _studentsTaught = LecturerService.CountStudentsTaught(lecturerId);
+                _studentsTaught = _semester != null
+                    ? LecturerService.CountStudentsTaught(lecturerId, _semester.SemesterId)
+                    : 0;
                 _attendanceRate = LecturerService.GetCurrentSemesterAttendanceRate(lecturerId);
 
                 // My Courses: the lecturer's current-semester offerings (newest first

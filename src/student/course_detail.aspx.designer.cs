@@ -49,6 +49,8 @@ namespace src.student
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Repeater assignmentsRepeater;
+        protected global::System.Web.UI.WebControls.Panel assignmentStatusPanel;
+        protected global::System.Web.UI.WebControls.Literal assignmentStatusMessage;
 
         /// <summary>
         /// barsRepeater control.

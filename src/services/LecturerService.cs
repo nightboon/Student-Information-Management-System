@@ -132,22 +132,24 @@ namespace src.services
             }
         }
 
-        // Distinct students enrolled in the lecturer's current-semester offerings.
+        // Distinct students enrolled in the lecturer's offerings for one semester.
         private const string CountStudentsTaughtSql =
             "SELECT COUNT(DISTINCT e.student_id) " +
             "FROM TEACHINGS t " +
             "JOIN COURSE_OFFERINGS o ON t.offering_id = o.offering_id " +
-            "JOIN SEMESTERS sem ON o.semester_id = sem.semester_id " +
             "JOIN ENROLMENTS e ON e.offering_id = o.offering_id " +
-            "WHERE t.lecturer_id = @lecturerId AND sem.is_current = 1 AND e.status = 'ENROLLED'";
+            "WHERE t.lecturer_id = @lecturerId " +
+            "AND o.semester_id = @semesterId " +
+            "AND e.status = 'ENROLLED'";
 
-        /// <summary>Distinct students taught across the lecturer's current-semester offerings.</summary>
-        public static int CountStudentsTaught(int lecturerId)
+        /// <summary>Distinct students taught across the lecturer's offerings for the given semester.</summary>
+        public static int CountStudentsTaught(int lecturerId, int semesterId)
         {
             using (var conn = Db.OpenConnection())
             using (var cmd = new SqlCommand(CountStudentsTaughtSql, conn))
             {
                 cmd.Parameters.AddWithValue("@lecturerId", lecturerId);
+                cmd.Parameters.AddWithValue("@semesterId", semesterId);
                 return Convert.ToInt32(cmd.ExecuteScalar());
             }
         }
