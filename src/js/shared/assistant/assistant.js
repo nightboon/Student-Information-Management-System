@@ -8,17 +8,66 @@
 
     if (!fab || !panel) return;
 
-    // Conversation history sent to the server on every turn.
-    var history = [];
+    // The chat endpoint is provided by the host control (data-endpoint), so the
+    // same script works on any page or role without a hard-coded URL.
+    var endpoint = panel.getAttribute('data-endpoint');
+    if (!endpoint) return;
+
     var busy = false;
 
-    // One conversation id per page load, so all exchanges land in one log row.
-    var conversationId = (window.crypto && crypto.randomUUID)
-        ? crypto.randomUUID()
-        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-            var r = Math.random() * 16 | 0;
-            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-        });
+    // Chat state survives same-tab page navigation via sessionStorage, but a
+    // manual refresh (or closing the tab) starts a fresh conversation.
+    var STORAGE_KEY = 'sims-assistant-chat';
+
+    function newConversationId() {
+        return (window.crypto && crypto.randomUUID)
+            ? crypto.randomUUID()
+            : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                var r = Math.random() * 16 | 0;
+                return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+    }
+
+    // True only for an explicit page refresh, so we can clear the chat on F5
+    // but keep it when navigating between pages.
+    function isReload() {
+        try {
+            var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+            if (nav && nav.type) return nav.type === 'reload';
+            // Deprecated fallback for older browsers (1 === TYPE_RELOAD).
+            return !!(performance.navigation && performance.navigation.type === 1);
+        } catch (e) {
+            return false;
+        }
+    }
+
+    // Conversation history sent to the server on every turn, plus its log id.
+    var history = [];
+    var conversationId;
+
+    if (isReload()) {
+        sessionStorage.removeItem(STORAGE_KEY);
+    }
+
+    var saved = null;
+    try { saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY)); } catch (e) { saved = null; }
+
+    if (saved && saved.conversationId && saved.history) {
+        conversationId = saved.conversationId;
+        history = saved.history;
+    } else {
+        conversationId = newConversationId();
+    }
+
+    // Save the current conversation so it can be restored on the next page.
+    function persist() {
+        try {
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+                conversationId: conversationId,
+                history: history
+            }));
+        } catch (e) { /* storage full/unavailable: degrade silently */ }
+    }
 
     function openPanel() {
         panel.classList.remove('hidden');
@@ -87,7 +136,7 @@
 
         var pending = addBubble('Thinking…', 'ai');
 
-        fetch('/student/student_dashboard.aspx/Chat', {
+        fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json; charset=utf-8' },
             body: JSON.stringify({ history: history, message: text, conversationId: conversationId })
@@ -105,6 +154,7 @@
                 renderReply(pending, reply);
                 history.push({ role: 'user', content: text });
                 history.push({ role: 'assistant', content: reply });
+                persist();
                 messagesEl.scrollTop = messagesEl.scrollHeight;
             })
             .catch(function () {
@@ -123,4 +173,17 @@
             send();
         }
     });
+
+    // Re-render any conversation restored from a previous page in this tab.
+    for (var i = 0; i < history.length; i++) {
+        var turn = history[i];
+        if (turn.role === 'user') {
+            addBubble(turn.content, 'user');
+        } else if (turn.role === 'assistant') {
+            renderReply(addBubble('', 'ai'), turn.content);
+        }
+    }
+    if (history.length) {
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
 })();
