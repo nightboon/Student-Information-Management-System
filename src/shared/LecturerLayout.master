@@ -1,6 +1,7 @@
 <%@ Master Language="C#" MasterPageFile="~/shared/site.master" AutoEventWireup="true" CodeBehind="LecturerLayout.master.cs" Inherits="src.shared.LecturerLayout" %>
 <%@ Register TagPrefix="uc" TagName="LecturerSidebar" Src="~/controls/lecturer_sidebar.ascx" %>
 <%@ Register TagPrefix="uc" TagName="LecturerTopbar" Src="~/controls/lecturer_topbar.ascx" %>
+<%@ Register TagPrefix="uc" TagName="Assistant" Src="~/controls/assistant_widget.ascx" %>
 
 <asp:Content ContentPlaceHolderID="BodyPlaceholder" runat="server">
     <div class="flex min-h-screen bg-slate-50/60">
@@ -13,6 +14,7 @@
             </main>
         </div>
     </div>
+    <uc:Assistant runat="server" ID="Assistant1" />
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="HeadPlaceholder" runat="server">

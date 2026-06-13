@@ -7,12 +7,13 @@ namespace src.assistant
 {
     /// <summary>
     /// The assistant's tool registry. Two responsibilities:
-    /// (A) <see cref="Definitions"/> describes the read-only tools the model may
-    ///     call; (B) <see cref="Execute"/> runs the matching service method.
+    /// (A) <see cref="DefinitionsFor"/> describes the read-only tools the model may
+    ///     call for a given role; (B) <see cref="Execute"/> runs the matching
+    ///     service method. Students and lecturers get different tool sets.
     ///
-    /// Every tool is parameterless and scoped to a single student: the userId is
+    /// Every tool is parameterless and scoped to a single user: the userId is
     /// supplied by the server from the session, never by the model. The model can
-    /// only choose WHICH tool to run, so it can neither reach other students' data
+    /// only choose WHICH tool to run, so it can neither reach other users' data
     /// nor influence the underlying (parameterized) SQL.
     /// </summary>
     public static class AssistantTools
@@ -20,9 +21,21 @@ namespace src.assistant
         private static readonly JavaScriptSerializer Json =
             new JavaScriptSerializer { MaxJsonLength = 10_000_000 };
 
-        /// <summary>Tool schemas in OpenAI "tools" format, sent on every request.</summary>
-        public static List<object> Definitions()
+        /// <summary>
+        /// Tool schemas in OpenAI "tools" format for the given role, sent on every
+        /// request. Lecturers get teaching tools; everyone else gets student tools.
+        /// </summary>
+        public static List<object> DefinitionsFor(string role)
         {
+            if (IsLecturer(role))
+            {
+                return new List<object>
+                {
+                    Tool("get_my_courses",        "Get the courses this lecturer is teaching this semester (code, name, credit hours, semester, enrolled count)."),
+                    Tool("get_at_risk_students",  "Get students flagged as at-risk across this lecturer's courses (name, course, risk level, reason, missing submissions)."),
+                };
+            }
+
             return new List<object>
             {
                 Tool("get_today_classes",    "Get the student's classes scheduled for today (time, course, venue, lecturer)."),
@@ -36,11 +49,24 @@ namespace src.assistant
         }
 
         /// <summary>
-        /// Runs the named tool for the given student and returns a compact JSON
+        /// Runs the named tool for the given user and role, returning a compact JSON
         /// string to feed back to the model. Unknown tool names return an error
-        /// object rather than throwing.
+        /// object rather than throwing. The userId is supplied by the server from
+        /// the session, never by the model.
         /// </summary>
-        public static string Execute(string toolName, int userId)
+        public static string Execute(string toolName, int userId, string role)
+        {
+            return IsLecturer(role)
+                ? ExecuteLecturer(toolName, userId)
+                : ExecuteStudent(toolName, userId);
+        }
+
+        private static bool IsLecturer(string role)
+        {
+            return string.Equals(role, "LECTURER", System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string ExecuteStudent(string toolName, int userId)
         {
             switch (toolName)
             {
@@ -102,6 +128,39 @@ namespace src.assistant
                         title = x.Title,
                         content = x.Content,
                         date = x.CreatedAt.ToString("yyyy-MM-dd")
+                    }));
+
+                default:
+                    return "{\"error\":\"unknown tool\"}";
+            }
+        }
+
+        private static string ExecuteLecturer(string toolName, int userId)
+        {
+            switch (toolName)
+            {
+                case "get_my_courses":
+                    return Serialize(LecturerCourseService.GetCourses(userId).Select(c => new
+                    {
+                        code = c.CourseCode,
+                        name = c.CourseName,
+                        creditHours = c.CreditHours,
+                        semester = c.SemesterName,
+                        enrolled = c.EnrolledCount,
+                        status = c.Status
+                    }));
+
+                case "get_at_risk_students":
+                    var lecturer = LecturerService.GetByUserId(userId);
+                    if (lecturer == null) return "{\"error\":\"not a lecturer\"}";
+                    return Serialize(LecturerPortalService.GetAtRiskStudents(lecturer.LecturerId).Select(s => new
+                    {
+                        student = s.StudentName,
+                        studentNo = s.StudentNo,
+                        course = s.CourseCode + " " + s.CourseName,
+                        riskLevel = s.RiskLevel,
+                        reason = s.RiskReason,
+                        missingSubmissions = s.MissingSubmissions
                     }));
 
                 default:
