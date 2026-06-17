@@ -52,14 +52,19 @@ namespace student_information_management_system
                 SetComposeVisible(false);
             }
 
-            showComposeButton.Visible = IsCourseScoped;
-            composePanel.Visible = IsCourseScoped;
+            showComposeButton.Visible = true;
+            composePanel.Visible = true;
             LoadRows();
+        }
+
+        protected override void OnPreRender(EventArgs e)
+        {
+            base.OnPreRender(e);
+            ApplyPinButtonStyle();
         }
 
         protected void ShowComposeButton_Click(object sender, EventArgs e)
         {
-            if (!IsCourseScoped) return;
             SetComposeVisible(true);
         }
 
@@ -70,10 +75,13 @@ namespace student_information_management_system
 
         protected void PostAnnouncement_Click(object sender, EventArgs e)
         {
-            if (!IsCourseScoped)
+            int offeringId;
+            int.TryParse(courseSelect.SelectedValue, out offeringId);
+
+            if (courseSelect.Items.Count == 0)
             {
-                ShowError("Choose a course before posting an announcement.");
-                SetComposeVisible(false);
+                ShowError("No assigned courses are available for posting.");
+                SetComposeVisible(true);
                 return;
             }
 
@@ -83,9 +91,6 @@ namespace student_information_management_system
                 SetComposeVisible(true);
                 return;
             }
-
-            int offeringId;
-            int.TryParse(courseSelect.SelectedValue, out offeringId);
 
             string fileUrl = SaveAttachment();
             if (statusBanner.Visible && string.IsNullOrEmpty(fileUrl) && attachmentInput.HasFile)
@@ -102,6 +107,9 @@ namespace student_information_management_system
             statusBanner.CssClass = "mt-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800";
             statusBanner.Visible = true;
             SetComposeVisible(false);
+            _tabFilter = "all";
+            ViewState["AnnouncementTab"] = "all";
+            ViewState["SelectedAnnouncementId"] = null;
             LoadRows();
         }
 
@@ -216,6 +224,15 @@ namespace student_information_management_system
             emptyPanel.Visible = _announcements.Count == 0;
             detailPanel.Visible = _selectedAnnouncement != null;
             ApplyTabStyles();
+        }
+
+        private void ApplyPinButtonStyle()
+        {
+            const string baseClass = "inline-flex h-9 w-9 items-center justify-center rounded-md";
+            bool pinned = _selectedAnnouncement != null && _selectedAnnouncement.IsPinned;
+            pinButton.CssClass = pinned
+                ? baseClass + " text-amber-500 hover:bg-amber-50"
+                : baseClass + " text-slate-400 hover:bg-slate-100 hover:text-slate-600";
         }
 
         private int SelectedAnnouncementId()

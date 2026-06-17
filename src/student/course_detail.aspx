@@ -67,6 +67,16 @@
                 </button>
             </li>
             <li>
+                <button type="button" data-action="switch-tab" data-tab="materials" data-active="false"
+                    class="relative inline-flex items-center gap-2 px-4 py-3 transition-colors data-[active=false]:text-slate-500 data-[active=false]:hover:text-slate-900"
+                    style="font-size:13.5px;font-weight:600">
+                    <i data-lucide="folder-open" class="h-4 w-4"></i>
+                    Materials
+                    <span class="tab-indicator absolute inset-x-2 -bottom-px h-0.5 rounded-full hidden"
+                        style="background-color:var(--course-accent)"></span>
+                </button>
+            </li>
+            <li>
                 <button type="button" data-action="switch-tab" data-tab="assignments" data-active="false"
                     class="relative inline-flex items-center gap-2 px-4 py-3 transition-colors data-[active=false]:text-slate-500 data-[active=false]:hover:text-slate-900"
                     style="font-size:13.5px;font-weight:600">
@@ -179,6 +189,49 @@
                     </div>
                 </aside>
 
+            </div>
+        </div>
+
+        <%-- ==================== MATERIALS PANE ==================== --%>
+        <div data-pane="materials" class="hidden">
+            <div class="rounded-2xl border border-slate-200 bg-white">
+                <header class="flex items-center justify-between p-6 pb-4">
+                    <div>
+                        <h2 class="text-slate-900" style="font-size:16px;font-weight:600">Course Materials</h2>
+                        <p class="text-slate-500 mt-0.5" style="font-size:13px"><%= StudentMaterialCount %> uploaded resources</p>
+                    </div>
+                </header>
+                <asp:Panel ID="studentMaterialsEmptyPanel" runat="server" Visible="false" CssClass="px-6 pb-6">
+                    <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-5 py-6 text-center text-slate-500" style="font-size:13px">
+                        No materials have been uploaded for this course yet.
+                    </div>
+                </asp:Panel>
+                <div class="divide-y divide-slate-100">
+                    <asp:Repeater ID="studentMaterialsRepeater" runat="server">
+                        <ItemTemplate>
+                            <a href='<%# MaterialPreviewUrl(Eval("MaterialId")) %>' class="group flex flex-col gap-3 px-6 py-5 transition-colors hover:bg-slate-50/70 sm:flex-row sm:items-center">
+                                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style="background-color:var(--course-accent-soft);color:var(--course-accent)">
+                                    <i data-lucide='<%# MaterialIcon(Eval("MaterialType")) %>' class="h-5 w-5"></i>
+                                </span>
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-600" style="font-size:10.5px;font-weight:700"><%# Server.HtmlEncode(Eval("CourseCode").ToString()) %></span>
+                                        <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-600" style="font-size:10.5px;font-weight:600"><%# Server.HtmlEncode(Eval("MaterialType").ToString()) %></span>
+                                    </div>
+                                    <h3 class="mt-1 text-slate-900 group-hover:text-slate-950" style="font-size:14px;font-weight:650"><%# Server.HtmlEncode(Eval("Title").ToString()) %></h3>
+                                    <p class="mt-1 text-slate-500" style="font-size:12.5px"><%# Server.HtmlEncode(Eval("Description").ToString()) %></p>
+                                    <p class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-slate-500" style="font-size:11.5px">
+                                        <span><%# MaterialDueLabel(Eval("DueDate")) %></span>
+                                        <span><%# MaterialWeightLabel(Eval("Weight")) %></span>
+                                        <span><%# Server.HtmlEncode(Eval("FileType").ToString().ToUpperInvariant()) %><%# string.IsNullOrWhiteSpace(FileSize(Eval("FileSizeBytes"))) ? "" : " · " + FileSize(Eval("FileSizeBytes")) %></span>
+                                        <span>Uploaded <%# ((System.DateTime)Eval("UploadedAt")).ToString("d MMM yyyy") %></span>
+                                    </p>
+                                </div>
+                                <i data-lucide="chevron-right" class="h-4 w-4 shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-slate-500"></i>
+                            </a>
+                        </ItemTemplate>
+                    </asp:Repeater>
+                </div>
             </div>
         </div>
 

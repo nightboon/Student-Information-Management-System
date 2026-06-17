@@ -94,6 +94,7 @@
         if (badge) badge.className = 'notif-badge rounded border px-1.5 py-0.5 ' + cat(item).badge;
         var pin = item.querySelector('.notif-pin');
         if (pin) pin.hidden = item.getAttribute('data-pinned') !== 'true';
+        item.style.opacity = item.getAttribute('data-read') === 'true' ? '0.7' : '';
         paintDot(item);
     }
 
@@ -148,8 +149,21 @@
         var detailContent = document.getElementById('detail-content');
         if (detailContent) detailContent.textContent = body ? body.textContent : '';
 
-        var pin = document.getElementById('detail-pin');
-        if (pin) pin.hidden = item.getAttribute('data-pinned') !== 'true';
+        var attachment = document.getElementById('detail-attachment');
+        var attachmentLink = document.getElementById('detail-attachment-link');
+        var attachmentName = document.getElementById('detail-attachment-name');
+        var attachmentUrl = item.getAttribute('data-attachment-url') || '';
+        if (attachment && attachmentLink && attachmentName) {
+            if (item.getAttribute('data-has-attachment') === 'true' && attachmentUrl) {
+                attachment.classList.remove('hidden');
+                attachmentLink.href = attachmentUrl;
+                attachmentName.textContent = item.getAttribute('data-attachment-name') || 'Open attachment';
+            } else {
+                attachment.classList.add('hidden');
+                attachmentLink.href = '#';
+                attachmentName.textContent = 'Open attachment';
+            }
+        }
 
         showDetail(true);
 

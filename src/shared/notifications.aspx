@@ -9,7 +9,7 @@
             <p class="text-slate-500" style="font-size:13px;font-weight:500">Inbox</p>
             <h1 class="mt-1 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em">Notifications</h1>
             <p class="mt-1 text-slate-500" style="font-size:14px">
-                Updates from your courses, lecturers, and the registrar. <span id="unread-count" class="font-semibold text-[#a01020]"><%= UnreadCount %></span> unread.
+                <%= NotificationSummaryText %> <span id="unread-count" class="font-semibold text-[#a01020]"><%= UnreadCount %></span> unread.
             </p>
         </div>
         <button id="mark-all-read" type="button" class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 h-10 text-slate-700 hover:bg-slate-50 transition-colors" style="font-size:13px;font-weight:600">
@@ -42,11 +42,15 @@
                                 data-author="<%# Server.HtmlEncode((string)Eval("AuthorName")) %>"
                                 data-time="<%# ListTime((DateTime)Eval("CreatedAt")) %>"
                                 data-fulltime="<%# FullTime((DateTime)Eval("CreatedAt")) %>"
-                                data-pinned="<%# PinnedFlag(Eval("IsPinned")) %>">
+                                data-pinned="<%# PinnedFlag(Eval("IsPinned")) %>"
+                                data-has-attachment="<%# ReadFlag(Eval("HasAttachment")) %>"
+                                data-attachment-url="<%# Server.HtmlEncode(AttachmentUrl((StudentNotification)Container.DataItem)) %>"
+                                data-attachment-name="<%# Server.HtmlEncode(AttachmentName((StudentNotification)Container.DataItem)) %>">
                                 <span class="notif-dot mt-1.5 h-2 w-2 shrink-0 rounded-full"></span>
                                 <div class="min-w-0 flex-1">
                                     <div class="flex items-center gap-2">
                                         <span class="notif-badge rounded border px-1.5 py-0.5" style="font-size:9.5px;font-weight:700;letter-spacing:0.04em"><%# Category(Eval("AuthorRole")) %></span>
+                                        <span class='<%# Convert.ToBoolean(Eval("HasAttachment")) ? "rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-slate-600" : "hidden" %>' style="font-size:9.5px;font-weight:700;letter-spacing:0.04em">FILE</span>
                                         <i data-lucide="pin" class="notif-pin h-3 w-3 text-amber-500"></i>
                                         <span class="ml-auto text-slate-400 truncate" style="font-size:10.5px"><%# ListTime((DateTime)Eval("CreatedAt")) %></span>
                                     </div>
@@ -68,20 +72,6 @@
         <%-- Detail panel: populated by notifications.js from the selected list item --%>
         <div class="rounded-lg border border-slate-200 bg-white">
             <article class="flex h-full flex-col">
-                <header class="flex items-center justify-between border-b border-slate-100 px-5 py-3">
-                    <div class="ml-auto flex items-center gap-1">
-                        <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-slate-100 transition-colors" title="Pin">
-                            <i data-lucide="pin" id="detail-pin" class="h-4 w-4 text-amber-500"></i>
-                        </button>
-                        <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-slate-100 transition-colors" title="Archive">
-                            <i data-lucide="archive" class="h-4 w-4 text-slate-500"></i>
-                        </button>
-                        <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-slate-100 transition-colors" title="Delete">
-                            <i data-lucide="trash-2" class="h-4 w-4 text-slate-500"></i>
-                        </button>
-                    </div>
-                </header>
-
                 <div id="detail-empty" class="flex flex-1 items-center justify-center px-7 py-16 text-slate-400" style="display:none;font-size:13px">
                     Select a notification to read it.
                 </div>
@@ -107,6 +97,13 @@
                     </div>
 
                     <div id="detail-content" class="mt-5 text-slate-700" style="font-size:14px;line-height:1.7;white-space:pre-line"></div>
+
+                    <div id="detail-attachment" class="mt-6 hidden">
+                        <a id="detail-attachment-link" href="#" target="_blank" rel="noopener" class="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-slate-700 hover:border-slate-300 hover:text-slate-900 transition-colors" style="font-size:13px;font-weight:700">
+                            <i data-lucide="paperclip" class="h-4 w-4"></i>
+                            <span id="detail-attachment-name">Open attachment</span>
+                        </a>
+                    </div>
                 </div>
 
                 <footer class="border-t border-slate-100 bg-slate-50/40 px-5 py-3 flex items-center justify-end gap-2">
@@ -122,5 +119,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/shared/notifications/notifications.js") %>?v=2"></script>
+    <script src="<%= ResolveUrl("~/js/shared/notifications/notifications.js") %>?v=5"></script>
 </asp:Content>

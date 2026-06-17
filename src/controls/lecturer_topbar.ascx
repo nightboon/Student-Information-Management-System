@@ -18,14 +18,14 @@
             <i data-lucide="help-circle" class="h-5 w-5"></i>
         </button>
 
-        <%-- Notifications: styled to match the student topbar but not yet wired
-             (no lecturer unread-count source), so it is a plain non-navigating
-             button with no count badge for now. --%>
-        <button type="button"
-                class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
-                aria-label="Notifications">
+        <a href="<%= ResolveUrl("~/shared/notifications.aspx") %>"
+           class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+           aria-label="Notifications">
             <i data-lucide="bell" class="h-4 w-4"></i>
-        </button>
+            <span data-notification-count-badge
+                  class="absolute -right-1 -top-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#e0162b] px-1 text-white ring-2 ring-white<%= NotificationBadgeVisibilityClass %>"
+                  style="font-size:10px;font-weight:700"><%= NotificationBadgeText %></span>
+        </a>
 
         <a href="<%= ResolveUrl("~/lecturer/lecturer_account.aspx") %>"
            class="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-3 transition-colors hover:border-[#e0162b]/30 hover:bg-[#e0162b]/[0.03]"

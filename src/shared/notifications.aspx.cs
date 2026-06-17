@@ -1,15 +1,38 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Web;
 using System.Web.Services;
+using src.security;
 using src.services;
 
 namespace src.shared
 {
-    public partial class notification : src.security.StudentPage
+    public partial class notification : SecurePage
     {
         protected List<StudentNotification> Notifications = new List<StudentNotification>();
+
+        protected override void OnPreInit(EventArgs e)
+        {
+            base.OnPreInit(e);
+
+            if (string.Equals(CurrentRole, RoleRoutes.Lecturer, StringComparison.OrdinalIgnoreCase))
+            {
+                MasterPageFile = "~/shared/LecturerLayout.master";
+            }
+        }
+
+        protected override void EnforceRole()
+        {
+            if (string.Equals(CurrentRole, RoleRoutes.Student, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(CurrentRole, RoleRoutes.Lecturer, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            Response.Redirect(RoleRoutes.HomePageFor(CurrentRole));
+        }
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -22,16 +45,33 @@ namespace src.shared
             }
 
             int userId = (int)Session["user_id"];
-            Notifications = AnnouncementService.GetAllForStudent(userId);
+            Notifications = IsLecturer
+                ? AnnouncementService.GetAllForLecturer(userId)
+                : AnnouncementService.GetAllForStudent(userId);
 
             notificationsRepeater.DataSource = Notifications;
             notificationsRepeater.DataBind();
             emptyPanel.Visible = Notifications.Count == 0;
         }
 
+        private bool IsLecturer
+        {
+            get { return string.Equals(CurrentRole, RoleRoutes.Lecturer, StringComparison.OrdinalIgnoreCase); }
+        }
+
         protected int UnreadCount
         {
             get { return Notifications.Count(n => !n.IsRead); }
+        }
+
+        protected string NotificationSummaryText
+        {
+            get
+            {
+                return IsLecturer
+                    ? "Announcements you sent and registrar system updates."
+                    : "Updates from your courses, lecturers, and the registrar.";
+            }
         }
 
         protected string ReadFlag(object isRead)
@@ -50,6 +90,14 @@ namespace src.shared
 
         protected string CourseLabel(StudentNotification n)
         {
+            if (string.Equals(n.AuthorRole, RoleRoutes.Admin, StringComparison.OrdinalIgnoreCase) &&
+                string.IsNullOrEmpty(n.CourseCode))
+            {
+                return "System notification";
+            }
+
+            if (string.IsNullOrEmpty(n.CourseCode)) return "General";
+
             return n.CourseCode + " · " + n.CourseName;
         }
 
@@ -74,6 +122,19 @@ namespace src.shared
             return ((bool)isPinned) ? "true" : "false";
         }
 
+        protected string AttachmentUrl(StudentNotification n)
+        {
+            return n != null && n.HasAttachment && !string.IsNullOrWhiteSpace(n.FileUrl)
+                ? ResolveUrl(n.FileUrl)
+                : "";
+        }
+
+        protected string AttachmentName(StudentNotification n)
+        {
+            if (n == null || string.IsNullOrWhiteSpace(n.FileUrl)) return "";
+            return Path.GetFileName(n.FileUrl);
+        }
+
         private static int CurrentUserIdOrReject()
         {
             HttpContext context = HttpContext.Current;
@@ -86,6 +147,14 @@ namespace src.shared
             return (int)context.Session["user_id"];
         }
 
+        private static bool CurrentUserIsLecturer()
+        {
+            HttpContext context = HttpContext.Current;
+            return context != null &&
+                   context.Session != null &&
+                   string.Equals(context.Session["role"] as string, RoleRoutes.Lecturer, StringComparison.OrdinalIgnoreCase);
+        }
+
         private static string BadgeText(int unreadCount)
         {
             return unreadCount > 9 ? "9+" : unreadCount.ToString();
@@ -93,7 +162,9 @@ namespace src.shared
 
         private static object CountResponse(int userId)
         {
-            int unreadCount = AnnouncementService.GetUnreadCountForStudent(userId);
+            int unreadCount = CurrentUserIsLecturer()
+                ? AnnouncementService.GetUnreadCountForLecturer(userId)
+                : AnnouncementService.GetUnreadCountForStudent(userId);
             return new
             {
                 ok = true,
@@ -108,7 +179,11 @@ namespace src.shared
             int userId = CurrentUserIdOrReject();
             if (userId == 0) return new { ok = false };
 
-            AnnouncementService.MarkRead(userId, announcementId);
+            if (CurrentUserIsLecturer())
+                AnnouncementService.MarkReadForLecturer(userId, announcementId);
+            else
+                AnnouncementService.MarkRead(userId, announcementId);
+
             return CountResponse(userId);
         }
 
@@ -128,7 +203,11 @@ namespace src.shared
             int userId = CurrentUserIdOrReject();
             if (userId == 0) return new { ok = false };
 
-            AnnouncementService.MarkAllRead(userId);
+            if (CurrentUserIsLecturer())
+                AnnouncementService.MarkAllReadForLecturer(userId);
+            else
+                AnnouncementService.MarkAllRead(userId);
+
             return CountResponse(userId);
         }
     }

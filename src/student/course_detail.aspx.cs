@@ -11,6 +11,7 @@ namespace src.student
     public partial class course_detail : src.security.StudentPage
     {
         protected new CourseHeader Header;
+        protected int StudentMaterialCount;
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -45,6 +46,12 @@ namespace src.student
 
             modulesRepeater.DataSource = ModuleService.GetModules(offeringId);
             modulesRepeater.DataBind();
+
+            var materials = CourseDetailService.GetMaterialsForStudent(offeringId, userId);
+            StudentMaterialCount = materials.Count;
+            studentMaterialsRepeater.DataSource = materials;
+            studentMaterialsRepeater.DataBind();
+            studentMaterialsEmptyPanel.Visible = StudentMaterialCount == 0;
 
             announcementsRepeater.DataSource = AnnouncementService.GetByOffering(offeringId);
             announcementsRepeater.DataBind();
@@ -178,6 +185,35 @@ namespace src.student
                 case "docx": return "file-text";
                 default: return "paperclip";
             }
+        }
+
+        protected string MaterialIcon(object materialType)
+        {
+            switch (Convert.ToString(materialType).ToLowerInvariant())
+            {
+                case "assignment": return "clipboard-check";
+                case "quiz": return "circle-help";
+                case "test": return "clipboard-list";
+                case "lecture notes": return "book-open";
+                default: return "file";
+            }
+        }
+
+        protected string MaterialPreviewUrl(object materialId)
+        {
+            return ResolveUrl("~/shared/material_preview.aspx?id=" + HttpUtility.UrlEncode(Convert.ToString(materialId)));
+        }
+
+        protected string MaterialDueLabel(object dueDate)
+        {
+            if (dueDate == null || dueDate is DBNull) return "No due date";
+            return "Due " + Convert.ToDateTime(dueDate).ToString("d MMM yyyy");
+        }
+
+        protected string MaterialWeightLabel(object weight)
+        {
+            if (weight == null || weight is DBNull) return "No weight";
+            return Convert.ToDecimal(weight).ToString("0.#") + "% weight";
         }
 
         /// <summary>Due/status line for an assignment card.</summary>

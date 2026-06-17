@@ -7,11 +7,15 @@ namespace src.controls
     public partial class lecturer_topbar : UserControl
     {
         private Lecturer _lecturer;
+        private int _unreadNotificationCount;
 
         protected void Page_Load(object sender, EventArgs e)
         {
             if (Session["user_id"] == null) return;
-            _lecturer = LecturerService.GetByUserId((int)Session["user_id"]);
+
+            int userId = (int)Session["user_id"];
+            _lecturer = LecturerService.GetByUserId(userId);
+            _unreadNotificationCount = AnnouncementService.GetUnreadCountForLecturer(userId);
         }
 
         protected string FullName
@@ -46,6 +50,16 @@ namespace src.controls
                 if (parts.Length > 1) initials += parts[1].Substring(0, 1);
                 return initials.ToUpperInvariant();
             }
+        }
+
+        protected string NotificationBadgeText
+        {
+            get { return _unreadNotificationCount > 9 ? "9+" : _unreadNotificationCount.ToString(); }
+        }
+
+        protected string NotificationBadgeVisibilityClass
+        {
+            get { return _unreadNotificationCount > 0 ? "" : " hidden"; }
         }
     }
 }

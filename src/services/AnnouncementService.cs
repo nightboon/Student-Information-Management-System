@@ -41,6 +41,7 @@ namespace src.services
         public DateTime CreatedAt { get; set; }
         public bool IsPinned { get; set; }
         public bool HasAttachment { get; set; }
+        public string FileUrl { get; set; }
         public string CourseCode { get; set; }
         public string CourseName { get; set; }
         public string AuthorName { get; set; }
@@ -100,7 +101,7 @@ namespace src.services
         private const string SelectByOffering =
             "SELECT DISTINCT an.announcement_id, an.title, " +
             "CAST(an.content AS varchar(max)) AS content, an.created_at, an.is_pinned, " +
-            "CASE WHEN an.file_url IS NULL THEN 0 ELSE 1 END AS has_attachment, " +
+            "CASE WHEN an.file_url IS NULL THEN 0 ELSE 1 END AS has_attachment, an.file_url, " +
             "u.role, ISNULL(l.full_name, u.username) AS author_name " +
             "FROM ANNOUNCEMENTS an " +
             "JOIN ANNOUNCEMENT_TARGETS at ON at.announcement_id = an.announcement_id " +
@@ -145,7 +146,7 @@ namespace src.services
         private const string SelectAllForStudent =
             "SELECT an.announcement_id, an.title, " +
             "CAST(an.content AS varchar(max)) AS content, an.created_at, an.is_pinned, " +
-            "CASE WHEN an.file_url IS NULL THEN 0 ELSE 1 END AS has_attachment, " +
+            "CASE WHEN an.file_url IS NULL THEN 0 ELSE 1 END AS has_attachment, an.file_url, " +
             "ISNULL(l.full_name, u.username) AS author_name, u.role, " +
             "ca.course_code, ca.course_name, " +
             "CASE WHEN nr.announcement_id IS NULL THEN 0 ELSE 1 END AS is_read " +
@@ -175,6 +176,37 @@ namespace src.services
             "JOIN STUDENTS s ON e.student_id = s.student_id " +
             "WHERE s.user_id = @userId AND e.status = 'ENROLLED'";
 
+        // Lecturer inbox: announcements they authored plus admin-authored
+        // system notices. OUTER APPLY keeps system notices visible even when
+        // they are not tied to a course offering.
+        private const string SelectAllForLecturer =
+            "SELECT an.announcement_id, an.title, " +
+            "CAST(an.content AS varchar(max)) AS content, an.created_at, an.is_pinned, " +
+            "CASE WHEN an.file_url IS NULL THEN 0 ELSE 1 END AS has_attachment, an.file_url, " +
+            "ISNULL(l.full_name, u.username) AS author_name, u.role, " +
+            "ISNULL(ca.course_code, '') AS course_code, ISNULL(ca.course_name, '') AS course_name, " +
+            "CASE WHEN nr.announcement_id IS NULL THEN 0 ELSE 1 END AS is_read " +
+            "FROM ANNOUNCEMENTS an " +
+            "JOIN USERS u ON u.user_id = an.created_by " +
+            "LEFT JOIN LECTURERS l ON l.user_id = u.user_id " +
+            "OUTER APPLY ( " +
+            "  SELECT TOP 1 c.course_code, c.course_name " +
+            "  FROM ANNOUNCEMENT_TARGETS at " +
+            "  JOIN COURSE_OFFERINGS o ON at.offering_id = o.offering_id " +
+            "  JOIN COURSES c ON o.course_id = c.course_id " +
+            "  WHERE at.announcement_id = an.announcement_id " +
+            "  ORDER BY c.course_code " +
+            ") ca " +
+            "LEFT JOIN NOTIFICATION_READS nr ON nr.announcement_id = an.announcement_id AND nr.user_id = @userId " +
+            "WHERE an.created_by = @userId OR u.role = 'ADMIN' " +
+            "ORDER BY an.is_pinned DESC, an.created_at DESC";
+
+        private const string VisibleNotificationIdsForLecturer =
+            "SELECT DISTINCT an.announcement_id " +
+            "FROM ANNOUNCEMENTS an " +
+            "JOIN USERS u ON u.user_id = an.created_by " +
+            "WHERE an.created_by = @userId OR u.role = 'ADMIN'";
+
         public static List<StudentNotification> GetAllForStudent(int userId)
         {
             using (var conn = Db.OpenConnection())
@@ -194,6 +226,39 @@ namespace src.services
                             CreatedAt = (DateTime)reader["created_at"],
                             IsPinned = (bool)reader["is_pinned"],
                             HasAttachment = (int)reader["has_attachment"] == 1,
+                            FileUrl = reader["file_url"] == DBNull.Value ? "" : reader["file_url"].ToString(),
+                            AuthorName = reader["author_name"].ToString(),
+                            AuthorRole = reader["role"].ToString(),
+                            CourseCode = reader["course_code"].ToString(),
+                            CourseName = reader["course_name"].ToString(),
+                            IsRead = (int)reader["is_read"] == 1
+                        });
+                    }
+                }
+                return list;
+            }
+        }
+
+        public static List<StudentNotification> GetAllForLecturer(int userId)
+        {
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(SelectAllForLecturer, conn))
+            {
+                cmd.Parameters.AddWithValue("@userId", userId);
+                var list = new List<StudentNotification>();
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        list.Add(new StudentNotification
+                        {
+                            AnnouncementId = (int)reader["announcement_id"],
+                            Title = reader["title"].ToString(),
+                            Content = reader["content"].ToString(),
+                            CreatedAt = (DateTime)reader["created_at"],
+                            IsPinned = (bool)reader["is_pinned"],
+                            HasAttachment = (int)reader["has_attachment"] == 1,
+                            FileUrl = reader["file_url"] == DBNull.Value ? "" : reader["file_url"].ToString(),
                             AuthorName = reader["author_name"].ToString(),
                             AuthorRole = reader["role"].ToString(),
                             CourseCode = reader["course_code"].ToString(),
@@ -208,9 +273,19 @@ namespace src.services
 
         public static int GetUnreadCountForStudent(int userId)
         {
+            return GetUnreadCount(userId, VisibleNotificationIdsForStudent);
+        }
+
+        public static int GetUnreadCountForLecturer(int userId)
+        {
+            return GetUnreadCount(userId, VisibleNotificationIdsForLecturer);
+        }
+
+        private static int GetUnreadCount(int userId, string visibleSql)
+        {
             string sql =
                 "SELECT COUNT(*) " +
-                "FROM (" + VisibleNotificationIdsForStudent + ") visible " +
+                "FROM (" + visibleSql + ") visible " +
                 "LEFT JOIN NOTIFICATION_READS nr ON nr.announcement_id = visible.announcement_id AND nr.user_id = @userId " +
                 "WHERE nr.announcement_id IS NULL";
 
@@ -224,8 +299,18 @@ namespace src.services
 
         public static void MarkRead(int userId, int announcementId)
         {
+            MarkRead(userId, announcementId, VisibleNotificationIdsForStudent);
+        }
+
+        public static void MarkReadForLecturer(int userId, int announcementId)
+        {
+            MarkRead(userId, announcementId, VisibleNotificationIdsForLecturer);
+        }
+
+        private static void MarkRead(int userId, int announcementId, string visibleSql)
+        {
             string sql =
-                "IF EXISTS (" + VisibleNotificationIdsForStudent + " AND an.announcement_id = @announcementId) " +
+                "IF EXISTS (SELECT 1 FROM (" + visibleSql + ") visible WHERE visible.announcement_id = @announcementId) " +
                 "BEGIN " +
                 "  IF EXISTS (SELECT 1 FROM NOTIFICATION_READS WHERE user_id = @userId AND announcement_id = @announcementId) " +
                 "    UPDATE NOTIFICATION_READS SET read_at = SYSUTCDATETIME() WHERE user_id = @userId AND announcement_id = @announcementId; " +
@@ -259,10 +344,20 @@ namespace src.services
 
         public static void MarkAllRead(int userId)
         {
+            MarkAllRead(userId, VisibleNotificationIdsForStudent);
+        }
+
+        public static void MarkAllReadForLecturer(int userId)
+        {
+            MarkAllRead(userId, VisibleNotificationIdsForLecturer);
+        }
+
+        private static void MarkAllRead(int userId, string visibleSql)
+        {
             string sql =
                 "INSERT INTO NOTIFICATION_READS (user_id, announcement_id, read_at) " +
                 "SELECT @userId, visible.announcement_id, SYSUTCDATETIME() " +
-                "FROM (" + VisibleNotificationIdsForStudent + ") visible " +
+                "FROM (" + visibleSql + ") visible " +
                 "WHERE NOT EXISTS ( " +
                 "  SELECT 1 FROM NOTIFICATION_READS nr " +
                 "  WHERE nr.user_id = @userId AND nr.announcement_id = visible.announcement_id " +
