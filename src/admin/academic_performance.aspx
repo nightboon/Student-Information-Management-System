@@ -8,6 +8,11 @@
             <p class="mt-1 text-slate-500" style="font-size:14px">Analyse grades, attendance, and student outcomes across programmes and semesters.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
+            <asp:Button runat="server" ID="btnSendWarnings" Text="Send Academic Warnings"
+                OnClick="btnSendWarnings_Click"
+                OnClientClick="return confirm('This will email academic-warning notices to all at-risk students. Continue?');"
+                CssClass="inline-flex items-center gap-1.5 rounded-md bg-[#e0162b] px-3 h-10 text-white hover:bg-[#a01020] transition-colors"
+                Style="font-size:13px;font-weight:600" />
             <div class="relative" data-dropdown>
                 <button type="button" data-dropdown-toggle class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 h-10 text-slate-700 hover:bg-slate-50 transition-colors" style="font-size:13px;font-weight:600"><i data-lucide="filter" class="h-4 w-4"></i> Filter</button>
                 <div data-dropdown-menu style="display:none" class="absolute right-0 z-20 mt-2 w-80 rounded-xl border border-slate-200 bg-white p-4 shadow-lg">
@@ -33,6 +38,13 @@
             </div>
         </div>
     </div>
+
+    <asp:Panel runat="server" ID="pnlResult" Visible="false" CssClass="mt-4 rounded-lg border px-4 py-3">
+        <div class="flex items-start gap-2">
+            <i data-lucide="mail-check" class="h-4 w-4 mt-0.5"></i>
+            <asp:Literal runat="server" ID="litResult" />
+        </div>
+    </asp:Panel>
 
     <%-- KPI strip --%>
     <section class="mt-6" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px">

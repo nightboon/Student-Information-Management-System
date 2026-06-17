@@ -13,5 +13,13 @@ namespace src.admin
 
     public partial class academic_performance
     {
+        /// <summary>btnSendWarnings control.</summary>
+        protected global::System.Web.UI.WebControls.Button btnSendWarnings;
+
+        /// <summary>pnlResult control.</summary>
+        protected global::System.Web.UI.WebControls.Panel pnlResult;
+
+        /// <summary>litResult control.</summary>
+        protected global::System.Web.UI.WebControls.Literal litResult;
     }
 }
