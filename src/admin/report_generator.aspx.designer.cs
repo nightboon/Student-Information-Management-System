@@ -15,6 +15,15 @@ namespace src.admin
     {
 
         /// <summary>
+        /// hdnReportType control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hdnReportType;
+
+        /// <summary>
         /// ddlSemester control.
         /// </summary>
         /// <remarks>
@@ -85,5 +94,32 @@ namespace src.admin
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.PlaceHolder emptyPreviewPanel;
+
+        /// <summary>
+        /// rptProgrammePreview control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptProgrammePreview;
+
+        /// <summary>
+        /// litProgrammePreviewCount control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litProgrammePreviewCount;
+
+        /// <summary>
+        /// emptyProgrammePreviewPanel control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.PlaceHolder emptyProgrammePreviewPanel;
     }
 }
