@@ -122,6 +122,7 @@
     <Content Include="lecturer\lecturer_dashboard.aspx" />
     <Content Include="lecturer\lecturer_account.aspx" />
     <Content Include="lecturer\lecturer_announcement.aspx" />
+    <Content Include="devtools\ai_console.aspx" />
     <Content Include="shared\email_test.aspx" />
     <Content Include="student\account.aspx" />
     <Content Include="student\notifications.aspx" />
@@ -420,6 +421,13 @@
     </Compile>
     <Compile Include="student\account.aspx.designer.cs">
       <DependentUpon>account.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="devtools\ai_console.aspx.cs">
+      <DependentUpon>ai_console.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="devtools\ai_console.aspx.designer.cs">
+      <DependentUpon>ai_console.aspx</DependentUpon>
     </Compile>
     <Compile Include="shared\email_test.aspx.cs">
       <DependentUpon>email_test.aspx</DependentUpon>
