@@ -19,6 +19,7 @@
             <span data-tab-panel="programmes"><button type="button" data-modal-open="prog-modal" class="inline-flex items-center gap-1.5 rounded-md bg-[#e0162b] px-4 h-10 text-white hover:bg-[#a01020] transition-colors shadow-[0_8px_18px_-10px_rgba(224,22,43,0.9)]" style="font-size:13px;font-weight:600"><i data-lucide="plus" class="h-4 w-4"></i> New Programme</button></span>
             <span data-tab-panel="courses"><button type="button" data-modal-open="course-modal" class="inline-flex items-center gap-1.5 rounded-md bg-[#e0162b] px-4 h-10 text-white hover:bg-[#a01020] transition-colors shadow-[0_8px_18px_-10px_rgba(224,22,43,0.9)]" style="font-size:13px;font-weight:600"><i data-lucide="plus" class="h-4 w-4"></i> New Course</button></span>
             <span data-tab-panel="assign"><button type="button" data-modal-open="assign-modal" class="inline-flex items-center gap-1.5 rounded-md bg-[#e0162b] px-4 h-10 text-white hover:bg-[#a01020] transition-colors shadow-[0_8px_18px_-10px_rgba(224,22,43,0.9)]" style="font-size:13px;font-weight:600"><i data-lucide="plus" class="h-4 w-4"></i> New Assignment</button></span>
+            <span data-tab-panel="departments"><button type="button" data-modal-open="department-modal" class="inline-flex items-center gap-1.5 rounded-md bg-[#e0162b] px-4 h-10 text-white hover:bg-[#a01020] transition-colors shadow-[0_8px_18px_-10px_rgba(224,22,43,0.9)]" style="font-size:13px;font-weight:600"><i data-lucide="plus" class="h-4 w-4"></i> New Department</button></span>
         </div>
     </div>
 
@@ -27,6 +28,7 @@
             <button type="button" data-tab="programmes" class="inline-flex items-center gap-2 rounded-t-lg border-b-2 border-transparent px-3 py-2 text-slate-500 hover:text-slate-900 data-[active=true]:border-[#e0162b] data-[active=true]:text-[#a01020]" style="font-size:13px;font-weight:600">Programmes</button>
             <button type="button" data-tab="courses" class="inline-flex items-center gap-2 rounded-t-lg border-b-2 border-transparent px-3 py-2 text-slate-500 hover:text-slate-900 data-[active=true]:border-[#e0162b] data-[active=true]:text-[#a01020]" style="font-size:13px;font-weight:600">Courses</button>
             <button type="button" data-tab="assign" class="inline-flex items-center gap-2 rounded-t-lg border-b-2 border-transparent px-3 py-2 text-slate-500 hover:text-slate-900 data-[active=true]:border-[#e0162b] data-[active=true]:text-[#a01020]" style="font-size:13px;font-weight:600">Course Assignment</button>
+            <button type="button" data-tab="departments" class="inline-flex items-center gap-2 rounded-t-lg border-b-2 border-transparent px-3 py-2 text-slate-500 hover:text-slate-900 data-[active=true]:border-[#e0162b] data-[active=true]:text-[#a01020]" style="font-size:13px;font-weight:600">Departments</button>
         </div>
 
         <%-- Programmes tab --%>
@@ -57,6 +59,24 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+
+        <%-- Departments tab --%>
+        <div data-tab-panel="departments">
+            <div data-table data-page-size="20">
+                <div class="px-6 py-4"><div class="relative w-full lg:max-w-sm"><i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i><input data-table-search placeholder="Search departments..." class="h-9 w-full rounded-md border border-slate-200 bg-white pl-9 pr-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:12.5px" /></div></div>
+                <div class="overflow-x-auto"><table class="min-w-full">
+                    <thead class="border-y border-slate-100 bg-slate-50/60 text-slate-500"><tr>
+                        <th class="px-6 py-3 text-left uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.05em">Code</th>
+                        <th class="px-6 py-3 text-left uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.05em">Department</th>
+                        <th class="px-6 py-3 text-right uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.05em">Programmes</th>
+                        <th class="px-6 py-3 text-right uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.05em">Lecturers</th>
+                        <th class="px-6 py-3 text-left uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.05em">Status</th>
+                        <th class="px-6 py-3 text-right uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.05em">Action</th>
+                    </tr></thead>
+                    <tbody><%= DepartmentRowsHtml %></tbody>
+                </table></div>
             </div>
         </div>
 
@@ -119,6 +139,19 @@
         </div>
     </section>
 
+</div>
+
+<div id="department-modal" data-modal class="fixed inset-0 z-[60] items-center justify-center p-4" style="display:none">
+    <div data-modal-backdrop class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
+    <div class="relative w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+        <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4"><h2 class="text-slate-900" style="font-size:17px;font-weight:700">Department Details</h2><button type="button" data-modal-close class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100"><i data-lucide="x" class="h-4 w-4"></i></button></div>
+        <div class="grid gap-4 px-6 py-5">
+            <label><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Department Code</span><input data-field="id" class="mt-1.5 h-10 w-full rounded-md border border-slate-200 px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" /></label>
+            <label><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Department Name</span><input data-field="name" class="mt-1.5 h-10 w-full rounded-md border border-slate-200 px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px" /></label>
+            <label><span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Status</span><select data-field="status" class="mt-1.5 h-10 w-full rounded-md border border-slate-200 px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:13px"><%= ProgrammeStatusOptionsHtml %></select></label>
+        </div>
+        <div class="flex justify-end gap-2 border-t border-slate-100 bg-slate-50/40 px-6 py-4"><button type="button" data-modal-close class="h-10 px-4 text-slate-600" style="font-size:13px;font-weight:600">Cancel</button><button type="button" data-admin-save-department class="h-10 rounded-md bg-[#e0162b] px-4 text-white hover:bg-[#a01020]" style="font-size:13px;font-weight:600">Save</button></div>
+    </div>
 </div>
 
 <%-- Programme modal --%>
@@ -249,6 +282,16 @@
                 setTimeout(function () { location.reload(); }, 450);
             }
             document.addEventListener("click", function (e) {
+                var editDepartment = e.target.closest("[data-admin-edit-department]");
+                if (editDepartment) {
+                    var departmentRow = editDepartment.closest("tr");
+                    var departmentModal = document.getElementById("department-modal");
+                    setField(departmentModal, "id", departmentRow && departmentRow.dataset.id);
+                    setField(departmentModal, "name", departmentRow && departmentRow.dataset.name);
+                    setField(departmentModal, "status", departmentRow && departmentRow.dataset.status);
+                    return;
+                }
+
                 var editProgramme = e.target.closest("[data-admin-edit-programme]");
                 if (editProgramme) {
                     var programmeRow = editProgramme.closest("tr");
@@ -299,6 +342,14 @@
                     setField(freshProgramme, "status", "Active");
                 }
 
+                var newDepartment = e.target.closest("[data-modal-open='department-modal']");
+                if (newDepartment) {
+                    var freshDepartment = document.getElementById("department-modal");
+                    setField(freshDepartment, "id", "");
+                    setField(freshDepartment, "name", "");
+                    setField(freshDepartment, "status", "Active");
+                }
+
                 var newCourse = e.target.closest("[data-modal-open='course-modal']");
                 if (newCourse) {
                     var freshCourse = document.getElementById("course-modal");
@@ -334,6 +385,17 @@
                         }
                     }).then(function () { done("Programme saved"); })
                         .catch(function () { if (window.toast) window.toast.error("Could not save programme"); });
+                    return;
+                }
+
+                var department = e.target.closest("[data-admin-save-department]");
+                if (department) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    var dm = document.getElementById("department-modal");
+                    post("SaveDepartment", { request: { id: field(dm, "id"), name: field(dm, "name"), status: field(dm, "status") } })
+                        .then(function () { done("Department saved"); })
+                        .catch(function () { if (window.toast) window.toast.error("Could not save department"); });
                     return;
                 }
 
@@ -382,6 +444,17 @@
             post("DeleteProgramme", { code: deleteProgramme.getAttribute("data-code") })
               .then(function () { done("Programme deleted"); })
               .catch(function () { if (window.toast) window.toast.error("Could not delete programme"); });
+            return;
+          }
+
+          var deleteDepartment = e.target.closest("[data-admin-delete-department]");
+          if (deleteDepartment) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (!confirm("Delete this department? Linked records will be marked inactive instead.")) return;
+            post("DeleteDepartment", { id: deleteDepartment.getAttribute("data-id") })
+              .then(function () { done("Department deleted"); })
+              .catch(function () { if (window.toast) window.toast.error("Could not delete department"); });
             return;
           }
 

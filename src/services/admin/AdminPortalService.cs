@@ -164,6 +164,32 @@ namespace src.services.admin
             return rows;
         }
 
+        public List<AdminDepartmentRow> GetDepartments()
+        {
+            const string sql =
+                "SELECT d.department_id, d.department_name, d.status, COUNT(DISTINCT p.programme_id) AS programme_count, COUNT(DISTINCT l.lecturer_id) AS lecturer_count " +
+                "FROM DEPARTMENTS d LEFT JOIN PROGRAMMES p ON p.department_id = d.department_id LEFT JOIN LECTURERS l ON l.department_id = d.department_id " +
+                "GROUP BY d.department_id, d.department_name, d.status ORDER BY d.department_name";
+            var rows = new List<AdminDepartmentRow>();
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(sql, conn))
+            using (var reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    rows.Add(new AdminDepartmentRow
+                    {
+                        Id = Text(reader["department_id"]),
+                        Name = Text(reader["department_name"]),
+                        Status = Title(Text(reader["status"])),
+                        ProgrammeCount = Int(reader["programme_count"]),
+                        LecturerCount = Int(reader["lecturer_count"])
+                    });
+                }
+            }
+            return rows;
+        }
+
         public List<AdminCourseCatalogRow> GetCourseCatalog()
         {
             const string sql =
@@ -385,6 +411,28 @@ namespace src.services.admin
             }
         }
 
+        public void SaveDepartment(AdminDepartmentSaveRequest request)
+        {
+            if (request == null) throw new ArgumentException("Missing department details.");
+            var id = CleanCode(request.Id);
+            if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException("Department code is required.");
+            if (string.IsNullOrWhiteSpace(request.Name)) throw new ArgumentException("Department name is required.");
+
+            using (var conn = Db.OpenConnection())
+            {
+                var exists = Exists(conn, "SELECT 1 FROM DEPARTMENTS WHERE department_id = @id", cmd => cmd.Parameters.AddWithValue("@id", id));
+                using (var cmd = new SqlCommand(exists
+                    ? "UPDATE DEPARTMENTS SET department_name = @name, status = @status WHERE department_id = @id"
+                    : "INSERT INTO DEPARTMENTS (department_id, department_name, status) VALUES (@id, @name, @status)", conn))
+                {
+                    cmd.Parameters.AddWithValue("@id", id);
+                    cmd.Parameters.AddWithValue("@name", request.Name.Trim());
+                    cmd.Parameters.AddWithValue("@status", NormalizeStatus(request.Status));
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
         public void SaveCourse(AdminCourseSaveRequest request)
         {
             if (request == null) throw new ArgumentException("Missing course details.");
@@ -428,6 +476,25 @@ namespace src.services.admin
                     : "DELETE FROM PROGRAMMES WHERE programme_id = @id OR programme_code = @id", conn))
                 {
                     cmd.Parameters.AddWithValue("@id", code);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public void DeleteDepartment(string departmentId)
+        {
+            var id = CleanCode(departmentId);
+            if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException("Department code is required.");
+            using (var conn = Db.OpenConnection())
+            {
+                var linked = Exists(conn,
+                    "SELECT 1 FROM PROGRAMMES WHERE department_id = @id UNION SELECT 1 FROM LECTURERS WHERE department_id = @id",
+                    cmd => cmd.Parameters.AddWithValue("@id", id));
+                using (var cmd = new SqlCommand(linked
+                    ? "UPDATE DEPARTMENTS SET status = 'INACTIVE' WHERE department_id = @id"
+                    : "DELETE FROM DEPARTMENTS WHERE department_id = @id", conn))
+                {
+                    cmd.Parameters.AddWithValue("@id", id);
                     cmd.ExecuteNonQuery();
                 }
             }
@@ -745,6 +812,46 @@ namespace src.services.admin
                 }
             }
             return summary;
+        }
+
+        public List<AdminStudentPerformanceRow> GetStudentPerformanceRows()
+        {
+            const string sql =
+                "SELECT s.student_id, s.student_name, p.programme_code, ISNULL(s.semester, 0) AS semester_no, " +
+                "ISNULL(latest.course_code, '') AS course_code, ISNULL(latest.course_name, '') AS course_name, " +
+                "ISNULL(latest.letter_grade, '-') AS letter_grade, ISNULL(latest.grade_point, 0) AS current_gpa, " +
+                "ISNULL(grades.cgpa, 0) AS cgpa, ISNULL(grades.failed_count, 0) AS failed_count, ISNULL(att.rate, 0) AS attendance, " +
+                "ISNULL(s.current_standing, '') AS standing " +
+                "FROM STUDENTS s JOIN PROGRAMMES p ON p.programme_id = s.programme_id " +
+                "OUTER APPLY (SELECT TOP 1 c.course_code, c.course_name, g.letter_grade, g.grade_point FROM GRADES g JOIN COURSE_OFFERINGS co ON co.offer_id = g.offer_id JOIN COURSES c ON c.course_id = co.course_id WHERE g.student_id = s.student_id ORDER BY g.grade_id DESC) latest " +
+                "OUTER APPLY (SELECT AVG(CAST(g.grade_point AS decimal(5,2))) AS cgpa, SUM(CASE WHEN g.letter_grade = 'F' THEN 1 ELSE 0 END) AS failed_count FROM GRADES g WHERE g.student_id = s.student_id) grades " +
+                "OUTER APPLY (SELECT CASE WHEN COUNT(*) = 0 THEN 0 ELSE 100.0 * SUM(CASE WHEN ar.status = 'PRESENT' THEN 1 ELSE 0 END) / COUNT(*) END AS rate FROM ATTENDANCE_RECORDS ar WHERE ar.student_id = s.student_id) att " +
+                "ORDER BY s.student_name";
+            var rows = new List<AdminStudentPerformanceRow>();
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(sql, conn))
+            using (var reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    rows.Add(new AdminStudentPerformanceRow
+                    {
+                        StudentId = Text(reader["student_id"]),
+                        Name = Text(reader["student_name"]),
+                        Programme = Text(reader["programme_code"]),
+                        Semester = Int(reader["semester_no"]),
+                        CourseCode = Text(reader["course_code"]),
+                        CourseName = Text(reader["course_name"]),
+                        LetterGrade = Text(reader["letter_grade"]),
+                        CurrentGpa = Decimal(reader["current_gpa"]),
+                        Cgpa = Decimal(reader["cgpa"]),
+                        FailedCourses = Int(reader["failed_count"]),
+                        Attendance = Decimal(reader["attendance"]),
+                        Standing = Text(reader["standing"])
+                    });
+                }
+            }
+            return rows;
         }
 
         public List<AdminCourseMetric> GetCourseMetrics()
@@ -1199,6 +1306,13 @@ namespace src.services.admin
         public string Status { get; set; }
     }
 
+    public class AdminDepartmentSaveRequest
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string Status { get; set; }
+    }
+
     public class AdminCourseSaveRequest
     {
         public string Code { get; set; }
@@ -1329,6 +1443,31 @@ namespace src.services.admin
         public string Status { get; set; }
         public int CourseCount { get; set; }
         public int StudentCount { get; set; }
+    }
+
+    public class AdminDepartmentRow
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string Status { get; set; }
+        public int ProgrammeCount { get; set; }
+        public int LecturerCount { get; set; }
+    }
+
+    public class AdminStudentPerformanceRow
+    {
+        public string StudentId { get; set; }
+        public string Name { get; set; }
+        public string Programme { get; set; }
+        public int Semester { get; set; }
+        public string CourseCode { get; set; }
+        public string CourseName { get; set; }
+        public string LetterGrade { get; set; }
+        public decimal CurrentGpa { get; set; }
+        public decimal Cgpa { get; set; }
+        public int FailedCourses { get; set; }
+        public decimal Attendance { get; set; }
+        public string Standing { get; set; }
     }
 
     public class AdminCourseCatalogRow

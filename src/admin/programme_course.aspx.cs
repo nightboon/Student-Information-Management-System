@@ -11,6 +11,7 @@ namespace src.admin
         private readonly AdminPortalService service = new AdminPortalService();
 
         protected string ProgrammeRowsHtml { get; private set; }
+        protected string DepartmentRowsHtml { get; private set; }
         protected string CourseRowsHtml { get; private set; }
         protected string AssignmentRowsHtml { get; private set; }
         protected string ProgrammeOptionsHtml { get; private set; }
@@ -25,6 +26,7 @@ namespace src.admin
         protected void Page_Load(object sender, EventArgs e)
         {
             ProgrammeRowsHtml = BuildProgrammeRows();
+            DepartmentRowsHtml = BuildDepartmentRows();
             CourseRowsHtml = BuildCourseRows();
             AssignmentRowsHtml = BuildAssignmentRows();
             var lookups = service.GetLookups();
@@ -36,6 +38,23 @@ namespace src.admin
             LecturerOptionsHtml = AdminPortalService.RenderOptions(lookups.Lecturers, "Select lecturer...");
             ProgrammeStatusFilterOptionsHtml = AdminPortalService.RenderOptions(lookups.ProgrammeStatuses, "All statuses");
             CourseStatusFilterOptionsHtml = AdminPortalService.RenderOptions(lookups.CourseStatuses, "All statuses");
+        }
+
+        private string BuildDepartmentRows()
+        {
+            var html = new StringBuilder();
+            foreach (var d in service.GetDepartments())
+            {
+                html.Append("<tr data-row data-id=\"").Append(Attr(d.Id)).Append("\" data-name=\"").Append(Attr(d.Name)).Append("\" data-status=\"").Append(Attr(d.Status)).Append("\" data-search=\"").Append(Attr((d.Id + " " + d.Name).ToLowerInvariant())).Append("\" class=\"border-b border-slate-100 hover:bg-slate-50/60\">");
+                html.Append("<td class=\"px-6 py-3 text-slate-900 font-medium\" style=\"font-size:12.5px\">").Append(Html(d.Id)).Append("</td>");
+                html.Append("<td class=\"px-6 py-3 text-slate-700\" style=\"font-size:12.5px\">").Append(Html(d.Name)).Append("</td>");
+                html.Append("<td class=\"px-6 py-3 text-right text-slate-700\" style=\"font-size:12.5px\">").Append(d.ProgrammeCount).Append("</td>");
+                html.Append("<td class=\"px-6 py-3 text-right text-slate-700\" style=\"font-size:12.5px\">").Append(d.LecturerCount).Append("</td>");
+                html.Append("<td class=\"px-6 py-3\"><span class=\"inline-flex items-center rounded-full border px-2 py-0.5 ").Append(StatusBadge(d.Status)).Append("\" style=\"font-size:11.5px;font-weight:600\">").Append(Html(d.Status)).Append("</span></td>");
+                html.Append("<td class=\"px-6 py-3 text-right\"><div class=\"flex items-center justify-end gap-1\"><button type=\"button\" data-admin-edit-department data-modal-open=\"department-modal\" class=\"inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50\"><i data-lucide=\"pencil\" class=\"h-3.5 w-3.5\"></i></button><button type=\"button\" data-admin-delete-department data-id=\"").Append(Attr(d.Id)).Append("\" class=\"inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-[#e0162b] hover:bg-[#e0162b]/5\"><i data-lucide=\"trash-2\" class=\"h-3.5 w-3.5\"></i></button></div></td></tr>");
+            }
+            html.Append("<tr data-table-empty style=\"display:none\"><td colspan=\"6\" class=\"px-6 py-12 text-center text-slate-400\" style=\"font-size:13px\">No departments match your search.</td></tr>");
+            return html.ToString();
         }
 
         private string BuildProgrammeRows()
@@ -111,6 +130,14 @@ namespace src.admin
         }
 
         [WebMethod(EnableSession = true)]
+        public static object SaveDepartment(AdminDepartmentSaveRequest request)
+        {
+            EnsureAdmin();
+            new AdminPortalService().SaveDepartment(request);
+            return new { ok = true };
+        }
+
+        [WebMethod(EnableSession = true)]
         public static object SaveCourse(AdminCourseSaveRequest request)
         {
             EnsureAdmin();
@@ -123,6 +150,14 @@ namespace src.admin
         {
             EnsureAdmin();
             new AdminPortalService().DeleteProgramme(code);
+            return new { ok = true };
+        }
+
+        [WebMethod(EnableSession = true)]
+        public static object DeleteDepartment(string id)
+        {
+            EnsureAdmin();
+            new AdminPortalService().DeleteDepartment(id);
             return new { ok = true };
         }
 

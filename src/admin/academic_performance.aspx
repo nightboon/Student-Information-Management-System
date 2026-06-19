@@ -230,11 +230,26 @@
         </div>
     </div>
 
+    <table class="hidden"><tbody id="backend-student-rows"><%= StudentRowsHtml %></tbody><tbody id="backend-risk-rows"><%= AtRiskRowsHtml %></tbody><tbody id="backend-top-rows"><%= TopPerformerRowsHtml %></tbody></table>
 </asp:Content>
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
     <script src="<%= ResolveUrl("~/js/admin/shared/icons.js") %>"></script>
     <script src="<%= ResolveUrl("~/js/admin/shared/toast.js") %>"></script>
     <script src="<%= ResolveUrl("~/js/admin/shared/table.js") %>"></script>
     <script src="<%= ResolveUrl("~/js/admin/shared/ui.js") %>"></script>
+    <script>
+      (function () {
+        function replaceRows(panel, sourceId) {
+          var target = document.querySelector("[data-tab-panel='" + panel + "'] tbody");
+          var source = document.getElementById(sourceId);
+          if (!target || !source) return;
+          Array.prototype.forEach.call(target.querySelectorAll("tr:not([data-table-empty])"), function (row) { row.remove(); });
+          while (source.firstElementChild) target.insertBefore(source.firstElementChild, target.firstChild);
+        }
+        replaceRows("students", "backend-student-rows");
+        replaceRows("atrisk", "backend-risk-rows");
+        replaceRows("top", "backend-top-rows");
+      })();
+    </script>
 </asp:Content>
 

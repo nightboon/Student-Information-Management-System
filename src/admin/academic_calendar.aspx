@@ -25,53 +25,17 @@
             <div class="rounded-lg border border-slate-200 bg-white" style="flex:2 1 460px;min-width:0">
                 <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
                     <div class="flex items-center gap-3">
-                        <button type="button" data-toast="Calendar month navigation is not connected yet" data-toast-type="info" class="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-slate-100"><i data-lucide="chevron-left" class="h-4 w-4"></i></button>
-                        <div class="text-slate-900" style="font-size:15px;font-weight:700">May 2026</div>
-                        <button type="button" data-toast="Calendar month navigation is not connected yet" data-toast-type="info" class="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-slate-100"><i data-lucide="chevron-right" class="h-4 w-4"></i></button>
-                        <button type="button" data-toast="Calendar month navigation is not connected yet" data-toast-type="info" class="ml-2 inline-flex h-8 items-center rounded-md border border-slate-200 px-2.5 text-slate-600 hover:bg-slate-50" style="font-size:12px;font-weight:600">Today</button>
+                        <button type="button" data-calendar-prev title="Previous month" class="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-slate-100"><i data-lucide="chevron-left" class="h-4 w-4"></i></button>
+                        <div data-calendar-title class="text-slate-900" style="font-size:15px;font-weight:700"></div>
+                        <button type="button" data-calendar-next title="Next month" class="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-slate-100"><i data-lucide="chevron-right" class="h-4 w-4"></i></button>
+                        <button type="button" data-calendar-today class="ml-2 inline-flex h-8 items-center rounded-md border border-slate-200 px-2.5 text-slate-600 hover:bg-slate-50" style="font-size:12px;font-weight:600">Today</button>
                     </div>
                     <select class="h-9 rounded-md border border-slate-200 bg-white px-3 text-slate-700 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:12.5px"><%= SemesterFilterOptionsHtml %></select>
                 </div>
                 <div class="px-6 py-4 text-slate-500" style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;font-size:11px;font-weight:600">
                     <div class="px-2">Mon</div><div class="px-2">Tue</div><div class="px-2">Wed</div><div class="px-2">Thu</div><div class="px-2">Fri</div><div class="px-2">Sat</div><div class="px-2">Sun</div>
                 </div>
-                <div class="px-6 pb-6" style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px">
-                    <div class="min-h-[88px] rounded-lg border border-transparent bg-slate-50/30 p-1.5"></div>
-                    <div class="min-h-[88px] rounded-lg border border-transparent bg-slate-50/30 p-1.5"></div>
-                    <div class="min-h-[88px] rounded-lg border border-transparent bg-slate-50/30 p-1.5"></div>
-                    <div class="min-h-[88px] rounded-lg border border-transparent bg-slate-50/30 p-1.5"></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">1</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">2</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">3</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">4</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">5</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">6</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">7</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">8</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">9</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">10</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">11</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">12</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">13</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">14</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">15</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">16</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">17</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">18</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">19</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">20</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">21</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">22</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">23</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">24</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">25</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">26</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">27</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">28</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-[#e0162b]/40 ring-2 ring-[#e0162b]/30 p-1.5"><div class="text-[#a01020]" style="font-size:12px;font-weight:700">29</div></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">30</div><button type="button" data-modal-open="event-modal" title="Add/Drop Deadline" class="mt-1 block w-full truncate rounded px-1.5 py-0.5 text-left bg-[#e0162b]/10 text-[#a01020]" style="font-size:10px;font-weight:600">Add/Drop Deadline</button></div>
-                    <div class="min-h-[88px] rounded-lg border border-slate-200 p-1.5"><div class="text-slate-700" style="font-size:12px;font-weight:500">31</div></div>
-                </div>
+                <div data-calendar-grid class="px-6 pb-6" style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px"></div>
             </div>
 
             <%-- Filters --%>
@@ -142,6 +106,57 @@
     <script src="<%= ResolveUrl("~/js/admin/shared/ui.js") %>"></script>
     <script>
       (function () {
+        var calendarEvents = <%= CalendarEventsJson %>;
+        var calendarCursor = new Date();
+        if (calendarEvents.length) {
+          calendarCursor = parseDate(calendarEvents[0].StartDate);
+        }
+        calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth(), 1);
+
+        function parseDate(value) {
+          if (value instanceof Date) return value;
+          var match = /Date\((\d+)\)/.exec(value || "");
+          return match ? new Date(parseInt(match[1], 10)) : new Date(value);
+        }
+        function iso(date) {
+          return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0") + "-" + String(date.getDate()).padStart(2, "0");
+        }
+        function escapeHtml(value) {
+          var div = document.createElement("div");
+          div.textContent = value || "";
+          return div.innerHTML;
+        }
+        function renderCalendar() {
+          var grid = document.querySelector("[data-calendar-grid]");
+          var title = document.querySelector("[data-calendar-title]");
+          if (!grid || !title) return;
+          title.textContent = calendarCursor.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+          var year = calendarCursor.getFullYear();
+          var month = calendarCursor.getMonth();
+          var first = new Date(year, month, 1);
+          var offset = (first.getDay() + 6) % 7;
+          var days = new Date(year, month + 1, 0).getDate();
+          var today = iso(new Date());
+          var html = "";
+          for (var blank = 0; blank < offset; blank++) {
+            html += '<div class="min-h-[88px] rounded-lg border border-transparent bg-slate-50/30 p-1.5"></div>';
+          }
+          for (var day = 1; day <= days; day++) {
+            var date = new Date(year, month, day);
+            var key = iso(date);
+            var isToday = key === today;
+            var events = calendarEvents.filter(function (item) { return iso(parseDate(item.StartDate)) === key; });
+            html += '<div class="group relative min-h-[88px] rounded-lg border ' + (isToday ? 'border-[#e0162b]/40 ring-2 ring-[#e0162b]/20' : 'border-slate-200') + ' p-1.5 transition-colors hover:border-[#e0162b]/40 hover:bg-[#e0162b]/5">';
+            html += '<div class="' + (isToday ? 'text-[#a01020] font-bold' : 'text-slate-700') + '" style="font-size:12px">' + day + '</div>';
+            html += '<button type="button" data-calendar-add="' + key + '" data-modal-open="event-modal" title="Add event on ' + key + '" class="absolute right-1 top-1 hidden h-6 w-6 items-center justify-center rounded-md bg-[#e0162b] text-white group-hover:inline-flex"><i data-lucide="plus" class="h-3.5 w-3.5"></i></button>';
+            events.forEach(function (item) {
+              html += '<button type="button" data-calendar-chip data-session-id="' + escapeHtml(item.SessionId) + '" data-title="' + escapeHtml(item.Title) + '" data-type="' + escapeHtml(item.Type) + '" data-start-date="' + iso(parseDate(item.SessionStartDate)) + '" data-end-date="' + iso(parseDate(item.SessionEndDate)) + '" data-semester="' + escapeHtml(item.AcademicYear + " " + item.SemesterName) + '" data-status="' + escapeHtml(item.Status) + '" data-modal-open="event-modal" class="mt-1 block w-full truncate rounded bg-[#e0162b]/10 px-1.5 py-0.5 text-left text-[#a01020] hover:bg-[#e0162b]/20" style="font-size:10px;font-weight:600">' + escapeHtml(item.Title) + '</button>';
+            });
+            html += '</div>';
+          }
+          grid.innerHTML = html;
+          if (window.lucide) window.lucide.createIcons();
+        }
         function field(modal, name) { return modal ? modal.querySelector("[data-field='" + name + "']") : null; }
         function setValue(modal, name, value) {
           var input = field(modal, name);
@@ -168,6 +183,38 @@
         }
 
         document.addEventListener("click", function (e) {
+          var previous = e.target.closest("[data-calendar-prev]");
+          if (previous) { calendarCursor.setMonth(calendarCursor.getMonth() - 1); renderCalendar(); return; }
+          var next = e.target.closest("[data-calendar-next]");
+          if (next) { calendarCursor.setMonth(calendarCursor.getMonth() + 1); renderCalendar(); return; }
+          var today = e.target.closest("[data-calendar-today]");
+          if (today) { calendarCursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1); renderCalendar(); return; }
+
+          var chip = e.target.closest("[data-calendar-chip]");
+          if (chip) {
+            var chipModal = document.getElementById("event-modal");
+            setValue(chipModal, "sessionId", chip.dataset.sessionId);
+            setValue(chipModal, "title", chip.dataset.title);
+            setValue(chipModal, "type", chip.dataset.type);
+            setValue(chipModal, "startDate", chip.dataset.startDate);
+            setValue(chipModal, "endDate", chip.dataset.endDate);
+            setValue(chipModal, "semesterLabel", chip.dataset.semester);
+            setValue(chipModal, "status", chip.dataset.status);
+            return;
+          }
+
+          var addDay = e.target.closest("[data-calendar-add]");
+          if (addDay) {
+            var dayModal = document.getElementById("event-modal");
+            setValue(dayModal, "sessionId", "");
+            setValue(dayModal, "title", "");
+            setValue(dayModal, "type", "Semester start");
+            setValue(dayModal, "startDate", addDay.dataset.calendarAdd);
+            setValue(dayModal, "endDate", addDay.dataset.calendarAdd);
+            setValue(dayModal, "status", "Scheduled");
+            return;
+          }
+
           var edit = e.target.closest("[data-calendar-edit]");
           if (edit) {
             var row = edit.closest("tr");
@@ -177,12 +224,12 @@
             setValue(modal, "type", row ? row.dataset.type : "Semester start");
             setValue(modal, "startDate", row && row.dataset.startDate);
             setValue(modal, "endDate", row && row.dataset.endDate);
-            setValue(modal, "semesterLabel", row ? (row.dataset.semesterName + " " + row.dataset.academicYear).trim() : "");
+            setValue(modal, "semesterLabel", row ? (row.dataset.academicYear + " " + row.dataset.semesterName).trim() : "");
             setValue(modal, "status", row && row.dataset.status);
             return;
           }
 
-          var openEvent = e.target.closest("[data-modal-open='event-modal']");
+          var openEvent = e.target.closest("[data-modal-open='event-modal']:not([data-calendar-chip]):not([data-calendar-add])");
           if (openEvent) {
             var freshModal = document.getElementById("event-modal");
             setValue(freshModal, "sessionId", "");
@@ -221,6 +268,7 @@
               .catch(function () { if (window.toast) window.toast.error("Could not delete event"); });
           }
         }, true);
+        renderCalendar();
       })();
     </script>
 </asp:Content>

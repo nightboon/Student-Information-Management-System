@@ -13,6 +13,10 @@ namespace src.admin
         protected AdminDashboardData Summary { get; private set; }
         protected string PassFailRowsHtml { get; private set; }
         protected string AttendanceRowsHtml { get; private set; }
+        protected string StudentRowsHtml { get; private set; }
+        protected string AtRiskRowsHtml { get; private set; }
+        protected string TopPerformerRowsHtml { get; private set; }
+        protected int TopPerformerCount { get; private set; }
         protected string AcademicYearOptionsHtml { get; private set; }
         protected string SemesterOptionsHtml { get; private set; }
         protected string ProgrammeOptionsHtml { get; private set; }
@@ -22,13 +26,59 @@ namespace src.admin
         {
             Summary = service.GetDashboard();
             var courses = service.GetCourseMetrics();
+            var students = service.GetStudentPerformanceRows();
             PassFailRowsHtml = BuildPassFailRows(courses);
             AttendanceRowsHtml = BuildAttendanceRows(courses);
+            StudentRowsHtml = BuildStudentRows(students);
+            AtRiskRowsHtml = BuildAtRiskRows(students);
+            TopPerformerRowsHtml = BuildTopRows(students);
+            TopPerformerCount = new List<AdminStudentPerformanceRow>(students).FindAll(s => s.Cgpa >= 3.7m).Count;
             var lookups = service.GetLookups();
             AcademicYearOptionsHtml = AdminPortalService.RenderOptions(lookups.AcademicYears, null);
             SemesterOptionsHtml = AdminPortalService.RenderOptions(lookups.StudentSemesters, "All semesters");
             ProgrammeOptionsHtml = AdminPortalService.RenderOptions(lookups.Programmes, "All programmes");
             LecturerOptionsHtml = AdminPortalService.RenderOptions(lookups.Lecturers, "Select mentor...");
+        }
+
+        private static string BuildStudentRows(IEnumerable<AdminStudentPerformanceRow> students)
+        {
+            var html = new StringBuilder();
+            foreach (var s in students)
+            {
+                var status = s.LetterGrade == "F" ? "Fail" : "Pass";
+                html.Append("<tr data-backend-student data-row data-search=\"").Append(Attr((s.StudentId + " " + s.Name + " " + s.CourseCode).ToLowerInvariant())).Append("\" data-prog=\"").Append(Attr(s.Programme)).Append("\" data-sem=\"").Append(s.Semester).Append("\" data-status=\"").Append(status).Append("\" class=\"border-b border-slate-100 hover:bg-slate-50/60\">");
+                html.Append("<td class=\"px-6 py-3 text-slate-500\" style=\"font-size:12.5px\">").Append(Html(s.StudentId)).Append("</td><td class=\"px-6 py-3 text-slate-900 font-medium\" style=\"font-size:12.5px\">").Append(Html(s.Name)).Append("</td>");
+                html.Append("<td class=\"px-6 py-3\" style=\"font-size:12.5px\"><span class=\"inline-flex rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-slate-600\" style=\"font-size:11.5px;font-weight:600\">").Append(Html(s.Programme)).Append("</span></td>");
+                html.Append("<td class=\"px-6 py-3 text-center text-slate-700\" style=\"font-size:12.5px\">").Append(s.Semester).Append("</td><td class=\"px-6 py-3 text-slate-700\" style=\"font-size:12.5px\"><span class=\"font-medium text-slate-900\">").Append(Html(s.CourseCode)).Append("</span> &middot; ").Append(Html(s.CourseName)).Append("</td>");
+                html.Append("<td class=\"px-6 py-3 text-center\" style=\"font-size:12.5px\">").Append(Html(s.LetterGrade)).Append("</td><td class=\"px-6 py-3 text-right text-slate-700\" style=\"font-size:12.5px\">").Append(s.CurrentGpa.ToString("0.00")).Append("</td><td class=\"px-6 py-3 text-right text-slate-700\" style=\"font-size:12.5px\">").Append(s.Cgpa.ToString("0.00")).Append("</td>");
+                html.Append("<td class=\"px-6 py-3\" style=\"font-size:12.5px\"><span class=\"inline-flex rounded-full border px-2 py-0.5 ").Append(status == "Pass" ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-[#e0162b]/10 text-[#a01020] border-[#e0162b]/20").Append("\" style=\"font-size:11.5px;font-weight:600\">").Append(status).Append("</span></td>");
+                html.Append("<td class=\"px-6 py-3 text-right\"><a href=\"student_detail.aspx?id=").Append(Attr(s.StudentId)).Append("\" class=\"inline-flex h-7 items-center rounded-md border border-slate-200 bg-white px-2 text-slate-600 hover:bg-slate-50\" style=\"font-size:11.5px;font-weight:600\">View</a></td></tr>");
+            }
+            return html.ToString();
+        }
+
+        private static string BuildAtRiskRows(IEnumerable<AdminStudentPerformanceRow> students)
+        {
+            var html = new StringBuilder();
+            foreach (var s in students)
+            {
+                if (s.Cgpa >= 2.0m && s.Attendance >= 75m && s.FailedCourses == 0 && s.Standing.IndexOf("risk", StringComparison.OrdinalIgnoreCase) < 0 && s.Standing.IndexOf("probation", StringComparison.OrdinalIgnoreCase) < 0) continue;
+                var risk = s.Cgpa < 1.5m || s.Attendance < 60m ? "Critical" : s.Cgpa < 2m || s.Attendance < 75m ? "High" : "Medium";
+                var reason = s.Cgpa < 2m ? "CGPA below good-standing threshold" : s.Attendance < 75m ? "Attendance below 75%" : "Failed course requires follow-up";
+                html.Append("<tr data-backend-student class=\"border-b border-slate-100 hover:bg-slate-50/60\"><td class=\"px-6 py-3 text-slate-500\" style=\"font-size:12.5px\">").Append(Html(s.StudentId)).Append("</td><td class=\"px-6 py-3 text-slate-900 font-medium\" style=\"font-size:12.5px\">").Append(Html(s.Name)).Append("</td><td class=\"px-6 py-3\" style=\"font-size:12.5px\">").Append(Html(s.Programme)).Append("</td><td class=\"px-6 py-3 text-center\" style=\"font-size:12.5px\">").Append(s.Semester).Append("</td><td class=\"px-6 py-3 text-right text-[#a01020] font-semibold\" style=\"font-size:12.5px\">").Append(s.Cgpa.ToString("0.00")).Append("</td><td class=\"px-6 py-3 text-right\" style=\"font-size:12.5px\">").Append(s.Attendance.ToString("0.0")).Append("%</td><td class=\"px-6 py-3 text-right\" style=\"font-size:12.5px\">").Append(s.FailedCourses).Append("</td><td class=\"px-6 py-3\" style=\"font-size:12.5px\">").Append(risk).Append("</td><td class=\"px-6 py-3 text-slate-700\" style=\"font-size:12.5px\">").Append(Html(reason)).Append("</td><td class=\"px-6 py-3 text-right\"><a href=\"student_detail.aspx?id=").Append(Attr(s.StudentId)).Append("\" class=\"inline-flex h-7 items-center rounded-md border border-slate-200 bg-white px-2 text-slate-600 hover:bg-slate-50\" style=\"font-size:11.5px;font-weight:600\">View</a></td></tr>");
+            }
+            return html.ToString();
+        }
+
+        private static string BuildTopRows(IEnumerable<AdminStudentPerformanceRow> students)
+        {
+            var html = new StringBuilder();
+            foreach (var s in students)
+            {
+                if (s.Cgpa < 3.7m) continue;
+                html.Append("<tr data-backend-student class=\"border-b border-slate-100 hover:bg-slate-50/60\"><td class=\"px-6 py-3 text-slate-500\" style=\"font-size:12.5px\">").Append(Html(s.StudentId)).Append("</td><td class=\"px-6 py-3 text-slate-900 font-medium\" style=\"font-size:12.5px\">").Append(Html(s.Name)).Append("</td><td class=\"px-6 py-3\" style=\"font-size:12.5px\">").Append(Html(s.Programme)).Append("</td><td class=\"px-6 py-3 text-center\" style=\"font-size:12.5px\">").Append(s.Semester).Append("</td><td class=\"px-6 py-3 text-right text-emerald-600 font-semibold\" style=\"font-size:12.5px\">").Append(s.Cgpa.ToString("0.00")).Append("</td><td class=\"px-6 py-3 text-slate-700\" style=\"font-size:12.5px\">Dean's List eligible</td><td class=\"px-6 py-3 text-right\"><a href=\"student_detail.aspx?id=").Append(Attr(s.StudentId)).Append("\" class=\"inline-flex h-7 items-center rounded-md border border-slate-200 bg-white px-2 text-slate-600 hover:bg-slate-50\" style=\"font-size:11.5px;font-weight:600\">View</a></td></tr>");
+            }
+            return html.ToString();
         }
 
         protected string Percent(decimal value)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Web;
 using System.Web.Services;
+using System.Web.Script.Serialization;
 using src.services.admin;
 
 namespace src.admin
@@ -18,12 +19,14 @@ namespace src.admin
         protected string EventTypeOptionsHtml { get; private set; }
         protected string EventTypeFilterOptionsHtml { get; private set; }
         protected string EventStatusOptionsHtml { get; private set; }
+        protected string CalendarEventsJson { get; private set; }
 
         protected void Page_Load(object sender, EventArgs e)
         {
             var events = service.GetCalendarEvents();
             EventCount = events.Count;
             EventRowsHtml = BuildRows(events);
+            CalendarEventsJson = new JavaScriptSerializer().Serialize(events);
             var lookups = service.GetLookups();
             SemesterOptionsHtml = AdminPortalService.RenderOptions(lookups.AcademicSessions, null);
             SemesterFilterOptionsHtml = AdminPortalService.RenderOptions(lookups.AcademicSessions, "All semesters");
