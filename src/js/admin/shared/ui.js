@@ -116,7 +116,9 @@
       return;
     }
     if ((o = e.target.closest("[data-toast]"))) {
-      window.toast.success(o.getAttribute("data-toast"), o.getAttribute("data-toast-desc") || undefined);
+      var toastType = o.getAttribute("data-toast-type") || "success";
+      var toastMethod = window.toast[toastType] || window.toast.info;
+      toastMethod(o.getAttribute("data-toast"), o.getAttribute("data-toast-desc") || undefined);
       closeAllDropdowns();
       return;
     }

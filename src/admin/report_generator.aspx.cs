@@ -47,8 +47,8 @@ namespace src.admin
 
         private void BindPreview()
         {
-            int? semesterId = ToNullableInt(ddlSemester.SelectedValue);
-            int? programmeId = ToNullableInt(ddlProgramme.SelectedValue);
+            string semesterId = ddlSemester.SelectedValue;
+            string programmeId = ddlProgramme.SelectedValue;
             string status = ddlStatus.SelectedValue;
 
             DateTime? dateFrom = ToNullableDate(txtDateFrom.Text);
@@ -68,17 +68,6 @@ namespace src.admin
             litPreviewCount.Text = "Showing " + Math.Min(10, reportData.Count) + " of " + reportData.Count + " record(s).";
 
             emptyPreviewPanel.Visible = reportData.Count == 0;
-        }
-
-        private int? ToNullableInt(string value)
-        {
-            int result;
-            if (int.TryParse(value, out result))
-            {
-                return result;
-            }
-
-            return null;
         }
 
         private DateTime? ToNullableDate(string value)

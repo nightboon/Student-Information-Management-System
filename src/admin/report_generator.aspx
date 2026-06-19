@@ -38,8 +38,6 @@
                         <button 
                             type="button" 
                             id="btnGeneratePdf"
-                            data-toast="Student Academic Report generated"
-                            data-toast-desc="PDF preview opened"
                             class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 h-10 text-slate-700 hover:bg-slate-50 transition-colors" 
                             style="font-size:13px;font-weight:600">
                             <i data-lucide="file-text" class="h-4 w-4"></i> Generate PDF
@@ -48,8 +46,6 @@
                         <button 
                             type="button" 
                             id="btnGenerateExcel"
-                            data-toast="Student Academic Report generated"
-                            data-toast-desc="Excel file downloaded"
                             class="inline-flex items-center gap-1.5 rounded-md bg-[#e0162b] px-4 h-10 text-white hover:bg-[#a01020] transition-colors shadow-[0_8px_18px_-10px_rgba(224,22,43,0.9)]" 
                             style="font-size:13px;font-weight:600">
                             <i data-lucide="file-spreadsheet" class="h-4 w-4"></i> Generate Excel
@@ -201,6 +197,10 @@
         var items = document.querySelectorAll("[data-report]");
         items.forEach(function (b) {
           b.addEventListener("click", function () {
+            if (b !== items[0]) {
+              if (window.toast) window.toast.info("This report type is not implemented yet");
+              return;
+            }
             items.forEach(function (x) { x.setAttribute("data-active", "false"); });
             b.setAttribute("data-active", "true");
           });

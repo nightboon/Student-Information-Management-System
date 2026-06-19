@@ -16,6 +16,21 @@
     <script src="<%= ResolveUrl("~/js/admin/course-attendance/attendance.js") %>"></script>
     <script>
       (function () {
+        var courses = <%= AttendanceJson %>;
+        var status = window.ATTENDANCE.status;
+        window.ATTENDANCE = {
+          list: courses,
+          get: function (code) {
+            for (var i = 0; i < courses.length; i++) if (courses[i].code === code) return courses[i];
+            return { code: code, title: "Unknown course", prog: "-", sem: 0, lecturer: "-",
+                     enrolled: 0, avgPct: 0, sessionsHeld: 0, sessions: [], students: [] };
+          },
+          status: status
+        };
+      })();
+    </script>
+    <script>
+      (function () {
         function qp(k) { var m = location.search.match(new RegExp("[?&]" + k + "=([^&]*)")); return m ? decodeURIComponent(m[1]) : ""; }
         function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]; }); }
         function badgeClass(tone) {
@@ -103,7 +118,7 @@
                         '</div>' +
                       '</div>' +
                       '<div class="flex items-center gap-2">' +
-                        '<button type="button" data-toast="Attendance CSV exported" data-toast-desc="' + esc(c.code + ' · ' + c.title) + '" class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 h-10 text-slate-700 hover:bg-slate-50 transition-colors" style="font-size:13px;font-weight:600"><i data-lucide="download" class="h-4 w-4"></i> Export CSV</button>' +
+                        '<button type="button" data-toast="Course CSV export is not connected yet" data-toast-type="info" class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 h-10 text-slate-700 hover:bg-slate-50 transition-colors" style="font-size:13px;font-weight:600"><i data-lucide="download" class="h-4 w-4"></i> Export CSV</button>' +
                       '</div>' +
                     '</div>' +
                   '</section>';

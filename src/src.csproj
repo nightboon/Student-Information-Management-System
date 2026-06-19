@@ -294,6 +294,7 @@
       <DependentUpon>lecturer_take_attendance.aspx</DependentUpon>
     </Compile>
     <Compile Include="services\AcademicTermReader.cs" />
+    <Compile Include="services\admin\AdminPortalService.cs" />
     <Compile Include="services\AssignmentService.cs" />
     <Compile Include="services\CookieService.cs" />
     <Compile Include="services\email\EmailLayout.cs" />
