@@ -1,0 +1,24 @@
+<%@ Master Language="C#" MasterPageFile="~/site.master" AutoEventWireup="true" CodeBehind="AdminLayout.master.cs" Inherits="src.shared.AdminLayout" %>
+<%@ Register TagPrefix="uc" TagName="AdminSidebar" Src="~/controls/admin_sidebar.ascx" %>
+<%@ Register TagPrefix="uc" TagName="AdminTopbar" Src="~/controls/admin_topbar.ascx" %>
+
+<asp:Content ContentPlaceHolderID="BodyPlaceholder" runat="server">
+    <div class="flex min-h-screen bg-slate-50/60">
+        <div id="mobile-menu-backdrop" data-open="false" class="fixed inset-0 z-40 bg-slate-900/50 opacity-0 pointer-events-none transition-opacity duration-300 data-[open=true]:opacity-100 data-[open=true]:pointer-events-auto lg:hidden"></div>
+        <uc:AdminSidebar runat="server" ID="AdminSidebar1" />
+        <div class="flex-1 flex flex-col min-w-0">
+            <uc:AdminTopbar runat="server" ID="AdminTopbar1" />
+            <main class="flex-1 px-6 py-8 lg:px-10">
+                <asp:ContentPlaceHolder ID="MainContent" runat="server" />
+            </main>
+        </div>
+    </div>
+</asp:Content>
+
+<asp:Content ContentPlaceHolderID="HeadPlaceholder" runat="server">
+    <asp:ContentPlaceHolder ID="HeadPlaceholder" runat="server" />
+</asp:Content>
+
+<asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
+    <asp:ContentPlaceHolder ID="ScriptsPlaceholder" runat="server" />
+</asp:Content>

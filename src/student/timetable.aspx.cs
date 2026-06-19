@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Web;
@@ -27,7 +27,7 @@ namespace src.student
 
             if (Session["user_id"] == null)
             {
-                Response.Redirect("~/shared/login.aspx");
+                Response.Redirect("~/login/login.aspx");
                 return;
             }
 
@@ -42,10 +42,11 @@ namespace src.student
 
         private void LoadTimetable(int userId)
         {
-            var timetable = TimetableService.GetTimetablePage(userId);
+            var user = UserContextFactory.FromSession(Session);
+            var timetable = StudentPortalService.GetTimetablePage(user);
             if (timetable == null)
             {
-                Response.Redirect("~/shared/login.aspx");
+                Response.Redirect("~/login/login.aspx");
                 return;
             }
 
@@ -62,7 +63,7 @@ namespace src.student
             emptyCoursesPanel.Visible = timetable.Courses.Count == 0;
         }
 
-        private static string BuildTimetablePayloadJson(TimetablePageData timetable)
+        private static string BuildTimetablePayloadJson(StudentTimetablePage timetable)
         {
             var events = new List<object>();
             foreach (var session in timetable.Sessions)
@@ -104,7 +105,7 @@ namespace src.student
             return serializer.Serialize(payload).Replace("</", "<\\/");
         }
 
-        private static string FormatSemester(TimetablePageData timetable)
+        private static string FormatSemester(StudentTimetablePage timetable)
         {
             if (timetable.CurrentSemesterNo <= 0)
             {
@@ -130,7 +131,7 @@ namespace src.student
             return hours.ToString("0.#", CultureInfo.InvariantCulture) + " hrs";
         }
 
-        private static string FormatScheduleRange(List<ClassSession> sessions)
+        private static string FormatScheduleRange(List<StudentClassSession> sessions)
         {
             if (sessions.Count == 0)
             {
@@ -152,7 +153,7 @@ namespace src.student
                 " - " + FormatDisplayTime(GetLatestEnd(sessions));
         }
 
-        private static TimeSpan GetEarliestStart(List<ClassSession> sessions)
+        private static TimeSpan GetEarliestStart(List<StudentClassSession> sessions)
         {
             if (sessions.Count == 0)
             {
@@ -171,7 +172,7 @@ namespace src.student
             return earliest;
         }
 
-        private static TimeSpan GetLatestEnd(List<ClassSession> sessions)
+        private static TimeSpan GetLatestEnd(List<StudentClassSession> sessions)
         {
             if (sessions.Count == 0)
             {
@@ -190,7 +191,7 @@ namespace src.student
             return latest;
         }
 
-        private static bool HasWeekendClasses(List<ClassSession> sessions)
+        private static bool HasWeekendClasses(List<StudentClassSession> sessions)
         {
             foreach (var session in sessions)
             {

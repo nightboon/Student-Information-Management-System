@@ -1,28 +1,30 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
 using System.Web.UI;
-using System.Web.UI.WebControls;
 using src.services;
 
 namespace src.controls
 {
     public partial class topbar : UserControl
     {
-        private Student _student;
+        private StudentAccountProfile _student;
         private int _unreadNotificationCount;
 
         protected void Page_Load(object sender, EventArgs e)
         {
             if (Session["user_id"] == null) return;
 
-            _student = StudentService.GetByUserId((int)Session["user_id"]);
+            var user = UserContextFactory.FromSession(Session);
+            _student = StudentPortalService.GetAccount(user);
             if (_student != null)
             {
-                _unreadNotificationCount = AnnouncementService.GetUnreadCountForStudent((int)Session["user_id"]);
+                _unreadNotificationCount = StudentPortalService
+                    .GetNotifications(user, ReadNotificationIds())
+                    .Count(n => !n.IsRead);
             }
         }
+
         protected string IconUrl
         {
             get
@@ -31,6 +33,7 @@ namespace src.controls
                 return ResolveUrl("~/" + _student.IconPath.TrimStart('/'));
             }
         }
+
         protected string FullName
         {
             get { return _student != null ? _student.FullName : ""; }
@@ -54,6 +57,12 @@ namespace src.controls
         protected string NotificationBadgeVisibilityClass
         {
             get { return _unreadNotificationCount > 0 ? "" : " hidden"; }
+        }
+
+        private ISet<int> ReadNotificationIds()
+        {
+            var ids = Session["student_notification_read_ids"] as ISet<int>;
+            return ids ?? new HashSet<int>();
         }
     }
 }

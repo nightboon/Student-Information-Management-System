@@ -1,4 +1,4 @@
-<%@ Page Language="C#" MasterPageFile="~/shared/DashboardLayout.master" AutoEventWireup="true" CodeBehind="grades.aspx.cs" Inherits="src.student.grade" %>
+﻿<%@ Page Language="C#" MasterPageFile="~/student/StudentLayout.master" AutoEventWireup="true" CodeBehind="grades.aspx.cs" Inherits="src.student.grade" %>
 
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
 

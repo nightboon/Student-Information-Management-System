@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Web;
 using System.Web.UI;
@@ -29,7 +29,7 @@ namespace src.student
 
             if (Session["user_id"] == null)
             {
-                Response.Redirect("~/shared/login.aspx");
+                Response.Redirect("~/login/login.aspx");
                 return;
             }
 
@@ -43,7 +43,7 @@ namespace src.student
                 return;
             }
 
-            var semester = e.Item.DataItem as GradeSemester;
+            var semester = e.Item.DataItem as StudentGradeSemester;
             var courses = e.Item.FindControl("coursesRepeater") as Repeater;
             if (semester != null && courses != null)
             {
@@ -60,14 +60,14 @@ namespace src.student
 
         protected string SemesterShortLabel(object dataItem)
         {
-            var semester = dataItem as GradeSemester;
+            var semester = dataItem as StudentGradeSemester;
             if (semester == null) return "";
             return "Y" + YearNo(semester.SemesterNo) + " T" + TrimesterNo(semester.SemesterNo);
         }
 
         protected string SemesterTitle(object dataItem)
         {
-            var semester = dataItem as GradeSemester;
+            var semester = dataItem as StudentGradeSemester;
             if (semester == null) return "";
 
             return "Year " + YearNo(semester.SemesterNo)
@@ -77,7 +77,7 @@ namespace src.student
 
         protected string SemesterSubtitle(object dataItem)
         {
-            var semester = dataItem as GradeSemester;
+            var semester = dataItem as StudentGradeSemester;
             if (semester == null) return "";
 
             return semester.CourseCount + " " + Pluralize("course", semester.CourseCount)
@@ -86,7 +86,7 @@ namespace src.student
 
         protected string GpaBarStyle(object dataItem)
         {
-            var semester = dataItem as GradeSemester;
+            var semester = dataItem as StudentGradeSemester;
             decimal value = semester != null && semester.Gpa.HasValue ? semester.Gpa.Value : 0m;
             decimal width = Math.Max(0m, Math.Min(100m, value / 4m * 100m));
             return "width:" + width.ToString("0.##") + "%";
@@ -94,7 +94,7 @@ namespace src.student
 
         protected string DistributionBarStyle(object dataItem)
         {
-            var item = dataItem as GradeDistributionItem;
+            var item = dataItem as StudentGradeDistributionItem;
             decimal width = item == null ? 0m : item.BarWidth;
             return "width:" + width.ToString("0.##") + "%;background-color:" + GradeColor(item == null ? "" : item.Grade);
         }
@@ -119,14 +119,14 @@ namespace src.student
 
         protected string CurrentScoreDisplay(object dataItem)
         {
-            var course = dataItem as GradeCourse;
+            var course = dataItem as StudentGradeCourse;
             if (course == null || !course.CurrentAverage.HasValue) return "Pending";
             return course.CurrentAverage.Value.ToString("0.#") + "%";
         }
 
         protected string CurrentScoreSubtext(object dataItem)
         {
-            var course = dataItem as GradeCourse;
+            var course = dataItem as StudentGradeCourse;
             if (course == null) return "";
             if (course.CompletedPercent > 0)
             {
@@ -141,7 +141,7 @@ namespace src.student
 
         protected string FinalExamDisplay(object dataItem)
         {
-            var course = dataItem as GradeCourse;
+            var course = dataItem as StudentGradeCourse;
             if (course == null || !course.HasFinalAssessment) return "N/A";
             if (!course.FinalExamMarks.HasValue) return "Pending";
             return course.FinalExamMarks.Value.ToString("0.#") + " /100";
@@ -149,7 +149,7 @@ namespace src.student
 
         protected string FinalExamCss(object dataItem)
         {
-            var course = dataItem as GradeCourse;
+            var course = dataItem as StudentGradeCourse;
             if (course != null && course.HasFinalAssessment && course.FinalExamMarks.HasValue)
             {
                 return "text-slate-900";
@@ -160,7 +160,7 @@ namespace src.student
 
         protected string LetterGradeDisplay(object dataItem)
         {
-            var course = dataItem as GradeCourse;
+            var course = dataItem as StudentGradeCourse;
             if (course == null || !course.GradePublished || string.IsNullOrWhiteSpace(course.LetterGrade))
             {
                 return "Pending";
@@ -170,7 +170,7 @@ namespace src.student
 
         protected string GradePointDisplay(object dataItem)
         {
-            var course = dataItem as GradeCourse;
+            var course = dataItem as StudentGradeCourse;
             if (course == null || !course.GradePublished || !course.Gpa.HasValue)
             {
                 return "-";
@@ -180,10 +180,11 @@ namespace src.student
 
         private void BindGradePage(int userId)
         {
-            var grades = GradeService.GetGradePage(userId);
+            var user = UserContextFactory.FromSession(Session);
+            var grades = StudentPortalService.GetGradePage(user);
             if (grades == null)
             {
-                Response.Redirect("~/shared/login.aspx");
+                Response.Redirect("~/login/login.aspx");
                 return;
             }
 

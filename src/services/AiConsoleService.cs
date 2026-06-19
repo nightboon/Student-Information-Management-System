@@ -14,7 +14,7 @@ namespace src.services
         public int ChatLogId { get; set; }
         public Guid ConversationId { get; set; }
         public int UserId { get; set; }
-        public int? StudentId { get; set; }
+        public string StudentId { get; set; }
         public string StudentName { get; set; }
         public string Transcript { get; set; }
         public int Turns { get; set; }
@@ -43,8 +43,8 @@ namespace src.services
         {
             get
             {
-                if (StudentId == null) return "U" + UserId;
-                return "#" + StudentId + " " + (StudentName ?? "");
+                if (string.IsNullOrEmpty(StudentId)) return "U" + UserId;
+                return StudentId + " " + (StudentName ?? "");
             }
         }
     }
@@ -204,7 +204,7 @@ namespace src.services
             using (var conn = Db.OpenConnection())
             using (var cmd = new SqlCommand(
                 "SELECT TOP (@top) cl.chat_log_id, cl.conversation_id, cl.user_id, " +
-                "s.student_id, s.full_name, cl.transcript, cl.turns, " +
+                "s.student_id, s.student_name, cl.transcript, cl.turns, " +
                 "cl.tools_used, cl.duration_ms, cl.created_at, cl.updated_at " +
                 "FROM CHAT_LOGS cl " +
                 "LEFT JOIN STUDENTS s ON s.user_id = cl.user_id " +
@@ -220,8 +220,8 @@ namespace src.services
                             ChatLogId = (int)reader["chat_log_id"],
                             ConversationId = (Guid)reader["conversation_id"],
                             UserId = (int)reader["user_id"],
-                            StudentId = reader["student_id"] == DBNull.Value ? (int?)null : (int)reader["student_id"],
-                            StudentName = reader["full_name"] == DBNull.Value ? null : reader["full_name"].ToString(),
+                            StudentId = reader["student_id"] == DBNull.Value ? null : reader["student_id"].ToString(),
+                            StudentName = reader["student_name"] == DBNull.Value ? null : reader["student_name"].ToString(),
                             Transcript = reader["transcript"].ToString(),
                             Turns = (int)reader["turns"],
                             ToolsUsed = reader["tools_used"] == DBNull.Value ? "" : reader["tools_used"].ToString(),

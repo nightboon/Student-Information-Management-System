@@ -8,7 +8,7 @@ namespace src.lecturer
 {
     public partial class lecturer_take_attendance : src.security.LecturerPage
     {
-        private int _lecturerId;
+        private string _lecturerId;
         private int _offeringId;
         private DateTime _date;
         private AttendanceOffering _offering;
@@ -16,15 +16,14 @@ namespace src.lecturer
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            var lecturer = Session["user_id"] != null
-                ? LecturerService.GetByUserId((int)Session["user_id"])
-                : null;
-            if (lecturer == null)
+            var user = UserContextFactory.FromSession(Session);
+            var profile = LecturerPortalService.GetProfile(user);
+            if (profile == null)
             {
                 Response.Redirect("~/shared/login.aspx");
                 return;
             }
-            _lecturerId = lecturer.LecturerId;
+            _lecturerId = profile.LecturerId;
 
             // offering is required; date defaults to today when missing or malformed.
             if (!int.TryParse(Request.QueryString["offering"], out _offeringId))
@@ -35,7 +34,7 @@ namespace src.lecturer
             _date = ParseDate(Request.QueryString["date"]);
 
             // Authorisation: only offerings this lecturer teaches resolve here.
-            _offering = LecturerAttendanceService.GetOffering(_offeringId, _lecturerId);
+            _offering = LecturerPortalService.GetAttendanceOffering(user, _offeringId);
             if (_offering == null)
             {
                 Response.Redirect("~/lecturer/lecturer_attendance.aspx");
@@ -50,7 +49,8 @@ namespace src.lecturer
 
         private void LoadRoster()
         {
-            _roster = LecturerAttendanceService.GetRoster(_offeringId, _date);
+            var user = UserContextFactory.FromSession(Session);
+            _roster = LecturerPortalService.GetAttendanceRoster(user, _offeringId, _date);
             rosterRepeater.DataSource = _roster;
             rosterRepeater.DataBind();
             attendanceData.Value = BuildInitialJson(_roster);
@@ -60,7 +60,7 @@ namespace src.lecturer
         protected void SaveAttendance_Click(object sender, EventArgs e)
         {
             var statuses = ParseSubmitted(attendanceData.Value);
-            int saved = LecturerAttendanceService.Save(_offeringId, _date, statuses);
+            int saved = LecturerPortalService.SaveAttendance(UserContextFactory.FromSession(Session), _offeringId, _date, statuses);
 
             // Re-read so the roster reflects exactly what is now stored.
             LoadRoster();

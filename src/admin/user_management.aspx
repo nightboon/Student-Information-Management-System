@@ -1,4 +1,4 @@
-<%@ Page Language="C#" MasterPageFile="~/shared/AdminLayout.master" AutoEventWireup="true" CodeBehind="user_management.aspx.cs" Inherits="src.admin.user_management" Title="User Management - INTI Admin Portal" %>
+<%@ Page Language="C#" MasterPageFile="~/admin/AdminLayout.master" AutoEventWireup="true" CodeBehind="user_management.aspx.cs" Inherits="src.admin.user_management" Title="User Management - INTI Admin Portal" %>
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
 
     <%-- Page header --%>
@@ -242,7 +242,7 @@
                 </div>
             </div>
             <div class="flex items-center justify-end gap-2 border-t border-slate-100 px-6 py-4 bg-slate-50/40">
-                <a href="<%= ResolveUrl("~/student_detail.aspx?id=S12101") %>" class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 h-10 text-slate-700 hover:bg-slate-50 transition-colors" style="font-size:13px;font-weight:600">View Student Profile</a>
+                <a href="<%= ResolveUrl("~/admin/student_detail.aspx?id=S12101") %>" class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 h-10 text-slate-700 hover:bg-slate-50 transition-colors" style="font-size:13px;font-weight:600">View Student Profile</a>
                 <button type="button" data-drawer-close class="inline-flex items-center gap-1.5 rounded-md bg-[#e0162b] px-4 h-10 text-white hover:bg-[#a01020] transition-colors shadow-[0_8px_18px_-10px_rgba(224,22,43,0.9)]" style="font-size:13px;font-weight:600">Close</button>
             </div>
         </div>

@@ -1,4 +1,4 @@
-<%@ Page Language="C#" MasterPageFile="~/shared/AdminLayout.master" AutoEventWireup="true" CodeBehind="admin_dashboard.aspx.cs" Inherits="src.admin.admin_dashboard" %>
+<%@ Page Language="C#" MasterPageFile="~/admin/AdminLayout.master" AutoEventWireup="true" CodeBehind="admin_dashboard.aspx.cs" Inherits="src.admin.admin_dashboard" %>
 
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
 
@@ -77,7 +77,7 @@
                     <h2 class="text-slate-900" style="font-size:16px;font-weight:600">Enrolment Overview</h2>
                     <p class="text-slate-500 mt-0.5" style="font-size:13px">Students by programme &middot; Semester 1, 2025/26</p>
                 </div>
-                <a href="<%= ResolveUrl("~/academic_performance.aspx") %>" class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors" style="font-size:13px;font-weight:600">
+                <a href="<%= ResolveUrl("~/admin/academic_performance.aspx") %>" class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors" style="font-size:13px;font-weight:600">
                     View details <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>
                 </a>
             </header>
@@ -201,7 +201,7 @@
                     <i data-lucide="megaphone" class="h-4 w-4 text-[#e0162b]"></i>
                     <h2 class="text-slate-900" style="font-size:16px;font-weight:600">Admin Notices</h2>
                 </div>
-                <a href="<%= ResolveUrl("~/notifications.aspx") %>" class="text-[#e0162b] hover:text-[#a01020]" style="font-size:12.5px;font-weight:600">All</a>
+                <a href="#" class="text-[#e0162b] hover:text-[#a01020]" style="font-size:12.5px;font-weight:600">All</a>
             </header>
             <ul class="mt-4 space-y-4">
                 <li class="border-b border-slate-100 pb-4 last:border-b-0 last:pb-0">

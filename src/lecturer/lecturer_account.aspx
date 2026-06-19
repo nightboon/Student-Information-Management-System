@@ -1,4 +1,4 @@
-<%@ Page Language="C#" MasterPageFile="~/shared/LecturerLayout.master" AutoEventWireup="true" CodeBehind="lecturer_account.aspx.cs" Inherits="src.lecturer.lecturer_account" Title="Account - INTI Lecturer Portal" %>
+﻿<%@ Page Language="C#" MasterPageFile="~/lecturer/LecturerLayout.master" AutoEventWireup="true" CodeBehind="lecturer_account.aspx.cs" Inherits="src.lecturer.lecturer_account" Title="Account - INTI Lecturer Portal" %>
 
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
 
@@ -247,7 +247,7 @@
                 </h3>
                 <p class="text-[#a01020]/80 mt-0.5" style="font-size:12.5px">End your session on this device.</p>
             </div>
-            <a href="<%= ResolveUrl("~/shared/login.aspx") %>" data-action="logout" class="inline-flex items-center justify-center gap-1.5 rounded-md bg-[#e0162b] px-4 h-10 text-white hover:bg-[#a01020] transition-colors shadow-[0_8px_18px_-10px_rgba(224,22,43,0.6)]" style="font-size:13px;font-weight:600">
+            <a href="<%= ResolveUrl("~/login/login.aspx") %>" data-action="logout" class="inline-flex items-center justify-center gap-1.5 rounded-md bg-[#e0162b] px-4 h-10 text-white hover:bg-[#a01020] transition-colors shadow-[0_8px_18px_-10px_rgba(224,22,43,0.6)]" style="font-size:13px;font-weight:600">
                 <i data-lucide="log-out" class="h-4 w-4"></i> Sign out
             </a>
         </section>
@@ -257,5 +257,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/shared/account/account.js") %>"></script>
+    <script src="<%= ResolveUrl("~/js/shared/account.js") %>"></script>
 </asp:Content>

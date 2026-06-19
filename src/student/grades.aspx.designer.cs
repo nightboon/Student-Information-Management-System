@@ -13,6 +13,7 @@ namespace src.student
 
     public partial class grade
     {
+
         /// <summary>
         /// gpaRepeater control.
         /// </summary>

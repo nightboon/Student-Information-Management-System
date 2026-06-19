@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" MasterPageFile="~/shared/LecturerLayout.master" AutoEventWireup="true" CodeBehind="lecturer_at_risk.aspx.cs" Inherits="student_information_management_system.lecturer_at_risk" Title="At-risk Students - INTI Lecturer Portal" %>
+﻿<%@ Page Language="C#" MasterPageFile="~/lecturer/LecturerLayout.master" AutoEventWireup="true" CodeBehind="lecturer_at_risk.aspx.cs" Inherits="student_information_management_system.lecturer_at_risk" Title="At-risk Students - INTI Lecturer Portal" %>
 
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

@@ -9,7 +9,7 @@ namespace src.lecturer
 {
     public partial class lecturer_courses : src.security.LecturerPage
     {
-        private List<LecturerCourse> _courses;
+        private List<LecturerCourseCard> _courses;
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -23,8 +23,8 @@ namespace src.lecturer
                 return;
             }
 
-            int userId = (int)Session["user_id"];
-            _courses = LecturerCourseService.GetCourses(userId);
+            var user = UserContextFactory.FromSession(Session);
+            _courses = LecturerPortalService.GetCourses(user);
 
             coursesRepeater.DataSource = _courses;
             coursesRepeater.DataBind();

@@ -1,4 +1,4 @@
-<%@ Page Language="C#" MasterPageFile="~/shared/LecturerLayout.master" AutoEventWireup="true" CodeBehind="lecturer_dashboard.aspx.cs" Inherits="student_information_management_system.lecturer_dashboard" Title="Dashboard - INTI Lecturer Portal" %>
+﻿<%@ Page Language="C#" MasterPageFile="~/lecturer/LecturerLayout.master" AutoEventWireup="true" CodeBehind="lecturer_dashboard.aspx.cs" Inherits="student_information_management_system.lecturer_dashboard" Title="Dashboard - INTI Lecturer Portal" %>
 
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
 
@@ -20,10 +20,10 @@
                 </p>
             </div>
             <div class="flex flex-wrap gap-3">
-                <a href='<%= ResolveUrl("~/lecturer/lecturer_attendance.aspx") %>' class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 h-11 text-white ring-1 ring-white/25 backdrop-blur hover:bg-white/15 transition-colors" style="font-size:14px;font-weight:500">
+                <button class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 h-11 text-white ring-1 ring-white/25 backdrop-blur hover:bg-white/15 transition-colors" style="font-size:14px;font-weight:500">
                     <i data-lucide="calendar-days" class="h-4 w-4"></i>
                     Today's schedule
-                </a>
+                </button>
             </div>
         </div>
     </section>
@@ -90,7 +90,7 @@
                     <h2 class="text-slate-900" style="font-size:16px;font-weight:600">Today's Schedule</h2>
                     <p class="text-slate-500 mt-0.5" style="font-size:13px"><%= TodayScheduleSubtitle %></p>
                 </div>
-                <a href='<%= ResolveUrl("~/lecturer/lecturer_attendance.aspx") %>' class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors" style="font-size:13px;font-weight:600">
+                <a href="#" class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors" style="font-size:13px;font-weight:600">
                     Full week <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>
                 </a>
             </header>
@@ -154,9 +154,9 @@
                 <p class="px-6 py-8 text-center text-slate-400" style="font-size:13px">Nothing awaiting grading.</p>
             <% } %>
             <div class="border-t border-slate-100 p-3">
-                <a href='<%= ResolveUrl("~/lecturer/lecturer_grades.aspx") %>' class="block w-full rounded-xl py-2.5 text-center text-slate-700 hover:bg-slate-50 transition-colors" style="font-size:13px;font-weight:600">
+                <button class="w-full rounded-xl py-2.5 text-slate-700 hover:bg-slate-50 transition-colors" style="font-size:13px;font-weight:600">
                     View all submissions
-                </a>
+                </button>
             </div>
         </div>
 
@@ -206,9 +206,6 @@
                     </span>
                     <h2 class="text-slate-900" style="font-size:16px;font-weight:600">Announcements</h2>
                 </div>
-                <a href='<%= ResolveUrl("~/lecturer/lecturer_announcement.aspx") %>' class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors" style="font-size:13px;font-weight:600">
-                    See all <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>
-                </a>
             </header>
             <asp:Repeater ID="announcementsRepeater" runat="server">
                 <HeaderTemplate><ul class="space-y-4"></HeaderTemplate>

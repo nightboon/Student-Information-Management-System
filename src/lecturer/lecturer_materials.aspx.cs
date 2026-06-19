@@ -10,14 +10,15 @@ namespace student_information_management_system
 {
     public partial class lecturer_materials : src.security.LecturerPage
     {
-        private Lecturer _lecturer;
+        private LecturerProfile _lecturer;
         private List<LecturerMaterialRow> _materials = new List<LecturerMaterialRow>();
         private int? _offeringFilter;
 
         protected void Page_Load(object sender, EventArgs e)
         {
             Page.Form.Enctype = "multipart/form-data";
-            _lecturer = Session["user_id"] != null ? LecturerService.GetByUserId((int)Session["user_id"]) : null;
+            var user = UserContextFactory.FromSession(Session);
+            _lecturer = LecturerPortalService.GetProfile(user);
             if (_lecturer == null)
             {
                 Response.Redirect("~/shared/login.aspx");
@@ -30,7 +31,7 @@ namespace student_information_management_system
 
             if (!IsPostBack)
             {
-                var courses = LecturerCourseService.GetCourses(_lecturer.UserId);
+                var courses = LecturerPortalService.GetCourses(user);
                 courseSelect.DataSource = courses;
                 courseSelect.DataTextField = "CourseCode";
                 courseSelect.DataValueField = "OfferingId";
@@ -119,19 +120,16 @@ namespace student_information_management_system
                 return;
             }
 
-            bool saved = LecturerPortalService.AddMaterial(
-                _lecturer.LecturerId,
-                offeringId,
-                titleInput.Text,
-                descriptionInput.Text,
-                materialTypeSelect.SelectedValue,
-                parsedDueDate,
-                parsedWeight,
-                fileUrl,
-                fileType,
-                fileSizeBytes);
+            var user = UserContextFactory.FromSession(Session);
+            int added = LecturerPortalService.AddMaterial(user, new LecturerMaterialInput
+            {
+                OfferingId = offeringId,
+                Title = titleInput.Text,
+                FileUrl = fileUrl,
+                UploadedAt = DateTime.Now
+            });
 
-            if (!saved)
+            if (added == 0)
             {
                 ShowStatus("Material could not be published for this course.", false);
                 return;
@@ -152,7 +150,7 @@ namespace student_information_management_system
             int materialId;
             if (!int.TryParse(Convert.ToString(e.CommandArgument), out materialId)) return;
 
-            bool deleted = LecturerPortalService.DeleteMaterial(_lecturer.LecturerId, materialId);
+            bool deleted = LecturerPortalService.DeleteMaterial(UserContextFactory.FromSession(Session), materialId);
             ShowStatus(deleted ? "Material deleted." : "Material could not be deleted.", deleted);
             LoadRows();
         }
@@ -192,7 +190,8 @@ namespace student_information_management_system
 
         private void LoadRows()
         {
-            _materials = LecturerPortalService.GetMaterials(_lecturer.LecturerId, _offeringFilter);
+            var user = UserContextFactory.FromSession(Session);
+            _materials = LecturerPortalService.GetMaterials(user, _offeringFilter);
             materialsRepeater.DataSource = _materials;
             materialsRepeater.DataBind();
             emptyPanel.Visible = _materials.Count == 0;

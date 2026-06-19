@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -37,7 +37,7 @@ namespace src.student
 
             if (Session["user_id"] == null)
             {
-                Response.Redirect("~/shared/login.aspx");
+                Response.Redirect("~/login/login.aspx");
                 return;
             }
 
@@ -46,7 +46,7 @@ namespace src.student
 
         protected string CourseCardClass(object dataItem)
         {
-            var course = dataItem as AttendanceCourse;
+            var course = dataItem as StudentAttendanceCourse;
             bool selected = course != null && course.OfferingId == _selectedOfferingId;
             return selected
                 ? "text-left rounded-lg border bg-white p-5 border-slate-200 cursor-pointer"
@@ -60,20 +60,20 @@ namespace src.student
 
         protected string CourseRateDisplay(object dataItem)
         {
-            var course = dataItem as AttendanceCourse;
+            var course = dataItem as StudentAttendanceCourse;
             return course == null ? "N/A" : FormatRate(course.AttendanceRate);
         }
 
         protected string CourseRatioDisplay(object dataItem)
         {
-            var course = dataItem as AttendanceCourse;
+            var course = dataItem as StudentAttendanceCourse;
             if (course == null) return "0 / 0";
             return course.PresentCount + " / " + course.TotalCount;
         }
 
         protected string CourseBarStyle(object dataItem)
         {
-            var course = dataItem as AttendanceCourse;
+            var course = dataItem as StudentAttendanceCourse;
             decimal width = course == null || !course.AttendanceRate.HasValue
                 ? 0m
                 : course.AttendanceRate.Value * 100m;
@@ -82,19 +82,19 @@ namespace src.student
 
         protected string SessionDateDisplay(object dataItem)
         {
-            var session = dataItem as AttendanceSession;
+            var session = dataItem as StudentAttendanceSession;
             return session == null ? "" : session.AttendanceDate.ToString("d MMM yyyy");
         }
 
         protected string SessionDayDisplay(object dataItem)
         {
-            var session = dataItem as AttendanceSession;
+            var session = dataItem as StudentAttendanceSession;
             return session == null ? "" : session.AttendanceDate.ToString("ddd");
         }
 
         protected string SessionTimeDisplay(object dataItem)
         {
-            var session = dataItem as AttendanceSession;
+            var session = dataItem as StudentAttendanceSession;
             if (session == null || !session.StartTime.HasValue || !session.EndTime.HasValue)
             {
                 return "TBA";
@@ -105,7 +105,7 @@ namespace src.student
 
         protected string SessionTypeDisplay(object dataItem)
         {
-            var session = dataItem as AttendanceSession;
+            var session = dataItem as StudentAttendanceSession;
             return session == null || string.IsNullOrWhiteSpace(session.SessionType)
                 ? "Class"
                 : session.SessionType;
@@ -113,7 +113,7 @@ namespace src.student
 
         protected string SessionVenueDisplay(object dataItem)
         {
-            var session = dataItem as AttendanceSession;
+            var session = dataItem as StudentAttendanceSession;
             return session == null || string.IsNullOrWhiteSpace(session.Venue)
                 ? "TBA"
                 : session.Venue;
@@ -161,10 +161,11 @@ namespace src.student
 
         private void BindAttendancePage(int userId)
         {
-            var attendance = AttendanceService.GetAttendancePage(userId);
+            var user = UserContextFactory.FromSession(Session);
+            var attendance = StudentPortalService.GetAttendancePage(user);
             if (attendance == null)
             {
-                Response.Redirect("~/shared/login.aspx");
+                Response.Redirect("~/login/login.aspx");
                 return;
             }
 
@@ -211,7 +212,7 @@ namespace src.student
             AttendancePayloadJson = BuildPayloadJson(attendance.Courses, _selectedOfferingId, currentCourses);
         }
 
-        private static string BuildSemesterOptions(List<AttendanceCourse> courses)
+        private static string BuildSemesterOptions(List<StudentAttendanceCourse> courses)
         {
             var semesters = courses
                 .GroupBy(c => c.SemesterId)
@@ -233,7 +234,7 @@ namespace src.student
             return sb.ToString();
         }
 
-        private string BuildPayloadJson(List<AttendanceCourse> courses, int defaultOfferingId, List<AttendanceCourse> currentCourses)
+        private string BuildPayloadJson(List<StudentAttendanceCourse> courses, int defaultOfferingId, List<StudentAttendanceCourse> currentCourses)
         {
             int currentSemesterId = currentCourses.Select(c => c.SemesterId).FirstOrDefault();
 

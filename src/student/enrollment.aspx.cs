@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -10,9 +10,9 @@ namespace src.student
 {
     public partial class enrollment : src.security.StudentPage
     {
-        private Semester _regSemester;
-        private RegistrationWindow _window;
-        private List<OfferingForRegistration> _offerings;
+        private StudentRegistrationTerm _regSemester;
+        private StudentRegistrationWindow _window;
+        private List<StudentOfferingOption> _offerings;
         private int _semesterNo;
 
         protected void Page_Load(object sender, EventArgs e)
@@ -23,23 +23,22 @@ namespace src.student
 
             if (Session["user_id"] == null)
             {
-                Response.Redirect("~/shared/login.aspx");
+                Response.Redirect("~/login/login.aspx");
                 return;
             }
 
-            int userId = (int)Session["user_id"];
-            _regSemester = EnrolmentService.GetRegistrationSemester();
-
-            if (_regSemester == null)
+            var user = UserContextFactory.FromSession(Session);
+            var page = StudentPortalService.GetEnrollmentPage(user);
+            if (page == null)
             {
-                _offerings = new List<OfferingForRegistration>();
-                _window = new RegistrationWindow();
+                Response.Redirect("~/login/login.aspx");
                 return;
             }
 
-            _window = EnrolmentService.GetRegistrationWindow(_regSemester.SemesterId);
-            _offerings = EnrolmentService.GetOfferingsForRegistration(userId, _regSemester.SemesterId);
-            _semesterNo = EnrolmentService.GetStudentSemesterNo(userId);
+            _regSemester = page.Term;
+            _window = page.Window;
+            _offerings = page.Offerings ?? new List<StudentOfferingOption>();
+            _semesterNo = page.SemesterNo;
 
             offeringsRepeater.DataSource = _offerings;
             offeringsRepeater.DataBind();
@@ -194,8 +193,8 @@ namespace src.student
                 return null;
             }
 
-            int userId = (int)ctx.Session["user_id"];
-            int inserted = EnrolmentService.Enrol(userId, offeringIds ?? new int[0]);
+            var user = UserContextFactory.FromSession(ctx.Session);
+            int inserted = StudentPortalService.Enrol(user, offeringIds ?? new int[0]);
             return new { ok = true, inserted = inserted };
         }
     }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Web;
@@ -8,18 +8,19 @@ namespace student_information_management_system
 {
     public partial class lecturer_at_risk : src.security.LecturerPage
     {
-        private Lecturer _lecturer;
+        private LecturerProfile _lecturer;
         private List<AtRiskStudentRow> _rows = new List<AtRiskStudentRow>();
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            _lecturer = Session["user_id"] != null ? LecturerService.GetByUserId((int)Session["user_id"]) : null;
+            var user = UserContextFactory.FromSession(Session);
+            _lecturer = LecturerPortalService.GetProfile(user);
             if (_lecturer == null)
             {
                 Response.Redirect("~/shared/login.aspx");
                 return;
             }
-            _rows = LecturerPortalService.GetAtRiskStudents(_lecturer.LecturerId);
+            _rows = LecturerPortalService.GetAtRisk(user);
             riskRepeater.DataSource = _rows;
             riskRepeater.DataBind();
             emptyPanel.Visible = _rows.Count == 0;

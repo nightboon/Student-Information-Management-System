@@ -9,7 +9,7 @@ namespace src.lecturer
     public partial class lecturer_course_people : src.security.LecturerPage
     {
         private int _offeringId;
-        private LecturerCourse _course;
+        private LecturerCourseCard _course;
         private List<EnrolledStudentRow> _students = new List<EnrolledStudentRow>();
 
         protected void Page_Load(object sender, EventArgs e)
@@ -20,8 +20,9 @@ namespace src.lecturer
                 return;
             }
 
-            var lecturer = LecturerService.GetByUserId((int)Session["user_id"]);
-            if (lecturer == null)
+            var user = UserContextFactory.FromSession(Session);
+            var profile = LecturerPortalService.GetProfile(user);
+            if (profile == null)
             {
                 Response.Redirect("~/shared/login.aspx");
                 return;
@@ -33,7 +34,7 @@ namespace src.lecturer
                 return;
             }
 
-            foreach (var course in LecturerCourseService.GetCourses(lecturer.UserId))
+            foreach (var course in LecturerPortalService.GetCourses(user))
             {
                 if (course.OfferingId == _offeringId)
                 {
@@ -48,7 +49,7 @@ namespace src.lecturer
                 return;
             }
 
-            _students = LecturerCourseService.GetEnrolledStudents(_offeringId, lecturer.LecturerId);
+            _students = LecturerPortalService.GetRoster(user, _offeringId);
             studentsRepeater.DataSource = _students;
             studentsRepeater.DataBind();
             emptyPanel.Visible = _students.Count == 0;

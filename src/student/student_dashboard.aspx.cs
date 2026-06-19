@@ -1,45 +1,24 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Web;
-using System.Web.UI;
-using System.Web.UI.WebControls;
-using src.db;
 using src.services;
 
 namespace src.student
 {
     public partial class student_dashboard : src.security.StudentPage
     {
-        private Student _student;
-        private Semester _semester;
+        private StudentDashboardData _dashboard;
 
         protected string Greeting
         {
             get
             {
                 int hour = DateTime.Now.Hour;
-                string greeting_msg = "Good";
-
-                if (hour >= 5 && hour < 12)
-                {
-                    greeting_msg += " Morning";
-                }else if(hour >= 12 && hour < 17)
-                {
-                    greeting_msg += " Afternoon";
-                }
-                else if (hour >= 17 && hour < 21)
-                {
-                    greeting_msg += " Evening";
-                }
-                else
-                {
-                    greeting_msg += " Night";
-                }
-
-                return greeting_msg;
+                if (hour >= 5 && hour < 12) return "Good Morning";
+                if (hour >= 12 && hour < 17) return "Good Afternoon";
+                if (hour >= 17 && hour < 21) return "Good Evening";
+                return "Good Night";
             }
         }
 
@@ -51,102 +30,104 @@ namespace src.student
 
             if (Session["user_id"] == null)
             {
-                Response.Redirect("~/shared/login.aspx");
+                Response.Redirect("~/login/login.aspx");
                 return;
             }
 
-            _student = StudentService.GetByUserId((int)Session["user_id"]);
-            _semester = SemesterService.GetCurrent();
-            if (_student != null)
+            var user = UserContextFactory.FromSession(Session);
+            _dashboard = StudentPortalService.GetDashboard(user, ReadNotificationIds());
+            if (_dashboard == null)
             {
-                coursesRepeater.DataSource = _student.CurrentCourses;
-                coursesRepeater.DataBind();
-                scheduleRepeater.DataSource = _student.TodayClasses;
-                scheduleRepeater.DataBind();
-                assignmentsRepeater.DataSource = _student.AssignmentsDueThisWeek;
-                assignmentsRepeater.DataBind();
-                announcementsRepeater.DataSource = _student.Announcements;
-                announcementsRepeater.DataBind();
+                Response.Redirect("~/login/login.aspx");
+                return;
             }
+
+            coursesRepeater.DataSource = _dashboard.Courses.Where(c => c.IsCurrent).Take(4).ToList();
+            coursesRepeater.DataBind();
+
+            scheduleRepeater.DataSource = _dashboard.TodayClasses;
+            scheduleRepeater.DataBind();
+
+            assignmentsRepeater.DataSource = _dashboard.AssignmentsDueThisWeek;
+            assignmentsRepeater.DataBind();
+
+            announcementsRepeater.DataSource = _dashboard.Announcements;
+            announcementsRepeater.DataBind();
         }
 
         protected string CurrentDateLabel
         {
-            // e.g. "Sunday, 24 May 2026" (day-first, invariant so it doesn't shift with server culture).
-            get { return DateTime.Now.ToString("dddd, d MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture); }
+            get { return DateTime.Now.ToString("dddd, d MMMM yyyy", CultureInfo.InvariantCulture); }
         }
 
         protected int SemesterWeek
         {
-            get { return _semester != null ? _semester.CurrentWeek : 1; }
+            get
+            {
+                if (_dashboard == null || _dashboard.CurrentTerm == null) return 1;
+                int week = ((DateTime.Today - _dashboard.CurrentTerm.StartDate.Date).Days / 7) + 1;
+                return Math.Max(1, week);
+            }
         }
 
         protected string SemesterNumber
         {
-            get { return _student != null ? _student.CurrentSemesterNo.ToString(System.Globalization.CultureInfo.InvariantCulture) : ""; }
+            get
+            {
+                return _dashboard != null && _dashboard.Account != null
+                    ? Math.Max(1, _dashboard.Account.CurrentSemesterNo).ToString(CultureInfo.InvariantCulture)
+                    : "";
+            }
         }
 
         protected string GetUserName
         {
-
-            get { return _student != null ? _student.FullName : "Student"; }
+            get { return _dashboard != null && _dashboard.Account != null ? _dashboard.Account.FullName : "Student"; }
         }
 
         protected int TodayClassCount
         {
-            // Today's classes come from the student profile loaded in Page_Load.
-            get { return _student != null && _student.TodayClasses != null ? _student.TodayClasses.Count : 0; }
+            get { return _dashboard != null && _dashboard.TodayClasses != null ? _dashboard.TodayClasses.Count : 0; }
         }
 
         protected int AssignmentDueCount
         {
-            // Assignments due this week, from the student profile loaded in Page_Load.
-            get { return _student != null && _student.AssignmentsDueThisWeek != null ? _student.AssignmentsDueThisWeek.Count : 0; }
+            get { return _dashboard != null && _dashboard.AssignmentsDueThisWeek != null ? _dashboard.AssignmentsDueThisWeek.Count : 0; }
         }
 
         protected int PendingTaskCount
         {
-            // Current-semester assignments the student has not yet submitted.
-            get { return _student != null ? _student.PendingTaskCount : 0; }
+            get { return _dashboard != null ? _dashboard.PendingTaskCount : 0; }
         }
 
         protected string CgpaDisplay
         {
-            // 2-decimal CGPA, or an em dash when the student has no published grades.
-            get
-            {
-                return _student != null && _student.Cgpa.HasValue
-                    ? _student.Cgpa.Value.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)
-                    : "—";
-            }
+            get { return _dashboard != null && _dashboard.Cgpa.HasValue ? _dashboard.Cgpa.Value.ToString("0.00", CultureInfo.InvariantCulture) : "-"; }
         }
 
         protected string AttendanceDisplay
         {
-            // Whole-percent attendance, or an em dash when there are no records.
             get
             {
-                return _student != null && _student.AttendanceRate.HasValue
-                    ? System.Math.Round(_student.AttendanceRate.Value * 100).ToString("0", System.Globalization.CultureInfo.InvariantCulture) + "%"
-                    : "—";
+                return _dashboard != null && _dashboard.AttendanceRate.HasValue
+                    ? Math.Round(_dashboard.AttendanceRate.Value * 100m).ToString("0", CultureInfo.InvariantCulture) + "%"
+                    : "-";
             }
         }
 
         protected int CreditsEarnedValue
         {
-            get { return _student != null ? _student.CreditsEarned : 0; }
+            get { return _dashboard != null ? _dashboard.CreditsEarned : 0; }
         }
 
         protected string ClassColor(string color)
         {
-            // Course color from the DB; falls back to neutral slate when unset.
-            return string.IsNullOrEmpty(color) ? "#64748b" : color;
+            return SafeColor(color);
         }
 
         protected string FormatTimeRange(TimeSpan start, TimeSpan end)
         {
-            // en dash (–) between the two HH:mm times, matching the markup.
-            return start.ToString(@"hh\:mm") + " – " + end.ToString(@"hh\:mm");
+            return start.ToString(@"hh\:mm") + " - " + end.ToString(@"hh\:mm");
         }
 
         protected bool IsLiveNow(TimeSpan start, TimeSpan end)
@@ -157,23 +138,22 @@ namespace src.student
 
         protected string TodayScheduleSubtitle
         {
-            // e.g. "4 classes · 6h 30m total", or a friendly note when empty.
             get
             {
-                if (_student == null || _student.TodayClasses == null || _student.TodayClasses.Count == 0)
+                if (_dashboard == null || _dashboard.TodayClasses == null || _dashboard.TodayClasses.Count == 0)
                 {
                     return "No classes today";
                 }
 
-                int count = _student.TodayClasses.Count;
                 TimeSpan total = TimeSpan.Zero;
-                foreach (var session in _student.TodayClasses)
+                foreach (var session in _dashboard.TodayClasses)
                 {
                     total += session.EndTime - session.StartTime;
                 }
 
+                int count = _dashboard.TodayClasses.Count;
                 string duration = (int)total.TotalHours + "h " + total.Minutes + "m";
-                return count + (count == 1 ? " class" : " classes") + " · " + duration + " total";
+                return count + (count == 1 ? " class" : " classes") + " - " + duration + " total";
             }
         }
 
@@ -188,8 +168,7 @@ namespace src.student
 
         protected string DueIcon(DateTime due)
         {
-            int days = (due.Date - DateTime.Today).Days;
-            return days <= 1 ? "alert-circle" : "check-circle-2";
+            return (due.Date - DateTime.Today).Days <= 1 ? "alert-circle" : "check-circle-2";
         }
 
         protected string DueBadgeClass(DateTime due)
@@ -202,13 +181,12 @@ namespace src.student
 
         protected string DueTextClass(DateTime due)
         {
-            int days = (due.Date - DateTime.Today).Days;
-            return days <= 1 ? "text-[#e0162b] font-semibold" : "text-slate-500";
+            return (due.Date - DateTime.Today).Days <= 1 ? "text-[#e0162b] font-semibold" : "text-slate-500";
         }
 
         protected int AnnouncementCount
         {
-            get { return _student != null && _student.Announcements != null ? _student.Announcements.Count : 0; }
+            get { return _dashboard != null && _dashboard.Announcements != null ? _dashboard.Announcements.Count : 0; }
         }
 
         protected string FormatRelativeTime(DateTime when)
@@ -221,8 +199,23 @@ namespace src.student
             int days = (int)ago.TotalDays;
             if (days == 1) return "Yesterday";
             if (days < 7) return days + " days ago";
-            return when.ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
+            return when.ToString("d MMM yyyy", CultureInfo.InvariantCulture);
         }
 
+        private System.Collections.Generic.ISet<int> ReadNotificationIds()
+        {
+            var ids = Session["student_notification_read_ids"] as System.Collections.Generic.ISet<int>;
+            return ids ?? new System.Collections.Generic.HashSet<int>();
+        }
+
+        private static string SafeColor(string color)
+        {
+            if (string.IsNullOrEmpty(color) || color.Length != 7 || color[0] != '#') return "#64748b";
+            for (int i = 1; i < color.Length; i++)
+            {
+                if (!Uri.IsHexDigit(color[i])) return "#64748b";
+            }
+            return color;
+        }
     }
 }

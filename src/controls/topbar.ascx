@@ -18,7 +18,7 @@
             <i data-lucide="help-circle" class="h-5 w-5"></i>
         </button>
 
-        <a href="<%= ResolveUrl("~/shared/notifications.aspx") %>"
+        <a href="<%= ResolveUrl("~/student/notifications.aspx") %>"
            class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
            aria-label="Notifications">
 
@@ -30,7 +30,7 @@
                   style="font-size:10px;font-weight:700"><%= NotificationBadgeText %></span>
         </a>
 
-        <a href="<%= ResolveUrl("~/shared/account.aspx") %>"
+        <a href="<%= ResolveUrl("~/student/account.aspx") %>"
            class="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-3 transition-colors hover:border-[#e0162b]/30 hover:bg-[#e0162b]/[0.03]"
            aria-label="Open account">
 

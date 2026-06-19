@@ -1,7 +1,7 @@
-<%@ Page Language="C#" MasterPageFile="~/shared/AdminLayout.master" AutoEventWireup="true" CodeBehind="course_passfail.aspx.cs" Inherits="src.admin.course_passfail" Title="Course Pass/Fail - INTI Admin Portal" %>
+<%@ Page Language="C#" MasterPageFile="~/admin/AdminLayout.master" AutoEventWireup="true" CodeBehind="course_passfail.aspx.cs" Inherits="src.admin.course_passfail" Title="Course Pass/Fail - INTI Admin Portal" %>
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
 
-    <a href="<%= ResolveUrl("~/academic_performance.aspx") %>" class="inline-flex items-center gap-1.5 text-slate-600 hover:text-[#a01020] transition-colors" style="font-size:13px;font-weight:600">
+    <a href="<%= ResolveUrl("~/admin/academic_performance.aspx") %>" class="inline-flex items-center gap-1.5 text-slate-600 hover:text-[#a01020] transition-colors" style="font-size:13px;font-weight:600">
         <i data-lucide="arrow-left" class="h-4 w-4"></i> Back to Academic Performance
     </a>
 

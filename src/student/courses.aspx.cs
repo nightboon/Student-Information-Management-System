@@ -1,69 +1,59 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Web;
-using System.Web.UI;
 using src.services;
 
 namespace src.student
 {
     public partial class courses : src.security.StudentPage
     {
-        private List<EnrolledCourse> _courses;
-        private string _currentSemesterName;
+        private List<StudentCourseCard> _courses = new List<StudentCourseCard>();
 
         protected void Page_Load(object sender, EventArgs e)
         {
             Response.Cache.SetCacheability(HttpCacheability.NoCache);
-            Response.Cache.SetExpires(DateTime.UtcNow.AddDays(-1));
-            Response.Cache.SetNoStore();
 
             if (Session["user_id"] == null)
             {
-                Response.Redirect("~/shared/login.aspx");
+                Response.Redirect("~/login/login.aspx");
                 return;
             }
 
-            int userId = (int)Session["user_id"];
-            _courses = EnrolmentService.GetCourses(userId);
+            var user = UserContextFactory.FromSession(Session);
+            _courses = StudentPortalService.GetCourses(user) ?? new List<StudentCourseCard>();
 
-            var current = SemesterService.GetCurrent();
-            _currentSemesterName = current != null ? current.Name : null;
-
-            coursesRepeater.DataSource = _courses;
+            coursesRepeater.DataSource = _courses
+                .OrderByDescending(c => c.IsCurrent)
+                .ThenBy(c => c.CourseCode)
+                .ToList();
             coursesRepeater.DataBind();
         }
 
-        /// <summary>Total number of courses the student is enrolled in (all semesters).</summary>
         protected int EnrolledCount
         {
-            get { return _courses != null ? _courses.Count : 0; }
+            get { return _courses.Count; }
         }
 
-        /// <summary>True when the given semester name matches the current semester.</summary>
         protected bool IsCurrent(string semesterName)
         {
-            return _currentSemesterName != null
-                && string.Equals(semesterName, _currentSemesterName, StringComparison.OrdinalIgnoreCase);
+            return _courses.Any(c => c.IsCurrent
+                && string.Equals(c.SemesterName, semesterName, StringComparison.OrdinalIgnoreCase));
         }
 
-        /// <summary>
-        /// Course accent color from the DB. Returns a neutral slate fallback when
-        /// unset or when the stored value is not a plain hex color, so a malformed
-        /// value can never break out of the inline style attribute it is written into.
-        /// </summary>
+        protected string SearchKey(string courseCode, string courseName, string lecturerName)
+        {
+            return (courseCode + " " + courseName + " " + lecturerName).ToLowerInvariant();
+        }
+
         protected string AccentColor(string color)
         {
-            if (string.IsNullOrEmpty(color)) return "#64748b";
-            // Require a 6-digit hex (#rrggbb): the icon tint appends an alpha suffix
-            // ("...15"), which only forms valid CSS for a 6-digit color.
-            return System.Text.RegularExpressions.Regex.IsMatch(color, @"^#[0-9A-Fa-f]{6}$")
-                ? color : "#64748b";
-        }
-
-        /// <summary>Lowercased "code name lecturer" string used by the client-side search filter.</summary>
-        protected string SearchKey(string code, string name, string lecturer)
-        {
-            return ((code ?? "") + " " + (name ?? "") + " " + (lecturer ?? "")).ToLowerInvariant();
+            if (string.IsNullOrEmpty(color) || color.Length != 7 || color[0] != '#') return "#64748b";
+            for (int i = 1; i < color.Length; i++)
+            {
+                if (!Uri.IsHexDigit(color[i])) return "#64748b";
+            }
+            return color;
         }
     }
 }

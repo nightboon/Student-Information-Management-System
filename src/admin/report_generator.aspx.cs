@@ -54,7 +54,7 @@ namespace src.admin
             DateTime? dateFrom = ToNullableDate(txtDateFrom.Text);
             DateTime? dateTo = ToNullableDate(txtDateTo.Text);
 
-            var studentReportData = reportService.GetStudentAcademicReport(
+            var reportData = reportService.GetStudentAcademicReport(
                 semesterId,
                 programmeId,
                 status,
@@ -62,27 +62,12 @@ namespace src.admin
                 dateTo
             );
 
-            rptPreview.DataSource = studentReportData.Take(10).ToList();
+            rptPreview.DataSource = reportData.Take(10).ToList();
             rptPreview.DataBind();
 
-            litPreviewCount.Text = "Showing " + Math.Min(10, studentReportData.Count) + " of " + studentReportData.Count + " record(s).";
+            litPreviewCount.Text = "Showing " + Math.Min(10, reportData.Count) + " of " + reportData.Count + " record(s).";
 
-            emptyPreviewPanel.Visible = studentReportData.Count == 0;
-
-            var programmeReportData = reportService.GetProgrammePerformanceReport(
-                semesterId,
-                programmeId,
-                status,
-                dateFrom,
-                dateTo
-            );
-
-            rptProgrammePreview.DataSource = programmeReportData.Take(10).ToList();
-            rptProgrammePreview.DataBind();
-
-            litProgrammePreviewCount.Text = "Showing " + Math.Min(10, programmeReportData.Count) + " of " + programmeReportData.Count + " programme performance record(s).";
-
-            emptyProgrammePreviewPanel.Visible = programmeReportData.Count == 0;
+            emptyPreviewPanel.Visible = reportData.Count == 0;
         }
 
         private int? ToNullableInt(string value)

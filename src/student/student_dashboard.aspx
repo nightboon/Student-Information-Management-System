@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" MasterPageFile="~/shared/DashboardLayout.master" AutoEventWireup="true" CodeBehind="student_dashboard.aspx.cs" Inherits="src.student.student_dashboard" Title="Dashboard - INTI Student Portal" %>
+﻿<%@ Page Language="C#" MasterPageFile="~/student/StudentLayout.master" AutoEventWireup="true" CodeBehind="student_dashboard.aspx.cs" Inherits="src.student.student_dashboard" Title="Dashboard - INTI Student Portal" %>
 
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
 
@@ -222,7 +222,7 @@
 
     </section>
 
-    <%-- The floating chat assistant is provided globally by DashboardLayout.master
+    <%-- The floating chat assistant is provided globally by StudentLayout.master
          via controls/assistant_widget.ascx, so there is no per-page markup here. --%>
 
 </asp:Content>

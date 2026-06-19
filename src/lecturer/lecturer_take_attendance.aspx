@@ -1,4 +1,4 @@
-<%@ Page Language="C#" MasterPageFile="~/shared/LecturerLayout.master" AutoEventWireup="true" CodeBehind="lecturer_take_attendance.aspx.cs" Inherits="src.lecturer.lecturer_take_attendance" Title="Take Attendance - INTI Lecturer Portal" %>
+﻿<%@ Page Language="C#" MasterPageFile="~/lecturer/LecturerLayout.master" AutoEventWireup="true" CodeBehind="lecturer_take_attendance.aspx.cs" Inherits="src.lecturer.lecturer_take_attendance" Title="Take Attendance - INTI Lecturer Portal" %>
 
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
 

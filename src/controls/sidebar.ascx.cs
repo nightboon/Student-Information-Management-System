@@ -1,4 +1,6 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Web.UI;
 using src.services;
 
@@ -12,7 +14,9 @@ namespace src.controls
         {
             if (Session["user_id"] == null) return;
 
-            _unreadNotificationCount = AnnouncementService.GetUnreadCountForStudent((int)Session["user_id"]);
+            var user = UserContextFactory.FromSession(Session);
+            var readIds = Session["student_notification_read_ids"] as ISet<int> ?? new HashSet<int>();
+            _unreadNotificationCount = StudentPortalService.GetNotifications(user, readIds).Count(n => !n.IsRead);
         }
 
         protected int UnreadNotificationCount

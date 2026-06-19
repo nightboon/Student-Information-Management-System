@@ -1,4 +1,4 @@
-<%@ Page Language="C#" MasterPageFile="~/shared/AdminLayout.master" AutoEventWireup="true" CodeBehind="programme_course.aspx.cs" Inherits="src.admin.programme_course" Title="Programme & Course - INTI Admin Portal" %>
+<%@ Page Language="C#" MasterPageFile="~/admin/AdminLayout.master" AutoEventWireup="true" CodeBehind="programme_course.aspx.cs" Inherits="src.admin.programme_course" Title="Programme & Course - INTI Admin Portal" %>
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
 <div data-tabs>
 

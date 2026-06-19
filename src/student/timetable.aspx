@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" MasterPageFile="~/shared/DashboardLayout.master" AutoEventWireup="true" CodeBehind="timetable.aspx.cs" Inherits="src.student.timetable" %>
+﻿<%@ Page Language="C#" MasterPageFile="~/student/StudentLayout.master" AutoEventWireup="true" CodeBehind="timetable.aspx.cs" Inherits="src.student.timetable" %>
 
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
 
@@ -256,7 +256,7 @@
 
   <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
 
-    <script src="<%= ResolveUrl("~/js/student/timetable/timetable.js") %>"></script>
+    <script src="<%= ResolveUrl("~/js/student/timetable.js") %>"></script>
 
     <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 

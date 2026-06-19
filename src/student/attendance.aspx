@@ -1,4 +1,4 @@
-<%@ Page Language="C#" MasterPageFile="~/shared/DashboardLayout.master" AutoEventWireup="true" CodeBehind="attendance.aspx.cs" Inherits="src.student.attendance" %>
+﻿<%@ Page Language="C#" MasterPageFile="~/student/StudentLayout.master" AutoEventWireup="true" CodeBehind="attendance.aspx.cs" Inherits="src.student.attendance" %>
 
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
 
@@ -213,5 +213,5 @@
     <script type="text/javascript">
         window.attendanceData = <%= AttendancePayloadJson %>;
     </script>
-    <script src='<%= ResolveUrl("~/js/student/attendance/attendance.js") %>'></script>
+    <script src='<%= ResolveUrl("~/js/student/attendance.js") %>'></script>
 </asp:Content>

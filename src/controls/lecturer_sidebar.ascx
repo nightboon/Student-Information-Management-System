@@ -1,4 +1,4 @@
-<%@ Control Language="C#" AutoEventWireup="true" CodeBehind="lecturer_sidebar.ascx.cs" Inherits="src.controls.lecturer_sidebar" %>
+﻿<%@ Control Language="C#" AutoEventWireup="true" CodeBehind="lecturer_sidebar.ascx.cs" Inherits="src.controls.lecturer_sidebar" %>
 
 <div class="hidden w-64 shrink-0 lg:block" aria-hidden="true"></div>
 
@@ -70,7 +70,7 @@
     </nav>
 
     <div class="border-t border-slate-100 p-3">
-        <a href="<%= ResolveUrl("~/shared/login.aspx") %>" data-action="logout" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-[#e0162b] transition-colors" style="font-size:14px;font-weight:500">
+        <a href="<%= ResolveUrl("~/login/login.aspx") %>" data-action="logout" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-[#e0162b] transition-colors" style="font-size:14px;font-weight:500">
             <i data-lucide="log-out" class="h-4 w-4 text-slate-400"></i>
             Sign out
         </a>

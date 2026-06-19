@@ -1,7 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Web;
 using System.Web.UI.WebControls;
 using src.services;
@@ -10,7 +9,7 @@ namespace student_information_management_system
 {
     public partial class lecturer_grades : src.security.LecturerPage
     {
-        private Lecturer _lecturer;
+        private LecturerProfile _lecturer;
         private List<LecturerAssessmentOption> _assessments = new List<LecturerAssessmentOption>();
         private List<LecturerGradeRow> _rows = new List<LecturerGradeRow>();
         private int _assessmentId;
@@ -24,7 +23,8 @@ namespace student_information_management_system
             Response.Cache.SetNoStore();
             Page.Form.Enctype = "multipart/form-data";
 
-            _lecturer = Session["user_id"] != null ? LecturerService.GetByUserId((int)Session["user_id"]) : null;
+            var user = UserContextFactory.FromSession(Session);
+            _lecturer = LecturerPortalService.GetProfile(user);
             if (_lecturer == null)
             {
                 Response.Redirect("~/shared/login.aspx");
@@ -34,10 +34,14 @@ namespace student_information_management_system
             int offeringId;
             if (int.TryParse(Request.QueryString["offering"], out offeringId) && offeringId > 0)
                 _offeringFilter = offeringId;
+            else
+            {
+                Response.Redirect("~/lecturer/lecturer_courses.aspx");
+                return;
+            }
 
-            _assessments = LecturerPortalService.GetAssessments(_lecturer.LecturerId);
-            if (_offeringFilter.HasValue)
-                _assessments = _assessments.FindAll(a => a.OfferingId == _offeringFilter.Value);
+            // Facade already scopes assessments to the offering
+            _assessments = LecturerPortalService.GetAssessments(user, _offeringFilter.Value);
             if (!IsPostBack)
             {
                 assessmentSelect.DataSource = _assessments;
@@ -63,29 +67,30 @@ namespace student_information_management_system
 
         protected void SaveDraft_Click(object sender, EventArgs e)
         {
-            var updates = ReadSubmittedUpdates();
+            var marksBySubmission = ReadSubmittedMarks();
             if (_hasInvalidMarks)
             {
                 ShowStatus("Marks must be between 0 and 100.", false);
                 return;
             }
 
-            LecturerPortalService.SaveAssessmentRows(_lecturer.LecturerId, _assessmentId, updates);
+            LecturerPortalService.SaveGradeMarks(UserContextFactory.FromSession(Session), _assessmentId, marksBySubmission);
             ShowStatus("Marks saved as draft.", true);
             LoadRows();
         }
 
         protected void Publish_Click(object sender, EventArgs e)
         {
-            var updates = ReadSubmittedUpdates();
+            var marksBySubmission = ReadSubmittedMarks();
             if (_hasInvalidMarks)
             {
                 ShowStatus("Marks must be between 0 and 100.", false);
                 return;
             }
 
-            LecturerPortalService.SaveAssessmentRows(_lecturer.LecturerId, _assessmentId, updates);
-            LecturerPortalService.PublishOfferingGrades(_lecturer.LecturerId, _assessmentId);
+            var user = UserContextFactory.FromSession(Session);
+            LecturerPortalService.SaveGradeMarks(user, _assessmentId, marksBySubmission);
+            LecturerPortalService.PublishGrades(user, _assessmentId);
             ShowStatus("Marks saved and final course grades published to students.", true);
             LoadRows();
         }
@@ -106,55 +111,33 @@ namespace student_information_management_system
         {
             if (e.CommandName != "SaveReview") return;
 
-            int submissionId;
-            if (!int.TryParse(Convert.ToString(e.CommandArgument), out submissionId)) return;
-
-            var feedbackInput = e.Item.FindControl("reviewFeedbackInput") as TextBox;
-            var annotatedInput = e.Item.FindControl("annotatedFileInput") as FileUpload;
-            string annotatedUrl = "";
-
-            if (annotatedInput != null && annotatedInput.HasFile)
-            {
-                try
-                {
-                    annotatedUrl = SaveAnnotatedFile(annotatedInput, submissionId);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    ShowStatus(ex.Message, false);
-                    return;
-                }
-            }
-
-            LecturerPortalService.SaveSubmissionReview(
-                _lecturer.LecturerId,
-                submissionId,
-                feedbackInput == null ? "" : feedbackInput.Text,
-                annotatedUrl);
-            ShowStatus("Feedback saved.", true);
-            LoadRows();
+            ShowStatus("Feedback is not available in this version.", false);
+            return;
         }
 
         private void LoadRows()
         {
             _rows = _assessmentId > 0
-                ? LecturerPortalService.GetGradeRows(_lecturer.LecturerId, _assessmentId)
+                ? LecturerPortalService.GetGradeRows(UserContextFactory.FromSession(Session), _assessmentId)
                 : new List<LecturerGradeRow>();
             gradeRepeater.DataSource = _rows;
             gradeRepeater.DataBind();
             emptyPanel.Visible = _rows.Count == 0;
         }
 
-        private IDictionary<int, LecturerGradeUpdate> ReadSubmittedUpdates()
+        private IDictionary<int, decimal?> ReadSubmittedMarks()
         {
-            var updates = new Dictionary<int, LecturerGradeUpdate>();
+            var marksBySubmission = new Dictionary<int, decimal?>();
             foreach (RepeaterItem item in gradeRepeater.Items)
             {
-                var hidden = item.FindControl("studentId") as HiddenField;
                 var submissionHidden = item.FindControl("submissionId") as HiddenField;
                 var input = item.FindControl("marksInput") as TextBox;
-                int studentId;
-                if (hidden == null || input == null || !int.TryParse(hidden.Value, out studentId)) continue;
+
+                int submissionId;
+                if (submissionHidden == null || input == null
+                    || !int.TryParse(submissionHidden.Value, out submissionId)
+                    || submissionId == 0)
+                    continue;
 
                 decimal parsed;
                 decimal? mark = null;
@@ -171,51 +154,9 @@ namespace student_information_management_system
                     continue;
                 }
 
-                int submissionId;
-                updates[studentId] = new LecturerGradeUpdate
-                {
-                    Marks = mark,
-                    SubmissionId = submissionHidden != null && int.TryParse(submissionHidden.Value, out submissionId)
-                        ? (int?)submissionId
-                        : null,
-                    Feedback = ""
-                };
+                marksBySubmission[submissionId] = mark;
             }
-            return updates;
-        }
-
-        private string SaveAnnotatedFile(FileUpload upload, int submissionId)
-        {
-            string extension = Path.GetExtension(upload.FileName);
-            if (string.IsNullOrWhiteSpace(extension)) extension = ".pdf";
-            extension = extension.ToLowerInvariant();
-
-            string[] allowed = { ".pdf", ".doc", ".docx", ".png", ".jpg", ".jpeg" };
-            if (Array.IndexOf(allowed, extension) < 0)
-            {
-                throw new InvalidOperationException("Annotated file must be PDF, DOC, DOCX, PNG, or JPG.");
-            }
-
-            int maxBytes = 10 * 1024 * 1024;
-            if (upload.PostedFile.ContentLength > maxBytes)
-            {
-                throw new InvalidOperationException("Annotated file is larger than 10 MB.");
-            }
-
-            string folder = Server.MapPath("~/uploads/feedback");
-            Directory.CreateDirectory(folder);
-
-            string baseName = Path.GetFileNameWithoutExtension(upload.FileName);
-            foreach (char c in Path.GetInvalidFileNameChars())
-            {
-                baseName = baseName.Replace(c, '-');
-            }
-            if (string.IsNullOrWhiteSpace(baseName)) baseName = "annotated";
-
-            string fileName = "sub" + submissionId + "-" + DateTime.Now.ToString("yyyyMMddHHmmss") + "-" + baseName + extension;
-            string physicalPath = Path.Combine(folder, fileName);
-            upload.SaveAs(physicalPath);
-            return "~/uploads/feedback/" + fileName;
+            return marksBySubmission;
         }
 
         protected int StudentCount

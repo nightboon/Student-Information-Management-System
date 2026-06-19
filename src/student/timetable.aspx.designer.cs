@@ -13,6 +13,7 @@ namespace src.student
 
     public partial class timetable
     {
+
         /// <summary>
         /// coursesRepeater control.
         /// </summary>

@@ -18,7 +18,6 @@ namespace src.lecturer
                 Response.Redirect("~/shared/login.aspx");
                 return;
             }
-            int userId = (int)Session["user_id"];
 
             if (!int.TryParse(Request.QueryString["offering"], out _offeringId))
             {
@@ -26,28 +25,36 @@ namespace src.lecturer
                 return;
             }
 
-            var lecturer = LecturerService.GetByUserId(userId);
-            if (lecturer == null)
+            var user = UserContextFactory.FromSession(Session);
+            var profile = LecturerPortalService.GetProfile(user);
+            if (profile == null)
             {
                 Response.Redirect("~/lecturer/lecturer_courses.aspx");
                 return;
             }
 
             // Returns null unless this lecturer teaches the offering (authorisation).
-            _stats = LecturerCourseDashboardService.GetStats(_offeringId, lecturer.LecturerId);
+            _stats = LecturerPortalService.GetCourseStats(user, _offeringId);
             if (_stats == null)
             {
                 Response.Redirect("~/lecturer/lecturer_courses.aspx");
                 return;
             }
 
-            // The announcements list feeds both the card count and the latest panel.
-            // GetByOffering orders pinned-first, so re-sort by date for "latest".
-            var announcements = AnnouncementService.GetByOffering(_offeringId);
+            var announcements = LecturerPortalService.GetAnnouncements(user, _offeringId);
             _announcementCount = announcements.Count;
             announcementsRepeater.DataSource = announcements
                 .OrderByDescending(a => a.CreatedAt)
                 .Take(3)
+                .Select(a => new
+                {
+                    a.AnnouncementId,
+                    a.Title,
+                    Content = a.Content,
+                    a.CreatedAt,
+                    IsPinned = false,
+                    AuthorName = "Lecturer"
+                })
                 .ToList();
             announcementsRepeater.DataBind();
         }

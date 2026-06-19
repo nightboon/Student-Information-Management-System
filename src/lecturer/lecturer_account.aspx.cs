@@ -7,7 +7,7 @@ namespace src.lecturer
 {
     public partial class lecturer_account : src.security.LecturerPage
     {
-        private Lecturer _lecturer;
+        private LecturerProfile _lecturer;
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -21,7 +21,8 @@ namespace src.lecturer
                 return;
             }
 
-            _lecturer = LecturerService.GetByUserId((int)Session["user_id"]);
+            var user = UserContextFactory.FromSession(Session);
+            _lecturer = LecturerPortalService.GetProfile(user);
             if (_lecturer == null)
             {
                 // Session has no lecturer profile — nothing to show here.
@@ -50,12 +51,12 @@ namespace src.lecturer
 
         protected string Department
         {
-            get { return _lecturer != null ? _lecturer.Department : ""; }
+            get { return _lecturer != null ? _lecturer.DepartmentId : ""; }
         }
 
         protected string LecturerIdLabel
         {
-            get { return _lecturer != null ? _lecturer.Username : ""; }
+            get { return _lecturer != null ? _lecturer.LecturerId : ""; }
         }
 
         protected string Email

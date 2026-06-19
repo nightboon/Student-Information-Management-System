@@ -1,4 +1,4 @@
-<%@ Page Language="C#" MasterPageFile="~/shared/LecturerLayout.master" AutoEventWireup="true" CodeBehind="lecturer_announcement.aspx.cs" Inherits="student_information_management_system.lecturer_announcements" Title="Announcements - INTI Lecturer Portal" %>
+﻿<%@ Page Language="C#" MasterPageFile="~/lecturer/LecturerLayout.master" AutoEventWireup="true" CodeBehind="lecturer_announcement.aspx.cs" Inherits="student_information_management_system.lecturer_announcements" Title="Announcements - INTI Lecturer Portal" %>
 
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
     <div class="max-w-none">
@@ -90,7 +90,6 @@
                                         <div class="flex flex-wrap items-center gap-1.5">
                                             <span class='<%# Convert.ToBoolean(Eval("IsPinned")) ? "rounded bg-rose-100 px-1.5 py-0.5 text-[#a01020]" : "hidden" %>' style="font-size:10px;font-weight:900">PINNED</span>
                                             <span class="rounded bg-sky-100 px-1.5 py-0.5 text-sky-700" style="font-size:10px;font-weight:900">ANNOUNCEMENT</span>
-                                            <span class='<%# Convert.ToBoolean(Eval("HasAttachment")) ? "rounded bg-slate-100 px-1.5 py-0.5 text-slate-600" : "hidden" %>' style="font-size:10px;font-weight:900">FILE</span>
                                         </div>
                                         <p class="mt-2 truncate text-slate-800" style="font-size:13px;font-weight:800"><%# Html(Eval("Title")) %></p>
                                         <p class="mt-0.5 truncate text-slate-500" style="font-size:12px"><%# Html(Eval("TargetCourses")) %></p>
@@ -107,7 +106,7 @@
             <article class="min-h-[620px] rounded-lg border border-slate-200 bg-white">
                 <asp:Panel ID="detailPanel" runat="server" CssClass="flex min-h-[620px] flex-col">
                     <div class="flex items-center justify-end gap-1 border-b border-slate-100 px-6 py-4">
-                        <asp:LinkButton ID="pinButton" runat="server" OnClick="PinButton_Click" CssClass="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600" ToolTip="Pin or unpin">
+                        <asp:LinkButton ID="pinButton" runat="server" OnClick="PinButton_Click" CssClass="inline-flex h-9 w-9 items-center justify-center rounded-md text-amber-500 hover:bg-amber-50" ToolTip="Pin or unpin">
                             <i data-lucide="pin" class="h-4 w-4"></i>
                         </asp:LinkButton>
                         <asp:LinkButton ID="deleteButton" runat="server" OnClick="DeleteButton_Click" CssClass="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 hover:bg-rose-50 hover:text-[#e0162b]" ToolTip="Delete announcement" OnClientClick="return confirm('Delete this announcement?');">

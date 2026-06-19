@@ -22,7 +22,7 @@ namespace src.security
                 return "~/student/student_dashboard.aspx";
 
             // Unknown/empty role -> fail safe to login.
-            return "~/shared/login.aspx";
+            return "~/login/login.aspx";
         }
     }
 }

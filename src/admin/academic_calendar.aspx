@@ -1,4 +1,4 @@
-<%@ Page Language="C#" MasterPageFile="~/shared/AdminLayout.master" AutoEventWireup="true" CodeBehind="academic_calendar.aspx.cs" Inherits="src.admin.academic_calendar" Title="Academic Calendar - INTI Admin Portal" %>
+<%@ Page Language="C#" MasterPageFile="~/admin/AdminLayout.master" AutoEventWireup="true" CodeBehind="academic_calendar.aspx.cs" Inherits="src.admin.academic_calendar" Title="Academic Calendar - INTI Admin Portal" %>
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
 
     <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">

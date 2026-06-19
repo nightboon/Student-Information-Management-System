@@ -1,0 +1,64 @@
+﻿<%@ Master Language="C#" MasterPageFile="~/site.master" AutoEventWireup="true" CodeBehind="LoginLayout.master.cs" Inherits="src.shared.LoginLayout" %>
+
+<asp:Content ContentPlaceHolderID="BodyPlaceholder" runat="server">
+    <div class="size-full min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
+        <div class="grid min-h-screen grid-cols-1 lg:grid-cols-[1.1fr_1fr]">
+
+            <!-- LEFT PANEL: ported from login-brand-panel.tsx -->
+            <div class="relative hidden lg:flex flex-col justify-between overflow-hidden p-12 xl:p-16">
+                <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1600&q=85" alt="Academic environment" class="absolute inset-0 h-full w-full object-cover" />
+                <div class="absolute inset-0 bg-gradient-to-b from-white via-white/60 to-transparent" style="background-size:100% 55%;background-repeat:no-repeat"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/40 to-transparent"></div>
+                <div class="pointer-events-none absolute -bottom-40 -right-28 h-[28rem] w-[28rem] rounded-full bg-[#e0162b]/15 blur-3xl"></div>
+
+                <div class="relative z-10 flex items-center">
+                    <img src="<%= ResolveUrl("~/img/inti_logo.png") %>" alt="INTI International College Penang" class="h-28 xl:h-32 w-auto object-contain" />
+                </div>
+
+                <div class="relative z-10 flex flex-col gap-10 text-white">
+                    <div class="max-w-lg">
+                        <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 backdrop-blur px-3 py-1" style="font-size:12px;font-weight:600;letter-spacing:0.04em">
+                            <span class="h-1.5 w-1.5 rounded-full bg-[#ff6b6b]"></span>
+                            INTI INTERNATIONAL COLLEGE PENANG
+                        </div>
+                        <h1 class="text-white" style="font-size:40px;font-weight:700;letter-spacing:-0.02em;line-height:1.1">
+                            Where ambition meets <span class="italic text-amber-200">opportunity.</span>
+                        </h1>
+                        <p class="mt-5 text-white/85" style="font-size:16px;font-weight:400;line-height:1.6">
+                            Empowering future-ready graduates through innovation, integrity, and academic excellence &mdash; across every discipline, every campus, every story.
+                        </p>
+                        <div class="mt-10 flex gap-4 rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-5">
+                            <i data-lucide="quote" class="h-5 w-5 shrink-0 text-amber-300"></i>
+                            <div>
+                                <p class="text-white/90" style="font-size:14px;line-height:1.6">
+                                    A learning environment that prepares students not only for careers, but for the world they&rsquo;ll build.
+                                </p>
+                                <p class="mt-2 text-white/60" style="font-size:12px;font-weight:500;letter-spacing:0.02em">
+                                    &mdash; INTI Faculty of Business &amp; Communication
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative z-10 flex items-center justify-between text-white/60" style="font-size:12px">
+                    <span>&copy; 2026 INTI Education Group</span>
+                    <div class="flex gap-5">
+                        <a href="#" class="hover:text-white transition-colors">Privacy</a>
+                        <a href="#" class="hover:text-white transition-colors">Help Center</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: filled by each login-style page -->
+            <main class="flex items-center justify-center px-6 py-16 sm:px-10 lg:px-16">
+                <asp:ContentPlaceHolder ID="MainContent" runat="server" />
+            </main>
+
+        </div>
+    </div>
+</asp:Content>
+
+<asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
+    <asp:ContentPlaceHolder ID="ScriptsPlaceholder" runat="server" />
+</asp:Content>

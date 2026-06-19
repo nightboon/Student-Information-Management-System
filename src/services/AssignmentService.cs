@@ -1,119 +1,104 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using src.db;
 
 namespace src.services
 {
-    /// <summary>
-    /// One assignment on a student's enrolled courses.
-    /// </summary>
     public class Assignment
     {
         public int AssignmentId { get; set; }
-        public int OfferingId { get; set; }
-        public string CourseCode { get; set; }
-        public string CourseName { get; set; }
+        public int OfferId { get; set; }
         public string Title { get; set; }
-        public DateTime DueDate { get; set; }
+        public string Description { get; set; }
+        public string FilePath { get; set; }
+        public int? TotalMarks { get; set; }
+        public DateTime? DueDate { get; set; }
     }
 
-    /// <summary>One assignment on a course-detail page, with the student's submission state.</summary>
-    public class CourseAssignment
+    public class AssignmentSaveRequest
     {
         public int AssignmentId { get; set; }
+        public int OfferId { get; set; }
         public string Title { get; set; }
-        public decimal? Weight { get; set; }
-        public string AssignmentType { get; set; }
-        public string GroupSize { get; set; }
         public string Description { get; set; }
-        public DateTime DueDate { get; set; }
-        /// <summary>"OPEN" (no submission), "SUBMITTED", or "MARKED".</summary>
-        public string SubmissionStatus { get; set; }
-        public decimal? Marks { get; set; }
-        public string SubmissionFileUrl { get; set; }
-        public DateTime? SubmittedAt { get; set; }
-        public string Feedback { get; set; }
-
-        public bool HasSubmission
-        {
-            get { return !string.IsNullOrWhiteSpace(SubmissionFileUrl); }
-        }
+        public string FilePath { get; set; }
+        public int? TotalMarks { get; set; }
+        public DateTime? DueDate { get; set; }
     }
 
-    /// <summary>
-    /// Read-only access to assignments for a student's current-semester
-    /// enrolled courses. Returns an empty list when there are none. SQL
-    /// exceptions are not caught here; they propagate to the caller.
-    /// </summary>
     public static class AssignmentService
     {
         private const string SelectAssignments =
-            "SELECT a.assignment_id, o.offering_id, c.course_code, c.course_name, " +
-            "a.title, a.due_date " +
+            "SELECT DISTINCT a.assignment_id, a.offer_id, a.title, CAST(a.description AS varchar(max)) AS description, a.file_path, a.total_marks, a.due_date " +
             "FROM ASSIGNMENTS a " +
-            "JOIN COURSE_OFFERINGS o ON a.offering_id = o.offering_id " +
-            "JOIN COURSES c ON o.course_id = c.course_id " +
-            "JOIN SEMESTERS sem ON o.semester_id = sem.semester_id " +
-            "JOIN ENROLMENTS e ON e.offering_id = o.offering_id " +
-            "JOIN STUDENTS s ON e.student_id = s.student_id " +
-            "WHERE s.user_id = @userId AND sem.is_current = 1 AND e.status = 'ENROLLED' ";
+            "JOIN COURSE_OFFERINGS co ON co.offer_id = a.offer_id " +
+            "WHERE @role = 'ADMIN' " +
+            "OR (@role = 'LECTURER' AND EXISTS (SELECT 1 FROM LECTURERS l WHERE l.user_id = @userId AND l.lecturer_id = co.lecturer_id)) " +
+            "OR (@role = 'STUDENT' AND EXISTS (SELECT 1 FROM STUDENTS s JOIN ENROLLMENTS e ON e.student_id = s.student_id WHERE s.user_id = @userId AND e.offer_id = a.offer_id AND e.status = 'ENROLLED')) " +
+            "ORDER BY a.due_date DESC, a.assignment_id DESC";
 
-        /// <summary>
-        /// Assignments due within the next 7 days (today through today + 6 days),
-        /// ordered by due date.
-        /// </summary>
-        public static List<Assignment> GetDueThisWeek(int userId)
+        public static List<Assignment> GetData(UserContext user)
         {
             using (var conn = Db.OpenConnection())
-            using (var cmd = new SqlCommand(
-                SelectAssignments +
-                "AND a.due_date >= @weekStart AND a.due_date <= @weekEnd " +
-                "ORDER BY a.due_date", conn))
+            using (var cmd = new SqlCommand(SelectAssignments, conn))
             {
-                cmd.Parameters.AddWithValue("@userId", userId);
-                cmd.Parameters.AddWithValue("@weekStart", DateTime.Today);
-                cmd.Parameters.AddWithValue("@weekEnd", DateTime.Today.AddDays(6));
-                return ReadAssignments(cmd);
+                ServiceAccess.AddUserContextParameters(cmd, user);
+                var list = new List<Assignment>();
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read()) list.Add(MapAssignment(reader));
+                }
+                return list;
             }
         }
 
-        /// <summary>
-        /// Count of current-semester assignments on the student's enrolled courses
-        /// that the student has not yet submitted.
-        /// </summary>
-        public static int GetPendingTaskCount(int userId)
+        public static int Add(UserContext user, AssignmentSaveRequest request)
         {
+            if (request == null) return 0;
+
             const string sql =
-                "SELECT COUNT(*) " +
-                "FROM ASSIGNMENTS a " +
-                "JOIN COURSE_OFFERINGS o ON a.offering_id = o.offering_id " +
-                "JOIN SEMESTERS sem ON o.semester_id = sem.semester_id " +
-                "JOIN ENROLMENTS e ON e.offering_id = o.offering_id " +
-                "JOIN STUDENTS s ON e.student_id = s.student_id " +
-                "WHERE s.user_id = @userId AND sem.is_current = 1 AND e.status = 'ENROLLED' " +
-                "AND NOT EXISTS (SELECT 1 FROM SUBMISSIONS sub " +
-                "WHERE sub.assignment_id = a.assignment_id AND sub.student_id = s.student_id)";
+                "INSERT INTO ASSIGNMENTS (offer_id, title, description, file_path, total_marks, due_date) " +
+                "VALUES (@offerId, @title, @description, @filePath, @totalMarks, @dueDate); " +
+                "SELECT CAST(SCOPE_IDENTITY() AS int);";
 
             using (var conn = Db.OpenConnection())
             using (var cmd = new SqlCommand(sql, conn))
             {
-                cmd.Parameters.AddWithValue("@userId", userId);
+                if (!ServiceAccess.CanManageOffer(conn, user, request.OfferId)) return 0;
+                AddAssignmentParameters(cmd, request);
                 return (int)cmd.ExecuteScalar();
             }
         }
 
-        private static List<Assignment> ReadAssignments(SqlCommand cmd)
+        public static bool Edit(UserContext user, AssignmentSaveRequest request)
         {
-            var assignments = new List<Assignment>();
-            using (var reader = cmd.ExecuteReader())
+            if (request == null) return false;
+
+            const string sql =
+                "UPDATE ASSIGNMENTS SET offer_id = @offerId, title = @title, description = @description, " +
+                "file_path = @filePath, total_marks = @totalMarks, due_date = @dueDate WHERE assignment_id = @assignmentId";
+
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand(sql, conn))
             {
-                while (reader.Read())
-                {
-                    assignments.Add(MapAssignment(reader));
-                }
+                if (!ServiceAccess.CanManageAssignment(conn, user, request.AssignmentId)) return false;
+                if (!ServiceAccess.CanManageOffer(conn, user, request.OfferId)) return false;
+                cmd.Parameters.AddWithValue("@assignmentId", request.AssignmentId);
+                AddAssignmentParameters(cmd, request);
+                return cmd.ExecuteNonQuery() > 0;
             }
-            return assignments;
+        }
+
+        public static bool Delete(UserContext user, int assignmentId)
+        {
+            using (var conn = Db.OpenConnection())
+            using (var cmd = new SqlCommand("DELETE FROM ASSIGNMENTS WHERE assignment_id = @assignmentId", conn))
+            {
+                if (!ServiceAccess.CanManageAssignment(conn, user, assignmentId)) return false;
+                cmd.Parameters.AddWithValue("@assignmentId", assignmentId);
+                return cmd.ExecuteNonQuery() > 0;
+            }
         }
 
         private static Assignment MapAssignment(SqlDataReader reader)
@@ -121,106 +106,23 @@ namespace src.services
             return new Assignment
             {
                 AssignmentId = (int)reader["assignment_id"],
-                OfferingId = (int)reader["offering_id"],
-                CourseCode = reader["course_code"].ToString(),
-                CourseName = reader["course_name"].ToString(),
-                Title = reader["title"].ToString(),
-                DueDate = (DateTime)reader["due_date"]
+                OfferId = (int)reader["offer_id"],
+                Title = reader["title"] == DBNull.Value ? "" : reader["title"].ToString(),
+                Description = reader["description"] == DBNull.Value ? "" : reader["description"].ToString(),
+                FilePath = reader["file_path"] == DBNull.Value ? "" : reader["file_path"].ToString(),
+                TotalMarks = reader["total_marks"] == DBNull.Value ? (int?)null : (int)reader["total_marks"],
+                DueDate = reader["due_date"] == DBNull.Value ? (DateTime?)null : (DateTime)reader["due_date"]
             };
         }
 
-        // Assignments for one offering with the student's submission status/marks.
-        // No submission row -> status defaults to OPEN.
-        private const string SelectByOffering =
-            "SELECT a.assignment_id, a.title, a.description, a.due_date, a.weight, a.assignment_type, a.group_size, " +
-            "ISNULL(sub.status, 'OPEN') AS sub_status, sub.marks, sub.file_url, sub.submit_date, " +
-            "ISNULL(sub.feedback, '') AS feedback " +
-            "FROM ASSIGNMENTS a " +
-            "JOIN COURSE_OFFERINGS o ON a.offering_id = o.offering_id " +
-            "JOIN ENROLMENTS e ON e.offering_id = o.offering_id " +
-            "JOIN STUDENTS s ON e.student_id = s.student_id AND s.user_id = @userId " +
-            "LEFT JOIN SUBMISSIONS sub ON sub.assignment_id = a.assignment_id " +
-            "AND sub.student_id = s.student_id " +
-            "WHERE a.offering_id = @offeringId AND e.status = 'ENROLLED' " +
-            "ORDER BY a.due_date";
-
-        /// <summary>
-        /// Assignments for a specific course offering, including the student's submission
-        /// status and marks. Returns an empty list when there are no assignments.
-        /// </summary>
-        public static List<CourseAssignment> GetByOffering(int offeringId, int userId)
+        private static void AddAssignmentParameters(SqlCommand cmd, AssignmentSaveRequest request)
         {
-            EnsureSubmissionFeedbackColumn();
-            using (var conn = Db.OpenConnection())
-            using (var cmd = new SqlCommand(SelectByOffering, conn))
-            {
-                cmd.Parameters.AddWithValue("@offeringId", offeringId);
-                cmd.Parameters.AddWithValue("@userId", userId);
-                var list = new List<CourseAssignment>();
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        list.Add(new CourseAssignment
-                        {
-                            AssignmentId = (int)reader["assignment_id"],
-                            Title = reader["title"].ToString(),
-                            Description = reader["description"] == DBNull.Value ? "" : reader["description"].ToString(),
-                            DueDate = (DateTime)reader["due_date"],
-                            Weight = reader["weight"] == DBNull.Value ? (decimal?)null : (decimal)reader["weight"],
-                            AssignmentType = reader["assignment_type"] == DBNull.Value ? null : reader["assignment_type"].ToString(),
-                            GroupSize = reader["group_size"] == DBNull.Value ? null : reader["group_size"].ToString(),
-                            SubmissionStatus = reader["sub_status"].ToString(),
-                            Marks = reader["marks"] == DBNull.Value ? (decimal?)null : (decimal)reader["marks"],
-                            SubmissionFileUrl = reader["file_url"] == DBNull.Value ? "" : reader["file_url"].ToString(),
-                            SubmittedAt = reader["submit_date"] == DBNull.Value ? (DateTime?)null : (DateTime)reader["submit_date"],
-                            Feedback = reader["feedback"].ToString()
-                        });
-                    }
-                }
-                return list;
-            }
-        }
-
-        public static bool SaveSubmission(int userId, int assignmentId, string fileUrl)
-        {
-            if (string.IsNullOrWhiteSpace(fileUrl)) return false;
-
-            const string sql =
-                "DECLARE @studentId int, @dueDate date; " +
-                "SELECT @studentId = s.student_id, @dueDate = a.due_date " +
-                "FROM STUDENTS s " +
-                "JOIN ENROLMENTS e ON e.student_id = s.student_id AND e.status = 'ENROLLED' " +
-                "JOIN ASSIGNMENTS a ON a.offering_id = e.offering_id " +
-                "WHERE s.user_id = @userId AND a.assignment_id = @assignmentId; " +
-                "IF @studentId IS NULL BEGIN SELECT 0; RETURN; END; " +
-                "IF EXISTS (SELECT 1 FROM SUBMISSIONS WHERE assignment_id = @assignmentId AND student_id = @studentId) " +
-                "UPDATE SUBMISSIONS SET file_url = @fileUrl, submit_date = SYSDATETIME(), status = CASE WHEN CAST(SYSDATETIME() AS date) > @dueDate THEN 'LATE' ELSE 'RESUBMITTED' END, marks = NULL " +
-                "WHERE assignment_id = @assignmentId AND student_id = @studentId; " +
-                "ELSE INSERT INTO SUBMISSIONS (assignment_id, student_id, file_url, submit_date, status) " +
-                "VALUES (@assignmentId, @studentId, @fileUrl, SYSDATETIME(), CASE WHEN CAST(SYSDATETIME() AS date) > @dueDate THEN 'LATE' ELSE 'SUBMITTED' END); " +
-                "SELECT @@ROWCOUNT;";
-
-            using (var conn = Db.OpenConnection())
-            using (var cmd = new SqlCommand(sql, conn))
-            {
-                cmd.Parameters.AddWithValue("@userId", userId);
-                cmd.Parameters.AddWithValue("@assignmentId", assignmentId);
-                cmd.Parameters.AddWithValue("@fileUrl", fileUrl.Trim());
-                return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
-            }
-        }
-
-        private static void EnsureSubmissionFeedbackColumn()
-        {
-            const string sql =
-                "IF COL_LENGTH('SUBMISSIONS', 'feedback') IS NULL " +
-                "ALTER TABLE SUBMISSIONS ADD feedback varchar(max) NULL";
-            using (var conn = Db.OpenConnection())
-            using (var cmd = new SqlCommand(sql, conn))
-            {
-                cmd.ExecuteNonQuery();
-            }
+            cmd.Parameters.AddWithValue("@offerId", request.OfferId);
+            cmd.Parameters.AddWithValue("@title", ServiceAccess.DbValue(request.Title));
+            cmd.Parameters.AddWithValue("@description", ServiceAccess.DbValue(request.Description));
+            cmd.Parameters.AddWithValue("@filePath", ServiceAccess.DbValue(request.FilePath));
+            cmd.Parameters.AddWithValue("@totalMarks", ServiceAccess.DbValue(request.TotalMarks));
+            cmd.Parameters.AddWithValue("@dueDate", ServiceAccess.DbValue(request.DueDate));
         }
     }
 }

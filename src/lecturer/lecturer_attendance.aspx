@@ -1,4 +1,4 @@
-<%@ Page Language="C#" MasterPageFile="~/shared/LecturerLayout.master" AutoEventWireup="true" CodeBehind="lecturer_attendance.aspx.cs" Inherits="src.lecturer.lecturer_attendance" Title="Attendance - INTI Lecturer Portal" %>
+﻿<%@ Page Language="C#" MasterPageFile="~/lecturer/LecturerLayout.master" AutoEventWireup="true" CodeBehind="lecturer_attendance.aspx.cs" Inherits="src.lecturer.lecturer_attendance" Title="Attendance - INTI Lecturer Portal" %>
 
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
 
@@ -241,5 +241,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/lecturer/attendance/attendance.js") %>"></script>
+    <script src="<%= ResolveUrl("~/js/lecturer/attendance.js") %>"></script>
 </asp:Content>

@@ -13,6 +13,7 @@ namespace src.student
 
     public partial class attendance
     {
+
         /// <summary>
         /// courseRepeater control.
         /// </summary>
