@@ -34,11 +34,6 @@ namespace student_information_management_system
             int offeringId;
             if (int.TryParse(Request.QueryString["offering"], out offeringId) && offeringId > 0)
                 _offeringFilter = offeringId;
-            else
-            {
-                Response.Redirect("~/lecturer/lecturer_courses.aspx");
-                return;
-            }
 
             _assessments = LecturerPortalService.GetAssessments(_lecturer.LecturerId);
             if (_offeringFilter.HasValue)
