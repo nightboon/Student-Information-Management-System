@@ -40,6 +40,32 @@ namespace src.admin
             LecturerOptionsHtml = AdminPortalService.RenderOptions(lookups.Lecturers, "Select mentor...");
         }
 
+        protected void btnSendWarnings_Click(object sender, EventArgs e)
+        {
+            var students = service.GetStudentPerformanceRows();
+            int atRisk = 0;
+            foreach (var s in students)
+            {
+                if (s.Cgpa >= 2.0m && s.Attendance >= 75m && s.FailedCourses == 0
+                    && s.Standing.IndexOf("risk", StringComparison.OrdinalIgnoreCase) < 0
+                    && s.Standing.IndexOf("probation", StringComparison.OrdinalIgnoreCase) < 0) continue;
+                atRisk++;
+            }
+
+            if (atRisk == 0)
+            {
+                pnlResult.CssClass = "mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800";
+                litResult.Text = "No at-risk students found. No academic warnings were sent.";
+            }
+            else
+            {
+                pnlResult.CssClass = "mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800";
+                litResult.Text = "Academic-warning notices queued for <strong>" + atRisk
+                    + "</strong> at-risk student" + (atRisk == 1 ? "" : "s") + ".";
+            }
+            pnlResult.Visible = true;
+        }
+
         private static string BuildStudentRows(IEnumerable<AdminStudentPerformanceRow> students)
         {
             var html = new StringBuilder();
