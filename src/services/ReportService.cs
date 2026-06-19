@@ -364,6 +364,90 @@ namespace src.services
             return list;
         }
 
+        public List<CoursePerformanceReportRow> GetCoursePerformanceReport(
+            string semesterId,
+            string programmeId,
+            DateTime? dateFrom,
+            DateTime? dateTo)
+        {
+            var list = new List<CoursePerformanceReportRow>();
+
+            using (SqlConnection conn = new SqlConnection(connStr))
+            {
+                conn.Open();
+
+                string sql = @"
+                    SELECT
+                        c.course_code AS CourseCode,
+                        c.course_name AS CourseName,
+                        p.programme_code AS Programme,
+                        COUNT(e.enrollment_id) AS Enrolled,
+                        SUM(CASE WHEN g.grade_id IS NOT NULL AND UPPER(ISNULL(g.letter_grade, '')) <> 'N/A' THEN 1 ELSE 0 END) AS Graded,
+                        CAST(AVG(CASE WHEN g.grade_id IS NOT NULL AND UPPER(ISNULL(g.letter_grade, '')) <> 'N/A' THEN g.grade_point END) AS DECIMAL(4,2)) AS AvgGpa,
+                        CAST(
+                            CASE
+                                WHEN SUM(CASE WHEN g.grade_id IS NOT NULL AND UPPER(ISNULL(g.letter_grade, '')) <> 'N/A' THEN 1 ELSE 0 END) = 0 THEN NULL
+                                ELSE SUM(CASE WHEN g.grade_id IS NOT NULL AND UPPER(ISNULL(g.letter_grade, '')) <> 'N/A' AND UPPER(g.letter_grade) <> 'F' THEN 1 ELSE 0 END) * 100.0
+                                   / SUM(CASE WHEN g.grade_id IS NOT NULL AND UPPER(ISNULL(g.letter_grade, '')) <> 'N/A' THEN 1 ELSE 0 END)
+                            END
+                        AS DECIMAL(5,1)) AS PassRate,
+                        SUM(CASE WHEN UPPER(ISNULL(g.letter_grade, '')) LIKE 'A%' THEN 1 ELSE 0 END) AS GradeA,
+                        SUM(CASE WHEN UPPER(ISNULL(g.letter_grade, '')) LIKE 'B%' THEN 1 ELSE 0 END) AS GradeB,
+                        SUM(CASE WHEN UPPER(ISNULL(g.letter_grade, '')) LIKE 'C%' THEN 1 ELSE 0 END) AS GradeC,
+                        SUM(CASE WHEN UPPER(ISNULL(g.letter_grade, '')) = 'D' THEN 1 ELSE 0 END) AS GradeD,
+                        SUM(CASE WHEN UPPER(ISNULL(g.letter_grade, '')) = 'F' THEN 1 ELSE 0 END) AS GradeF
+                    FROM COURSES c
+                    INNER JOIN PROGRAMMES p
+                        ON p.programme_id = c.programme_id
+                    LEFT JOIN COURSE_OFFERINGS co
+                        ON co.course_id = c.course_id
+                    LEFT JOIN ACADEMIC_SESSIONS sem
+                        ON sem.academic_year = co.academic_year AND sem.semester = co.semester
+                    LEFT JOIN ENROLLMENTS e
+                        ON e.offer_id = co.offer_id AND e.status = 'ENROLLED'
+                    LEFT JOIN GRADES g
+                        ON g.student_id = e.student_id AND g.offer_id = e.offer_id
+                    WHERE (@SemesterId IS NULL OR sem.session_id = @SemesterId)
+                      AND (@ProgrammeId IS NULL OR p.programme_id = @ProgrammeId)
+                      AND (@DateFrom IS NULL OR sem.end_date >= @DateFrom)
+                      AND (@DateTo IS NULL OR sem.start_date <= @DateTo)
+                    GROUP BY c.course_id, c.course_code, c.course_name, p.programme_code
+                    ORDER BY c.course_code";
+
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@SemesterId", (object)semesterId ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@ProgrammeId", (object)programmeId ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@DateFrom", (object)dateFrom ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@DateTo", (object)dateTo ?? DBNull.Value);
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            list.Add(new CoursePerformanceReportRow
+                            {
+                                CourseCode = Text(reader["CourseCode"]),
+                                CourseName = Text(reader["CourseName"]),
+                                Programme = Text(reader["Programme"]),
+                                Enrolled = IntValue(reader["Enrolled"]),
+                                Graded = IntValue(reader["Graded"]),
+                                AvgGpa = DecimalValue(reader["AvgGpa"]),
+                                PassRate = DecimalValue(reader["PassRate"]),
+                                GradeA = IntValue(reader["GradeA"]),
+                                GradeB = IntValue(reader["GradeB"]),
+                                GradeC = IntValue(reader["GradeC"]),
+                                GradeD = IntValue(reader["GradeD"]),
+                                GradeF = IntValue(reader["GradeF"])
+                            });
+                        }
+                    }
+                }
+            }
+
+            return list;
+        }
+
         private static string Text(object value)
         {
             return value == DBNull.Value || value == null ? "" : value.ToString();
@@ -471,6 +555,32 @@ namespace src.services
 
                 return "inline-flex items-center rounded-full border px-2 py-0.5 bg-[#e0162b]/10 text-[#a01020] border-[#e0162b]/20";
             }
+        }
+    }
+
+    public class CoursePerformanceReportRow
+    {
+        public string CourseCode { get; set; }
+        public string CourseName { get; set; }
+        public string Programme { get; set; }
+        public int Enrolled { get; set; }
+        public int Graded { get; set; }
+        public decimal? AvgGpa { get; set; }
+        public decimal? PassRate { get; set; }
+        public int GradeA { get; set; }
+        public int GradeB { get; set; }
+        public int GradeC { get; set; }
+        public int GradeD { get; set; }
+        public int GradeF { get; set; }
+
+        public string AvgGpaDisplay
+        {
+            get { return AvgGpa.HasValue ? AvgGpa.Value.ToString("0.00") : "-"; }
+        }
+
+        public string PassRateDisplay
+        {
+            get { return PassRate.HasValue ? PassRate.Value.ToString("0.0") + "%" : "-"; }
         }
     }
 }
