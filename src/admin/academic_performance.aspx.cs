@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Web;
+using src.services;
 using src.services.admin;
 
 namespace src.admin
@@ -42,28 +43,28 @@ namespace src.admin
 
         protected void btnSendWarnings_Click(object sender, EventArgs e)
         {
-            var students = service.GetStudentPerformanceRows();
-            int atRisk = 0;
-            foreach (var s in students)
+            var result = AtRiskWarningService.Run();
+            pnlResult.Visible = true;
+
+            if (!result.Ran)
             {
-                if (s.Cgpa >= 2.0m && s.Attendance >= 75m && s.FailedCourses == 0
-                    && s.Standing.IndexOf("risk", StringComparison.OrdinalIgnoreCase) < 0
-                    && s.Standing.IndexOf("probation", StringComparison.OrdinalIgnoreCase) < 0) continue;
-                atRisk++;
+                pnlResult.CssClass = "mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800";
+                litResult.Text = "Academic warnings were not sent because two completed semesters are not available yet.";
+                return;
             }
 
-            if (atRisk == 0)
-            {
-                pnlResult.CssClass = "mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800";
-                litResult.Text = "No at-risk students found. No academic warnings were sent.";
-            }
-            else
-            {
-                pnlResult.CssClass = "mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800";
-                litResult.Text = "Academic-warning notices queued for <strong>" + atRisk
-                    + "</strong> at-risk student" + (atRisk == 1 ? "" : "s") + ".";
-            }
-            pnlResult.Visible = true;
+            pnlResult.CssClass = result.Failed == 0
+                ? "mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800"
+                : "mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800";
+
+            litResult.Text = string.Format(
+                "Checked {0} students for {1} and {2}. Sent {3} warning(s), skipped {4}, and failed {5}.",
+                result.Checked,
+                Html(result.Sem1),
+                Html(result.Sem2),
+                result.Emailed,
+                result.Skipped,
+                result.Failed);
         }
 
         private static string BuildStudentRows(IEnumerable<AdminStudentPerformanceRow> students)

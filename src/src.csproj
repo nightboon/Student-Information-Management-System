@@ -297,6 +297,7 @@
     <Compile Include="services\AcademicTermReader.cs" />
     <Compile Include="services\admin\AdminPortalService.cs" />
     <Compile Include="services\AssignmentService.cs" />
+    <Compile Include="services\AtRiskWarningService.cs" />
     <Compile Include="services\CookieService.cs" />
     <Compile Include="services\email\EmailLayout.cs" />
     <Compile Include="services\email\EmailMessage.cs" />
