@@ -83,6 +83,20 @@ namespace src.admin
             litProgrammePreviewCount.Text = "Showing " + Math.Min(10, programmeReportData.Count) + " of " + programmeReportData.Count + " programme performance record(s).";
 
             emptyProgrammePreviewPanel.Visible = programmeReportData.Count == 0;
+
+            var courseReportData = reportService.GetCoursePerformanceReport(
+                semesterId,
+                programmeId,
+                dateFrom,
+                dateTo
+            );
+
+            rptCoursePreview.DataSource = courseReportData.Take(10).ToList();
+            rptCoursePreview.DataBind();
+
+            litCoursePreviewCount.Text = "Showing " + Math.Min(10, courseReportData.Count) + " of " + courseReportData.Count + " course performance record(s).";
+
+            emptyCoursePreviewPanel.Visible = courseReportData.Count == 0;
         }
 
         private static string EmptyToNull(string value)

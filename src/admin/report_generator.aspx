@@ -15,7 +15,7 @@
             <ul class="p-2" id="report-list">
                 <li><button type="button" data-report data-report-key="student" data-report-title="Student Academic Report" data-report-desc="Per-student academic summary with grades and CGPA" data-active="true" class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-50 data-[active=true]:bg-[#e0162b]/10"><span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">Student Academic Report</div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div><div class="text-slate-500 truncate" style="font-size:12px">Per-student academic summary with grades and CGPA</div></div></button></li>
                 <li><button type="button" data-report data-report-key="programme" data-report-title="Programme Performance Report" data-report-desc="Programme-level pass rate, GPA, enrolment" class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-50 data-[active=true]:bg-[#e0162b]/10"><span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">Programme Performance Report</div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div><div class="text-slate-500 truncate" style="font-size:12px">Programme-level pass rate, GPA, enrolment</div></div></button></li>
-                <li><button type="button" data-report class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-50 data-[active=true]:bg-[#e0162b]/10"><span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">Course Performance Report</div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div><div class="text-slate-500 truncate" style="font-size:12px">Course-level outcomes and grade distribution</div></div></button></li>
+                <li><button type="button" data-report data-report-key="course" data-report-title="Course Performance Report" data-report-desc="Course-level outcomes and grade distribution" class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-50 data-[active=true]:bg-[#e0162b]/10"><span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">Course Performance Report</div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div><div class="text-slate-500 truncate" style="font-size:12px">Course-level outcomes and grade distribution</div></div></button></li>
                 <li><button type="button" data-report class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-50 data-[active=true]:bg-[#e0162b]/10"><span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">Attendance Summary Report</div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div><div class="text-slate-500 truncate" style="font-size:12px">Attendance percentages by student / course</div></div></button></li>
                 <li><button type="button" data-report class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-50 data-[active=true]:bg-[#e0162b]/10"><span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">At-Risk Student Report</div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div><div class="text-slate-500 truncate" style="font-size:12px">Students requiring academic intervention</div></div></button></li>
                 <li><button type="button" data-report class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-50 data-[active=true]:bg-[#e0162b]/10"><span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">Top-Performing Student Report</div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div><div class="text-slate-500 truncate" style="font-size:12px">Dean's List / scholarship candidates</div></div></button></li>
@@ -122,7 +122,7 @@
                             </div>
                         </label>
 
-                        <label class="block">
+                        <label id="statusFilterField" class="block">
                             <span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Status</span>
                             <div class="mt-1.5">
                                 <asp:DropDownList 
@@ -233,6 +233,57 @@
                             </p>
                         </asp:PlaceHolder>
                     </div>
+
+                    <div data-report-preview="course" style="display:none">
+                        <table id="tblCoursePreview" class="min-w-full">
+                            <thead class="border-b border-slate-100 text-slate-500">
+                                <tr>
+                                    <th class="py-2 pr-4 text-left uppercase" style="font-size:11px;font-weight:600">Code</th>
+                                    <th class="py-2 pr-4 text-left uppercase" style="font-size:11px;font-weight:600">Course Name</th>
+                                    <th class="py-2 pr-4 text-left uppercase" style="font-size:11px;font-weight:600">Programme</th>
+                                    <th class="py-2 pr-4 text-right uppercase" style="font-size:11px;font-weight:600">Enrolled</th>
+                                    <th class="py-2 pr-4 text-right uppercase" style="font-size:11px;font-weight:600">Graded</th>
+                                    <th class="py-2 pr-4 text-right uppercase" style="font-size:11px;font-weight:600">Avg GPA</th>
+                                    <th class="py-2 pr-4 text-right uppercase" style="font-size:11px;font-weight:600">Pass Rate</th>
+                                    <th class="py-2 pr-4 text-right uppercase" style="font-size:11px;font-weight:600">A</th>
+                                    <th class="py-2 pr-4 text-right uppercase" style="font-size:11px;font-weight:600">B</th>
+                                    <th class="py-2 pr-4 text-right uppercase" style="font-size:11px;font-weight:600">C</th>
+                                    <th class="py-2 pr-4 text-right uppercase" style="font-size:11px;font-weight:600">D</th>
+                                    <th class="py-2 text-right uppercase" style="font-size:11px;font-weight:600">F</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <asp:Repeater ID="rptCoursePreview" runat="server">
+                                    <ItemTemplate>
+                                        <tr class="border-b border-slate-100" style="font-size:12.5px">
+                                            <td class="py-2 pr-4 text-slate-900 font-medium"><%# Eval("CourseCode") %></td>
+                                            <td class="py-2 pr-4 text-slate-900"><%# Eval("CourseName") %></td>
+                                            <td class="py-2 pr-4 text-slate-700"><%# Eval("Programme") %></td>
+                                            <td class="py-2 pr-4 text-right text-slate-700"><%# Eval("Enrolled") %></td>
+                                            <td class="py-2 pr-4 text-right text-slate-700"><%# Eval("Graded") %></td>
+                                            <td class="py-2 pr-4 text-right text-slate-700"><%# Eval("AvgGpaDisplay") %></td>
+                                            <td class="py-2 pr-4 text-right text-emerald-600 font-semibold"><%# Eval("PassRateDisplay") %></td>
+                                            <td class="py-2 pr-4 text-right text-slate-700"><%# Eval("GradeA") %></td>
+                                            <td class="py-2 pr-4 text-right text-slate-700"><%# Eval("GradeB") %></td>
+                                            <td class="py-2 pr-4 text-right text-slate-700"><%# Eval("GradeC") %></td>
+                                            <td class="py-2 pr-4 text-right text-slate-700"><%# Eval("GradeD") %></td>
+                                            <td class="py-2 text-right text-slate-700"><%# Eval("GradeF") %></td>
+                                        </tr>
+                                    </ItemTemplate>
+                                </asp:Repeater>
+                            </tbody>
+                        </table>
+
+                        <div class="mt-3 text-slate-400" style="font-size:11.5px">
+                            <asp:Literal ID="litCoursePreviewCount" runat="server"></asp:Literal>
+                        </div>
+
+                        <asp:PlaceHolder ID="emptyCoursePreviewPanel" runat="server" Visible="false">
+                            <p class="mt-3 rounded-lg border border-dashed border-slate-200 p-4 text-slate-500" style="font-size:13px">
+                                No course performance records found for the selected filters.
+                            </p>
+                        </asp:PlaceHolder>
+                    </div>
                 </div>
             </div>
         </div>
@@ -252,14 +303,24 @@
             description: "Per-student academic summary with grades and CGPA",
             tableId: "tblReportPreview",
             fileBase: "Student_Academic_Report",
-            sheetName: "Academic Report"
+            sheetName: "Academic Report",
+            usesStatus: true
           },
           programme: {
             title: "Programme Performance Report",
             description: "Programme-level pass rate, GPA, enrolment",
             tableId: "tblProgrammePreview",
             fileBase: "Programme_Performance_Report",
-            sheetName: "Programme Report"
+            sheetName: "Programme Report",
+            usesStatus: true
+          },
+          course: {
+            title: "Course Performance Report",
+            description: "Course-level outcomes and grade distribution",
+            tableId: "tblCoursePreview",
+            fileBase: "Course_Performance_Report",
+            sheetName: "Course Report",
+            usesStatus: false
           }
         };
         var activeKey = "student";
@@ -292,11 +353,13 @@
           var desc = document.getElementById("reportDescription");
           var pdfBtn = document.getElementById("btnGeneratePdf");
           var excelBtn = document.getElementById("btnGenerateExcel");
+          var statusFilter = document.getElementById("statusFilterField");
           if (hidden) hidden.value = activeKey;
           if (title) title.textContent = current.title;
           if (desc) desc.textContent = current.description;
           if (pdfBtn) pdfBtn.setAttribute("data-toast", current.title + " generated");
           if (excelBtn) excelBtn.setAttribute("data-toast", current.title + " generated");
+          if (statusFilter) statusFilter.style.display = current.usesStatus === false ? "none" : "";
           document.querySelectorAll("[data-report-preview]").forEach(function (panel) {
             panel.style.display = panel.getAttribute("data-report-preview") === activeKey ? "" : "none";
           });
@@ -370,7 +433,7 @@
 
                 var semester = getSelectedTextByIdEnding("ddlSemester");
                 var programme = getSelectedTextByIdEnding("ddlProgramme");
-                var status = getSelectedTextByIdEnding("ddlStatus");
+                var status = report.usesStatus === false ? "Not applicable" : getSelectedTextByIdEnding("ddlStatus");
                 var dateFrom = getValueByIdEnding("txtDateFrom") || "Any";
                 var dateTo = getValueByIdEnding("txtDateTo") || "Any";
 
@@ -533,7 +596,7 @@
 
                 var semester = getSelectedTextByIdEnding("ddlSemester");
                 var programme = getSelectedTextByIdEnding("ddlProgramme");
-                var status = getSelectedTextByIdEnding("ddlStatus");
+                var status = report.usesStatus === false ? "Not applicable" : getSelectedTextByIdEnding("ddlStatus");
                 var dateFrom = getValueByIdEnding("txtDateFrom") || "Any";
                 var dateTo = getValueByIdEnding("txtDateTo") || "Any";
 
