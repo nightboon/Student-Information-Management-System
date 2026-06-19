@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Web;
+using src.services;
 using src.services.admin;
 
 namespace src.admin
@@ -38,6 +39,32 @@ namespace src.admin
             SemesterOptionsHtml = AdminPortalService.RenderOptions(lookups.StudentSemesters, "All semesters");
             ProgrammeOptionsHtml = AdminPortalService.RenderOptions(lookups.Programmes, "All programmes");
             LecturerOptionsHtml = AdminPortalService.RenderOptions(lookups.Lecturers, "Select mentor...");
+        }
+
+        protected void btnSendWarnings_Click(object sender, EventArgs e)
+        {
+            var result = AtRiskWarningService.Run();
+            pnlResult.Visible = true;
+
+            if (!result.Ran)
+            {
+                pnlResult.CssClass = "mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800";
+                litResult.Text = "Academic warnings were not sent because two completed semesters are not available yet.";
+                return;
+            }
+
+            pnlResult.CssClass = result.Failed == 0
+                ? "mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800"
+                : "mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800";
+
+            litResult.Text = string.Format(
+                "Checked {0} students for {1} and {2}. Sent {3} warning(s), skipped {4}, and failed {5}.",
+                result.Checked,
+                Html(result.Sem1),
+                Html(result.Sem2),
+                result.Emailed,
+                result.Skipped,
+                result.Failed);
         }
 
         private static string BuildStudentRows(IEnumerable<AdminStudentPerformanceRow> students)
