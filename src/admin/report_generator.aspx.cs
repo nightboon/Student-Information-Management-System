@@ -111,6 +111,20 @@ namespace src.admin
             litAttendancePreviewCount.Text = "Showing " + Math.Min(10, attendanceReportData.Count) + " of " + attendanceReportData.Count + " course attendance record(s).";
 
             emptyAttendancePreviewPanel.Visible = attendanceReportData.Count == 0;
+
+            var atRiskReportData = reportService.GetAtRiskStudentReport(
+                semesterId,
+                programmeId,
+                dateFrom,
+                dateTo
+            );
+
+            rptAtRiskPreview.DataSource = atRiskReportData.Take(10).ToList();
+            rptAtRiskPreview.DataBind();
+
+            litAtRiskPreviewCount.Text = "Showing " + Math.Min(10, atRiskReportData.Count) + " of " + atRiskReportData.Count + " at-risk student(s).";
+
+            emptyAtRiskPreviewPanel.Visible = atRiskReportData.Count == 0;
         }
 
         private static string EmptyToNull(string value)
