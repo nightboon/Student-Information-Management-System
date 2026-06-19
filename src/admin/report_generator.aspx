@@ -23,7 +23,7 @@
             </ul>
         </div>
 
-        <%-- Config + Preview --%>
+        <%-- Config + Preview testing--%>
         <div class="space-y-6" style="flex:2 1 480px;min-width:0">
             <div class="rounded-lg border border-slate-200 bg-white">
                 <div class="flex items-start justify-between gap-3 border-b border-slate-100 px-6 py-4">
