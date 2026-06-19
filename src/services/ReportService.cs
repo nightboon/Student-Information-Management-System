@@ -538,6 +538,162 @@ namespace src.services
             return list;
         }
 
+        public List<AtRiskStudentReportRow> GetAtRiskStudentReport(
+            string semesterId,
+            string programmeId,
+            DateTime? dateFrom,
+            DateTime? dateTo)
+        {
+            var list = new List<AtRiskStudentReportRow>();
+
+            using (SqlConnection conn = new SqlConnection(connStr))
+            {
+                conn.Open();
+
+                string sql = @"
+                    WITH scoped_enrolments AS
+                    (
+                        SELECT
+                            s.student_id,
+                            s.student_name,
+                            s.semester AS semester_no,
+                            ISNULL(s.current_standing, '') AS current_standing,
+                            p.programme_code,
+                            e.offer_id,
+                            c.credit_hour
+                        FROM STUDENTS s
+                        INNER JOIN PROGRAMMES p
+                            ON p.programme_id = s.programme_id
+                        INNER JOIN ENROLLMENTS e
+                            ON e.student_id = s.student_id AND e.status = 'ENROLLED'
+                        INNER JOIN COURSE_OFFERINGS co
+                            ON co.offer_id = e.offer_id
+                        INNER JOIN COURSES c
+                            ON c.course_id = co.course_id
+                        INNER JOIN ACADEMIC_SESSIONS sem
+                            ON sem.academic_year = co.academic_year AND sem.semester = co.semester
+                        WHERE s.status = 'ACTIVE'
+                          AND (@SemesterId IS NULL OR sem.session_id = @SemesterId)
+                          AND (@ProgrammeId IS NULL OR p.programme_id = @ProgrammeId)
+                          AND (@DateFrom IS NULL OR sem.end_date >= @DateFrom)
+                          AND (@DateTo IS NULL OR sem.start_date <= @DateTo)
+                    ),
+                    student_scope AS
+                    (
+                        SELECT DISTINCT student_id, student_name, semester_no, current_standing, programme_code
+                        FROM scoped_enrolments
+                    ),
+                    academic_summary AS
+                    (
+                        SELECT
+                            se.student_id,
+                            CAST(
+                                CASE
+                                    WHEN SUM(CASE WHEN g.grade_id IS NOT NULL AND UPPER(ISNULL(g.letter_grade, '')) <> 'N/A' THEN se.credit_hour ELSE 0 END) = 0 THEN NULL
+                                    ELSE SUM(CASE WHEN g.grade_id IS NOT NULL AND UPPER(ISNULL(g.letter_grade, '')) <> 'N/A' THEN g.grade_point * se.credit_hour ELSE 0 END)
+                                       / SUM(CASE WHEN g.grade_id IS NOT NULL AND UPPER(ISNULL(g.letter_grade, '')) <> 'N/A' THEN se.credit_hour ELSE 0 END)
+                                END
+                            AS DECIMAL(4,2)) AS Cgpa,
+                            SUM(CASE WHEN UPPER(ISNULL(g.letter_grade, '')) = 'F' THEN 1 ELSE 0 END) AS FailedCourses
+                        FROM scoped_enrolments se
+                        LEFT JOIN GRADES g
+                            ON g.student_id = se.student_id AND g.offer_id = se.offer_id
+                        GROUP BY se.student_id
+                    ),
+                    attendance_summary AS
+                    (
+                        SELECT
+                            se.student_id,
+                            SUM(CASE WHEN UPPER(ISNULL(ar.status, '')) = 'PRESENT' THEN 1 ELSE 0 END) AS PresentCount,
+                            SUM(CASE WHEN NULLIF(LTRIM(RTRIM(ar.status)), '') IS NOT NULL THEN 1 ELSE 0 END) AS RecordedCount
+                        FROM scoped_enrolments se
+                        LEFT JOIN ATTENDANCE_SESSIONS ats
+                            ON ats.offer_id = se.offer_id
+                           AND (@DateFrom IS NULL OR ats.session_date >= @DateFrom)
+                           AND (@DateTo IS NULL OR ats.session_date <= @DateTo)
+                        LEFT JOIN ATTENDANCE_RECORDS ar
+                            ON ar.session_id = ats.session_id AND ar.student_id = se.student_id
+                        GROUP BY se.student_id
+                    ),
+                    metrics AS
+                    (
+                        SELECT
+                            ss.student_id AS StudentNo,
+                            ss.student_name AS StudentName,
+                            ss.programme_code AS Programme,
+                            ISNULL(ss.semester_no, 0) AS SemesterNo,
+                            ss.current_standing AS CurrentStanding,
+                            ac.Cgpa,
+                            ISNULL(ac.FailedCourses, 0) AS FailedCourses,
+                            CAST(
+                                CASE
+                                    WHEN ISNULL(att.RecordedCount, 0) = 0 THEN NULL
+                                    ELSE att.PresentCount * 100.0 / att.RecordedCount
+                                END
+                            AS DECIMAL(5,1)) AS AttendancePercentage
+                        FROM student_scope ss
+                        LEFT JOIN academic_summary ac ON ac.student_id = ss.student_id
+                        LEFT JOIN attendance_summary att ON att.student_id = ss.student_id
+                    ),
+                    risk_report AS
+                    (
+                        SELECT *,
+                            CASE
+                                WHEN (Cgpa IS NOT NULL AND Cgpa < 1.50)
+                                  OR (AttendancePercentage IS NOT NULL AND AttendancePercentage < 60) THEN 'Critical'
+                                WHEN (Cgpa IS NOT NULL AND Cgpa < 2.00)
+                                  OR (AttendancePercentage IS NOT NULL AND AttendancePercentage < 75) THEN 'High'
+                                ELSE 'Medium'
+                            END AS RiskLevel,
+                            CASE
+                                WHEN Cgpa IS NOT NULL AND Cgpa < 2.00 THEN 'CGPA below 2.00'
+                                WHEN AttendancePercentage IS NOT NULL AND AttendancePercentage < 75 THEN 'Attendance below 75%'
+                                WHEN FailedCourses > 0 THEN 'Failed course requires follow-up'
+                                ELSE 'Academic standing requires follow-up'
+                            END AS RiskReason
+                        FROM metrics
+                        WHERE (Cgpa IS NOT NULL AND Cgpa < 2.00)
+                           OR (AttendancePercentage IS NOT NULL AND AttendancePercentage < 75)
+                           OR FailedCourses > 0
+                           OR CurrentStanding LIKE '%risk%'
+                           OR CurrentStanding LIKE '%probation%'
+                    )
+                    SELECT * FROM risk_report
+                    ORDER BY
+                        CASE RiskLevel WHEN 'Critical' THEN 1 WHEN 'High' THEN 2 ELSE 3 END,
+                        StudentName";
+
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@SemesterId", (object)semesterId ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@ProgrammeId", (object)programmeId ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@DateFrom", (object)dateFrom ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@DateTo", (object)dateTo ?? DBNull.Value);
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            list.Add(new AtRiskStudentReportRow
+                            {
+                                StudentNo = Text(reader["StudentNo"]),
+                                StudentName = Text(reader["StudentName"]),
+                                Programme = Text(reader["Programme"]),
+                                SemesterNo = IntValue(reader["SemesterNo"]),
+                                Cgpa = DecimalValue(reader["Cgpa"]),
+                                AttendancePercentage = DecimalValue(reader["AttendancePercentage"]),
+                                FailedCourses = IntValue(reader["FailedCourses"]),
+                                RiskLevel = Text(reader["RiskLevel"]),
+                                RiskReason = Text(reader["RiskReason"])
+                            });
+                        }
+                    }
+                }
+            }
+
+            return list;
+        }
+
         private static string Text(object value)
         {
             return value == DBNull.Value || value == null ? "" : value.ToString();
@@ -687,6 +843,29 @@ namespace src.services
         public int AbsentCount { get; set; }
         public int RecordedSessions { get; set; }
         public decimal? AttendancePercentage { get; set; }
+
+        public string AttendancePercentageDisplay
+        {
+            get { return AttendancePercentage.HasValue ? AttendancePercentage.Value.ToString("0.0") + "%" : "-"; }
+        }
+    }
+
+    public class AtRiskStudentReportRow
+    {
+        public string StudentNo { get; set; }
+        public string StudentName { get; set; }
+        public string Programme { get; set; }
+        public int SemesterNo { get; set; }
+        public decimal? Cgpa { get; set; }
+        public decimal? AttendancePercentage { get; set; }
+        public int FailedCourses { get; set; }
+        public string RiskLevel { get; set; }
+        public string RiskReason { get; set; }
+
+        public string CgpaDisplay
+        {
+            get { return Cgpa.HasValue ? Cgpa.Value.ToString("0.00") : "-"; }
+        }
 
         public string AttendancePercentageDisplay
         {

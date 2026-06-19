@@ -17,7 +17,7 @@
                 <li><button type="button" data-report data-report-key="programme" data-report-title="Programme Performance Report" data-report-desc="Programme-level pass rate, GPA, enrolment" class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-50 data-[active=true]:bg-[#e0162b]/10"><span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">Programme Performance Report</div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div><div class="text-slate-500 truncate" style="font-size:12px">Programme-level pass rate, GPA, enrolment</div></div></button></li>
                 <li><button type="button" data-report data-report-key="course" data-report-title="Course Performance Report" data-report-desc="Course-level outcomes and grade distribution" class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-50 data-[active=true]:bg-[#e0162b]/10"><span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">Course Performance Report</div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div><div class="text-slate-500 truncate" style="font-size:12px">Course-level outcomes and grade distribution</div></div></button></li>
                 <li><button type="button" data-report data-report-key="attendance" data-report-title="Attendance Summary Report" data-report-desc="Attendance percentage by course" class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-50 data-[active=true]:bg-[#e0162b]/10"><span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">Attendance Summary Report</div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div><div class="text-slate-500 truncate" style="font-size:12px">Attendance percentage by course</div></div></button></li>
-                <li><button type="button" data-report class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-50 data-[active=true]:bg-[#e0162b]/10"><span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">At-Risk Student Report</div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div><div class="text-slate-500 truncate" style="font-size:12px">Students requiring academic intervention</div></div></button></li>
+                <li><button type="button" data-report data-report-key="atrisk" data-report-title="At-Risk Student Report" data-report-desc="Students requiring academic intervention" class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-50 data-[active=true]:bg-[#e0162b]/10"><span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">At-Risk Student Report</div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div><div class="text-slate-500 truncate" style="font-size:12px">Students requiring academic intervention</div></div></button></li>
                 <li><button type="button" data-report class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-50 data-[active=true]:bg-[#e0162b]/10"><span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">Top-Performing Student Report</div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div><div class="text-slate-500 truncate" style="font-size:12px">Dean's List / scholarship candidates</div></div></button></li>
                 <li><button type="button" data-report class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-50 data-[active=true]:bg-[#e0162b]/10"><span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">Enrolment Summary Report</div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div><div class="text-slate-500 truncate" style="font-size:12px">Semester-by-semester enrolment overview</div></div></button></li>
             </ul>
@@ -62,7 +62,7 @@
                     <h3 class="text-slate-900" style="font-size:14px;font-weight:700">Filters</h3>
                     <p class="mt-0.5 text-slate-500" style="font-size:12.5px">Refine the report scope before generating.</p>
 
-                    <div class="mt-5" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+                    <div class="mt-5" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
 
                         <label class="block">
                             <span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Semester</span>
@@ -91,6 +91,10 @@
                                 </asp:DropDownList>
                             </div>
                         </label>
+
+                    </div>
+
+                    <div class="mt-4" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
 
                         <label class="block">
                             <span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Date From</span>
@@ -331,6 +335,51 @@
                             </p>
                         </asp:PlaceHolder>
                     </div>
+
+                    <div data-report-preview="atrisk" style="display:none">
+                        <table id="tblAtRiskPreview" class="min-w-full">
+                            <thead class="border-b border-slate-100 text-slate-500">
+                                <tr>
+                                    <th class="py-2 pr-4 text-left uppercase" style="font-size:11px;font-weight:600">Student ID</th>
+                                    <th class="py-2 pr-4 text-left uppercase" style="font-size:11px;font-weight:600">Student Name</th>
+                                    <th class="py-2 pr-4 text-left uppercase" style="font-size:11px;font-weight:600">Programme</th>
+                                    <th class="py-2 pr-4 text-right uppercase" style="font-size:11px;font-weight:600">Semester</th>
+                                    <th class="py-2 pr-4 text-right uppercase" style="font-size:11px;font-weight:600">CGPA</th>
+                                    <th class="py-2 pr-4 text-right uppercase" style="font-size:11px;font-weight:600">Attendance</th>
+                                    <th class="py-2 pr-4 text-right uppercase" style="font-size:11px;font-weight:600">Failed</th>
+                                    <th class="py-2 pr-4 text-left uppercase" style="font-size:11px;font-weight:600">Risk</th>
+                                    <th class="py-2 text-left uppercase" style="font-size:11px;font-weight:600">Reason</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <asp:Repeater ID="rptAtRiskPreview" runat="server">
+                                    <ItemTemplate>
+                                        <tr class="border-b border-slate-100" style="font-size:12.5px">
+                                            <td class="py-2 pr-4 text-slate-500"><%# Eval("StudentNo") %></td>
+                                            <td class="py-2 pr-4 text-slate-900"><%# Eval("StudentName") %></td>
+                                            <td class="py-2 pr-4 text-slate-700"><%# Eval("Programme") %></td>
+                                            <td class="py-2 pr-4 text-right text-slate-700"><%# Eval("SemesterNo") %></td>
+                                            <td class="py-2 pr-4 text-right text-slate-700"><%# Eval("CgpaDisplay") %></td>
+                                            <td class="py-2 pr-4 text-right text-slate-700"><%# Eval("AttendancePercentageDisplay") %></td>
+                                            <td class="py-2 pr-4 text-right text-slate-700"><%# Eval("FailedCourses") %></td>
+                                            <td class="py-2 pr-4 text-[#a01020] font-semibold"><%# Eval("RiskLevel") %></td>
+                                            <td class="py-2 text-slate-700"><%# Eval("RiskReason") %></td>
+                                        </tr>
+                                    </ItemTemplate>
+                                </asp:Repeater>
+                            </tbody>
+                        </table>
+
+                        <div class="mt-3 text-slate-400" style="font-size:11.5px">
+                            <asp:Literal ID="litAtRiskPreviewCount" runat="server"></asp:Literal>
+                        </div>
+
+                        <asp:PlaceHolder ID="emptyAtRiskPreviewPanel" runat="server" Visible="false">
+                            <p class="mt-3 rounded-lg border border-dashed border-slate-200 p-4 text-slate-500" style="font-size:13px">
+                                No at-risk students found for the selected filters.
+                            </p>
+                        </asp:PlaceHolder>
+                    </div>
                 </div>
             </div>
         </div>
@@ -375,6 +424,14 @@
             tableId: "tblAttendancePreview",
             fileBase: "Attendance_Summary_Report",
             sheetName: "Attendance Report",
+            usesStatus: false
+          },
+          atrisk: {
+            title: "At-Risk Student Report",
+            description: "Students requiring academic intervention",
+            tableId: "tblAtRiskPreview",
+            fileBase: "At_Risk_Student_Report",
+            sheetName: "At-Risk Students",
             usesStatus: false
           }
         };
