@@ -1,4 +1,4 @@
-<%@ Page Language="C#" MasterPageFile="~/admin/AdminLayout.master" AutoEventWireup="true" CodeBehind="report_generator.aspx.cs" Inherits="src.admin.report_generator" Title="Report Generator - INTI Admin Portal" %>
+<%@ Page Language="C#" MasterPageFile="~/shared/AdminLayout.master" AutoEventWireup="true" CodeBehind="report_generator.aspx.cs" Inherits="src.admin.report_generator" Title="Report Generator - INTI Admin Portal" %>
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
     <asp:HiddenField ID="hdnReportType" runat="server" Value="student" />
 
