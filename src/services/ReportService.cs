@@ -316,6 +316,7 @@ namespace src.services
                             ps.fail_rate AS FailRate,
                             ps.completion_rate AS CompletionRate,
                             CASE
+                                WHEN ps.students = 0 THEN 'N/A'
                                 WHEN ISNULL(ps.pass_rate, 0) < 80 OR ISNULL(rs.at_risk, 0) >= 10 THEN 'At Risk'
                                 WHEN ISNULL(ps.pass_rate, 0) < 90 OR ISNULL(rs.at_risk, 0) > 0 THEN 'Watch'
                                 ELSE 'Healthy'
@@ -461,6 +462,11 @@ namespace src.services
                 if (string.Equals(Status, "Watch", StringComparison.OrdinalIgnoreCase))
                 {
                     return "inline-flex items-center rounded-full border px-2 py-0.5 bg-amber-50 text-amber-700 border-amber-100";
+                }
+
+                if (string.Equals(Status, "N/A", StringComparison.OrdinalIgnoreCase))
+                {
+                    return "inline-flex items-center rounded-full border px-2 py-0.5 bg-slate-100 text-slate-600 border-slate-200";
                 }
 
                 return "inline-flex items-center rounded-full border px-2 py-0.5 bg-[#e0162b]/10 text-[#a01020] border-[#e0162b]/20";
