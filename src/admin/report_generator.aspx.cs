@@ -97,6 +97,20 @@ namespace src.admin
             litCoursePreviewCount.Text = "Showing " + Math.Min(10, courseReportData.Count) + " of " + courseReportData.Count + " course performance record(s).";
 
             emptyCoursePreviewPanel.Visible = courseReportData.Count == 0;
+
+            var attendanceReportData = reportService.GetAttendanceSummaryReport(
+                semesterId,
+                programmeId,
+                dateFrom,
+                dateTo
+            );
+
+            rptAttendancePreview.DataSource = attendanceReportData.Take(10).ToList();
+            rptAttendancePreview.DataBind();
+
+            litAttendancePreviewCount.Text = "Showing " + Math.Min(10, attendanceReportData.Count) + " of " + attendanceReportData.Count + " course attendance record(s).";
+
+            emptyAttendancePreviewPanel.Visible = attendanceReportData.Count == 0;
         }
 
         private static string EmptyToNull(string value)
