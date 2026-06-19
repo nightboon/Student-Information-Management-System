@@ -62,7 +62,7 @@
         <p class="mt-7 px-3 pb-2 text-slate-400" style="font-size:11px;font-weight:600;letter-spacing:0.08em">SUPPORT</p>
         <ul class="space-y-0.5">
             <li>
-                <a href="#" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all" style="font-size:14px;font-weight:500">
+                <a href="#" data-toast="Help resources are not configured yet" data-toast-type="info" class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all" style="font-size:14px;font-weight:500">
                     <i data-lucide="life-buoy" class="h-4 w-4 text-slate-400 group-hover:text-slate-700"></i>
                     Help &amp; Support
                 </a>

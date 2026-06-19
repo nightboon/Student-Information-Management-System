@@ -9,25 +9,24 @@
         <div class="relative">
             <div class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 backdrop-blur" style="font-size:12px;font-weight:500">
                 <i data-lucide="sparkles" class="h-3.5 w-3.5 text-amber-200"></i>
-                Friday, 29 May 2026 &middot; Academic Year 2025/26 &middot; Semester 1
+                <%= DateTime.Now.ToString("dddd, dd MMMM yyyy") %>
             </div>
             <h1 class="mt-4 text-white" style="font-size:32px;font-weight:700;letter-spacing:-0.015em;line-height:1.15">
-                Good Morning, Dr. Aisyah <span role="img" aria-label="wave">&#128075;</span>
+                Good Morning, <%= Server.HtmlEncode(Session["username"] as string ?? "Administrator") %> <span role="img" aria-label="wave">&#128075;</span>
             </h1>
             <p class="mt-2 max-w-2xl text-white/75" style="font-size:15px;line-height:1.6">
-                You have <span class="text-white font-semibold">38 admission applications</span>,
-                <span class="text-white font-semibold">9 add/drop requests</span>, and
-                <span class="text-white font-semibold">5 critical at-risk students</span> requiring attention.
+                You have <span class="text-white font-semibold"><%= Number(Dashboard.PendingRequests) %> add/drop requests</span> and
+                <span class="text-white font-semibold"><%= Number(Dashboard.AtRiskStudents) %> at-risk students</span> requiring attention.
             </p>
             <div class="mt-6 flex flex-wrap items-center gap-3">
-                <button type="button" class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 h-11 text-white ring-1 ring-white/25 backdrop-blur hover:bg-white/15 transition-colors" style="font-size:14px;font-weight:500">
+                <a href="<%= ResolveUrl("~/admin/add_drop_requests.aspx") %>" class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 h-11 text-white ring-1 ring-white/25 backdrop-blur hover:bg-white/15 transition-colors" style="font-size:14px;font-weight:500">
                     <i data-lucide="clipboard-check" class="h-4 w-4"></i>
                     Review pending actions
-                </button>
-                <button type="button" class="inline-flex items-center gap-2 rounded-xl px-4 h-11 text-white/80 hover:text-white transition-colors" style="font-size:14px;font-weight:500">
+                </a>
+                <a href="<%= ResolveUrl("~/admin/academic_performance.aspx") %>" class="inline-flex items-center gap-2 rounded-xl px-4 h-11 text-white/80 hover:text-white transition-colors" style="font-size:14px;font-weight:500">
                     View dashboard insights
                     <i data-lucide="arrow-up-right" class="h-4 w-4"></i>
-                </button>
+                </a>
             </div>
         </div>
     </section>
@@ -39,7 +38,7 @@
                 <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-700"><i data-lucide="graduation-cap" class="h-5 w-5"></i></div>
             </div>
             <div class="mt-4 text-slate-500" style="font-size:12.5px;font-weight:500">Total Students</div>
-            <div class="mt-1 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em">2,847</div>
+            <div class="mt-1 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em"><%= Number(Dashboard.TotalStudents) %></div>
             <div class="mt-1 text-slate-400" style="font-size:12px">active records</div>
         </div>
         <div class="group rounded-2xl border border-slate-200 bg-white p-5 hover:border-slate-300 hover:shadow-sm transition-all">
@@ -47,7 +46,7 @@
                 <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-700"><i data-lucide="users" class="h-5 w-5"></i></div>
             </div>
             <div class="mt-4 text-slate-500" style="font-size:12.5px;font-weight:500">Total Lecturers</div>
-            <div class="mt-1 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em">164</div>
+            <div class="mt-1 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em"><%= Number(Dashboard.TotalLecturers) %></div>
             <div class="mt-1 text-slate-400" style="font-size:12px">teaching staff</div>
         </div>
         <div class="group rounded-2xl border border-slate-200 bg-white p-5 hover:border-slate-300 hover:shadow-sm transition-all">
@@ -55,8 +54,8 @@
                 <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-5 w-5"></i></div>
                 <span class="rounded-full bg-amber-50 px-2 py-0.5 text-amber-700 border border-amber-100" style="font-size:10.5px;font-weight:600">New</span>
             </div>
-            <div class="mt-4 text-slate-500" style="font-size:12.5px;font-weight:500">Pending Applications</div>
-            <div class="mt-1 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em">38</div>
+            <div class="mt-4 text-slate-500" style="font-size:12.5px;font-weight:500">Pending Requests</div>
+            <div class="mt-1 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em"><%= Number(Dashboard.PendingRequests) %></div>
             <div class="mt-1 text-slate-400" style="font-size:12px">awaiting review</div>
         </div>
         <div class="group rounded-2xl border border-slate-200 bg-white p-5 hover:border-slate-300 hover:shadow-sm transition-all">
@@ -64,7 +63,7 @@
                 <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#e0162b]/10 text-[#e0162b]"><i data-lucide="alert-triangle" class="h-5 w-5"></i></div>
             </div>
             <div class="mt-4 text-slate-500" style="font-size:12.5px;font-weight:500">At-Risk Students</div>
-            <div class="mt-1 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em">21</div>
+            <div class="mt-1 text-slate-900" style="font-size:28px;font-weight:700;letter-spacing:-0.01em"><%= Number(Dashboard.AtRiskStudents) %></div>
             <div class="mt-1 text-slate-400" style="font-size:12px">academic support needed</div>
         </div>
     </section>
@@ -75,55 +74,14 @@
             <header class="flex items-center justify-between p-6 pb-4">
                 <div>
                     <h2 class="text-slate-900" style="font-size:16px;font-weight:600">Enrolment Overview</h2>
-                    <p class="text-slate-500 mt-0.5" style="font-size:13px">Students by programme &middot; Semester 1, 2025/26</p>
+                    <p class="text-slate-500 mt-0.5" style="font-size:13px">Students by programme</p>
                 </div>
                 <a href="<%= ResolveUrl("~/admin/academic_performance.aspx") %>" class="inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020] transition-colors" style="font-size:13px;font-weight:600">
                     View details <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>
                 </a>
             </header>
             <div class="px-6 pb-6 space-y-3">
-                <div class="flex items-center gap-3">
-                    <div class="w-12 text-slate-500" style="font-size:11.5px;font-weight:600">BCS</div>
-                    <div class="flex-1">
-                        <div class="flex items-center justify-between"><div class="text-slate-900" style="font-size:13px;font-weight:500">Computer Science</div><div class="text-slate-500" style="font-size:12.5px">612 students</div></div>
-                        <div class="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-[#e0162b]" style="width:86%"></div></div>
-                    </div>
-                </div>
-                <div class="flex items-center gap-3">
-                    <div class="w-12 text-slate-500" style="font-size:11.5px;font-weight:600">BIT</div>
-                    <div class="flex-1">
-                        <div class="flex items-center justify-between"><div class="text-slate-900" style="font-size:13px;font-weight:500">Information Technology</div><div class="text-slate-500" style="font-size:12.5px">504 students</div></div>
-                        <div class="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-[#e0162b]" style="width:71%"></div></div>
-                    </div>
-                </div>
-                <div class="flex items-center gap-3">
-                    <div class="w-12 text-slate-500" style="font-size:11.5px;font-weight:600">BBA</div>
-                    <div class="flex-1">
-                        <div class="flex items-center justify-between"><div class="text-slate-900" style="font-size:13px;font-weight:500">Business Administration</div><div class="text-slate-500" style="font-size:12.5px">488 students</div></div>
-                        <div class="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-[#e0162b]" style="width:68%"></div></div>
-                    </div>
-                </div>
-                <div class="flex items-center gap-3">
-                    <div class="w-12 text-slate-500" style="font-size:11.5px;font-weight:600">BME</div>
-                    <div class="flex-1">
-                        <div class="flex items-center justify-between"><div class="text-slate-900" style="font-size:13px;font-weight:500">Mechanical Engineering</div><div class="text-slate-500" style="font-size:12.5px">372 students</div></div>
-                        <div class="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-[#e0162b]" style="width:52%"></div></div>
-                    </div>
-                </div>
-                <div class="flex items-center gap-3">
-                    <div class="w-12 text-slate-500" style="font-size:11.5px;font-weight:600">BAC</div>
-                    <div class="flex-1">
-                        <div class="flex items-center justify-between"><div class="text-slate-900" style="font-size:13px;font-weight:500">Accounting &amp; Finance</div><div class="text-slate-500" style="font-size:12.5px">341 students</div></div>
-                        <div class="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-[#e0162b]" style="width:48%"></div></div>
-                    </div>
-                </div>
-                <div class="flex items-center gap-3">
-                    <div class="w-12 text-slate-500" style="font-size:11.5px;font-weight:600">BDS</div>
-                    <div class="flex-1">
-                        <div class="flex items-center justify-between"><div class="text-slate-900" style="font-size:13px;font-weight:500">Data Science</div><div class="text-slate-500" style="font-size:12.5px">298 students</div></div>
-                        <div class="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-[#e0162b]" style="width:42%"></div></div>
-                    </div>
-                </div>
+                <%= ProgrammeEnrolmentHtml %>
             </div>
         </div>
 
@@ -174,22 +132,22 @@
             <ul class="mt-5" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
                 <li class="group rounded-xl border border-slate-200 p-4 hover:border-slate-300 hover:shadow-sm transition-all cursor-pointer">
                     <div class="text-slate-500" style="font-size:11.5px;font-weight:500">Total Attendance Rate</div>
-                    <div class="mt-1 text-slate-900" style="font-size:22px;font-weight:700;letter-spacing:-0.01em">87.4%</div>
+                    <div class="mt-1 text-slate-900" style="font-size:22px;font-weight:700;letter-spacing:-0.01em"><%= Percent(Dashboard.AverageAttendance) %></div>
                     <div class="text-slate-400" style="font-size:11.5px">across all courses</div>
                 </li>
                 <li class="group rounded-xl border border-slate-200 p-4 hover:border-slate-300 hover:shadow-sm transition-all cursor-pointer">
                     <div class="text-slate-500" style="font-size:11.5px;font-weight:500">Average CGPA</div>
-                    <div class="mt-1 text-slate-900" style="font-size:22px;font-weight:700;letter-spacing:-0.01em">3.20</div>
+                    <div class="mt-1 text-slate-900" style="font-size:22px;font-weight:700;letter-spacing:-0.01em"><%= DecimalNumber(Dashboard.AverageCgpa) %></div>
                     <div class="text-slate-400" style="font-size:11.5px">all active students</div>
                 </li>
                 <li class="group rounded-xl border border-slate-200 p-4 hover:border-slate-300 hover:shadow-sm transition-all cursor-pointer">
                     <div class="text-slate-500" style="font-size:11.5px;font-weight:500">Pass Rate</div>
-                    <div class="mt-1 text-slate-900" style="font-size:22px;font-weight:700;letter-spacing:-0.01em">86%</div>
+                    <div class="mt-1 text-slate-900" style="font-size:22px;font-weight:700;letter-spacing:-0.01em"><%= Percent(Dashboard.PassRate) %></div>
                     <div class="text-slate-400" style="font-size:11.5px">current semester</div>
                 </li>
                 <li class="group rounded-xl border border-slate-200 p-4 hover:border-slate-300 hover:shadow-sm transition-all cursor-pointer">
                     <div class="text-slate-500" style="font-size:11.5px;font-weight:500">Fail Rate</div>
-                    <div class="mt-1 text-slate-900" style="font-size:22px;font-weight:700;letter-spacing:-0.01em">14%</div>
+                    <div class="mt-1 text-slate-900" style="font-size:22px;font-weight:700;letter-spacing:-0.01em"><%= Percent(Dashboard.FailRate) %></div>
                     <div class="text-slate-400" style="font-size:11.5px">current semester</div>
                 </li>
             </ul>
@@ -201,7 +159,7 @@
                     <i data-lucide="megaphone" class="h-4 w-4 text-[#e0162b]"></i>
                     <h2 class="text-slate-900" style="font-size:16px;font-weight:600">Admin Notices</h2>
                 </div>
-                <a href="#" class="text-[#e0162b] hover:text-[#a01020]" style="font-size:12.5px;font-weight:600">All</a>
+                <a href="<%= ResolveUrl("~/admin/academic_calendar.aspx") %>" class="text-[#e0162b] hover:text-[#a01020]" style="font-size:12.5px;font-weight:600">All</a>
             </header>
             <ul class="mt-4 space-y-4">
                 <li class="border-b border-slate-100 pb-4 last:border-b-0 last:pb-0">

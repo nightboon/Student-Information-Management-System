@@ -28,7 +28,7 @@
                 <div class="flex items-start justify-between gap-3 border-b border-slate-100 px-6 py-4">
                     <div>
                         <div class="flex items-center gap-2">
-                            <h2 class="text-slate-900" style="font-size:18px;font-weight:700;letter-spacing:-0.01em">Student Academic Report</h2>
+                            <h2 id="report-title" class="text-slate-900" style="font-size:18px;font-weight:700;letter-spacing:-0.01em"><%= ReportTitle %></h2>
                             <span class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 bg-sky-50 text-sky-700 border-sky-100" style="font-size:11.5px;font-weight:600">PDF &middot; Excel</span>
                         </div>
                         <p class="mt-1 text-slate-500" style="font-size:13px">Per-student academic summary with grades and CGPA</p>
@@ -38,8 +38,6 @@
                         <button 
                             type="button" 
                             id="btnGeneratePdf"
-                            data-toast="Student Academic Report generated"
-                            data-toast-desc="PDF preview opened"
                             class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 h-10 text-slate-700 hover:bg-slate-50 transition-colors" 
                             style="font-size:13px;font-weight:600">
                             <i data-lucide="file-text" class="h-4 w-4"></i> Generate PDF
@@ -48,8 +46,6 @@
                         <button 
                             type="button" 
                             id="btnGenerateExcel"
-                            data-toast="Student Academic Report generated"
-                            data-toast-desc="Excel file downloaded"
                             class="inline-flex items-center gap-1.5 rounded-md bg-[#e0162b] px-4 h-10 text-white hover:bg-[#a01020] transition-colors shadow-[0_8px_18px_-10px_rgba(224,22,43,0.9)]" 
                             style="font-size:13px;font-weight:600">
                             <i data-lucide="file-spreadsheet" class="h-4 w-4"></i> Generate Excel
@@ -150,41 +146,23 @@
                 <div class="overflow-x-auto px-6 py-4">
                     <table id="tblReportPreview" class="min-w-full">
                         <thead class="border-b border-slate-100 text-slate-500">
-                            <tr>
-                                <th class="py-2 text-left uppercase" style="font-size:11px;font-weight:600">ID</th>
-                                <th class="py-2 text-left uppercase" style="font-size:11px;font-weight:600">Name</th>
-                                <th class="py-2 text-left uppercase" style="font-size:11px;font-weight:600">Programme</th>
-                                <th class="py-2 text-left uppercase" style="font-size:11px;font-weight:600">Semester</th>
-                                <th class="py-2 text-right uppercase" style="font-size:11px;font-weight:600">CGPA</th>
-                                <th class="py-2 text-left uppercase" style="font-size:11px;font-weight:600">Status</th>
-                            </tr>
+                            <tr><%= PreviewHeadersHtml %></tr>
                         </thead>
 
                         <tbody>
-                            <asp:Repeater ID="rptPreview" runat="server">
-                                <ItemTemplate>
-                                    <tr class="border-b border-slate-100" style="font-size:12.5px">
-                                        <td class="py-2 text-slate-500"><%# Eval("StudentNo") %></td>
-                                        <td class="py-2 text-slate-900"><%# Eval("StudentName") %></td>
-                                        <td class="py-2"><%# Eval("Programme") %></td>
-                                        <td class="py-2"><%# Eval("SemesterName") %></td>
-                                        <td class="py-2 text-right"><%# Eval("CGPADisplay") %></td>
-                                        <td class="py-2"><%# Eval("Status") %></td>
-                                    </tr>
-                                </ItemTemplate>
-                            </asp:Repeater>
+                            <%= PreviewRowsHtml %>
                         </tbody>
                     </table>
 
                     <div class="mt-3 text-slate-400" style="font-size:11.5px">
-                        <asp:Literal ID="litPreviewCount" runat="server"></asp:Literal>
+                        <%= PreviewCountText %>
                     </div>
 
-                    <asp:PlaceHolder ID="emptyPreviewPanel" runat="server" Visible="false">
+                    <% if (!HasPreviewRows) { %>
                         <p class="mt-3 rounded-lg border border-dashed border-slate-200 p-4 text-slate-500" style="font-size:13px">
                             No records found for the selected filters.
                         </p>
-                    </asp:PlaceHolder>
+                    <% } %>
                 </div>
             </div>
         </div>
@@ -198,11 +176,17 @@
     <script src="<%= ResolveUrl("~/js/admin/shared/ui.js") %>"></script>
     <script>
       (function () {
+        window.adminReportTitle = "<%= ReportTitle %>";
         var items = document.querySelectorAll("[data-report]");
+        var keys = ["student", "programme", "course", "attendance", "risk", "top", "enrolment"];
+        var selected = "<%= SelectedReportKey %>";
         items.forEach(function (b) {
+          var index = Array.prototype.indexOf.call(items, b);
+          b.setAttribute("data-active", keys[index] === selected ? "true" : "false");
           b.addEventListener("click", function () {
-            items.forEach(function (x) { x.setAttribute("data-active", "false"); });
-            b.setAttribute("data-active", "true");
+            var url = new URL(window.location.href);
+            url.searchParams.set("report", keys[index]);
+            window.location.href = url.toString();
           });
         });
       })();
@@ -242,7 +226,7 @@
 
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(16);
-                doc.text("Student Academic Report", 14, 15);
+                doc.text(window.adminReportTitle, 14, 15);
 
                 doc.setFont("helvetica", "normal");
                 doc.setFontSize(9);
@@ -328,8 +312,8 @@
                 }
 
                 doc.setProperties({
-                    title: "Student Academic Report",
-                    subject: "Student Academic Report",
+                    title: window.adminReportTitle,
+                    subject: window.adminReportTitle,
                     author: "INTI Admin Portal",
                     creator: "INTI Admin Portal"
                 });
@@ -349,7 +333,7 @@
                     '<!DOCTYPE html>' +
                     '<html>' +
                     '<head>' +
-                    '<title>Student Academic Report</title>' +
+                    '<title>' + window.adminReportTitle + '</title>' +
                     '<style>' +
                     'html, body { margin:0; height:100%; font-family:"Inter","Segoe UI",Arial,helvetica; background:#f8fafc; }' +
                     '.topbar { height:54px; display:flex; align-items:center; justify-content:space-between; padding:0 18px; border-bottom:1px solid #e5e7eb; background:#f8fafc; box-shadow:0 1px 4px rgba(15,23,42,0.06); }' +
@@ -360,7 +344,7 @@
                     '</head>' +
                     '<body>' +
                     '<div class="topbar">' +
-                    '<div class="title">Student Academic Report</div>' +
+                    '<div class="title">' + window.adminReportTitle + '</div>' +
                     '<a class="download" href="' + pdfUrl + '" download="Student_Academic_Report.pdf">Download PDF</a>' +
                     '</div>' +
                     '<iframe src="' + pdfUrl + '#toolbar=0&navpanes=0&scrollbar=1"></iframe>' +
@@ -372,7 +356,7 @@
                 try {
                     previewWindow.history.replaceState(
                         null,
-                        "Student Academic Report",
+                        window.adminReportTitle,
                         "pdfdownloadstudentacademicreport"
                     );
                 } catch (e) {
@@ -414,7 +398,7 @@
 
                 var excelData = [];
 
-                excelData.push(["Student Academic Report"]);
+                excelData.push([window.adminReportTitle]);
                 excelData.push(["Semester", semester]);
                 excelData.push(["Programme", programme]);
                 excelData.push(["Status", status]);
