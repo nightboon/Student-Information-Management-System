@@ -16,7 +16,7 @@
                 <li><button type="button" data-report data-report-key="student" data-report-title="Student Academic Report" data-report-desc="Per-student academic summary with grades and CGPA" data-active="true" class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-50 data-[active=true]:bg-[#e0162b]/10"><span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">Student Academic Report</div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div><div class="text-slate-500 truncate" style="font-size:12px">Per-student academic summary with grades and CGPA</div></div></button></li>
                 <li><button type="button" data-report data-report-key="programme" data-report-title="Programme Performance Report" data-report-desc="Programme-level pass rate, GPA, enrolment" class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-50 data-[active=true]:bg-[#e0162b]/10"><span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">Programme Performance Report</div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div><div class="text-slate-500 truncate" style="font-size:12px">Programme-level pass rate, GPA, enrolment</div></div></button></li>
                 <li><button type="button" data-report data-report-key="course" data-report-title="Course Performance Report" data-report-desc="Course-level outcomes and grade distribution" class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-50 data-[active=true]:bg-[#e0162b]/10"><span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">Course Performance Report</div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div><div class="text-slate-500 truncate" style="font-size:12px">Course-level outcomes and grade distribution</div></div></button></li>
-                <li><button type="button" data-report class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-50 data-[active=true]:bg-[#e0162b]/10"><span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">Attendance Summary Report</div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div><div class="text-slate-500 truncate" style="font-size:12px">Attendance percentages by student / course</div></div></button></li>
+                <li><button type="button" data-report data-report-key="attendance" data-report-title="Attendance Summary Report" data-report-desc="Attendance percentage by course" class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-50 data-[active=true]:bg-[#e0162b]/10"><span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">Attendance Summary Report</div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div><div class="text-slate-500 truncate" style="font-size:12px">Attendance percentage by course</div></div></button></li>
                 <li><button type="button" data-report class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-50 data-[active=true]:bg-[#e0162b]/10"><span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">At-Risk Student Report</div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div><div class="text-slate-500 truncate" style="font-size:12px">Students requiring academic intervention</div></div></button></li>
                 <li><button type="button" data-report class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-50 data-[active=true]:bg-[#e0162b]/10"><span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">Top-Performing Student Report</div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div><div class="text-slate-500 truncate" style="font-size:12px">Dean's List / scholarship candidates</div></div></button></li>
                 <li><button type="button" data-report class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-slate-50 data-[active=true]:bg-[#e0162b]/10"><span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700"><i data-lucide="file-text" class="h-4 w-4"></i></span><div class="min-w-0 flex-1"><div class="flex items-center justify-between"><div class="text-slate-900 truncate" style="font-size:13px;font-weight:600">Enrolment Summary Report</div><i data-lucide="chevron-right" class="h-4 w-4 text-slate-400"></i></div><div class="text-slate-500 truncate" style="font-size:12px">Semester-by-semester enrolment overview</div></div></button></li>
@@ -284,6 +284,53 @@
                             </p>
                         </asp:PlaceHolder>
                     </div>
+
+                    <div data-report-preview="attendance" style="display:none">
+                        <table id="tblAttendancePreview" class="min-w-full">
+                            <thead class="border-b border-slate-100 text-slate-500">
+                                <tr>
+                                    <th class="py-2 pr-4 text-left uppercase" style="font-size:11px;font-weight:600">Programme</th>
+                                    <th class="py-2 pr-4 text-left uppercase" style="font-size:11px;font-weight:600">Course</th>
+                                    <th class="py-2 pr-4 text-left uppercase" style="font-size:11px;font-weight:600">Semester</th>
+                                    <th class="py-2 pr-4 text-right uppercase" style="font-size:11px;font-weight:600">Students</th>
+                                    <th class="py-2 pr-4 text-right uppercase" style="font-size:11px;font-weight:600">Sessions</th>
+                                    <th class="py-2 pr-4 text-right uppercase" style="font-size:11px;font-weight:600">Present</th>
+                                    <th class="py-2 pr-4 text-right uppercase" style="font-size:11px;font-weight:600">Late</th>
+                                    <th class="py-2 pr-4 text-right uppercase" style="font-size:11px;font-weight:600">Absent</th>
+                                    <th class="py-2 pr-4 text-right uppercase" style="font-size:11px;font-weight:600">Recorded</th>
+                                    <th class="py-2 text-right uppercase" style="font-size:11px;font-weight:600">Attendance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <asp:Repeater ID="rptAttendancePreview" runat="server">
+                                    <ItemTemplate>
+                                        <tr class="border-b border-slate-100" style="font-size:12.5px">
+                                            <td class="py-2 pr-4 text-slate-700"><%# Eval("Programme") %></td>
+                                            <td class="py-2 pr-4 text-slate-700"><span class="font-medium"><%# Eval("CourseCode") %></span> - <%# Eval("CourseName") %></td>
+                                            <td class="py-2 pr-4 text-slate-700"><%# Eval("SemesterName") %></td>
+                                            <td class="py-2 pr-4 text-right text-slate-700"><%# Eval("EnrolledStudents") %></td>
+                                            <td class="py-2 pr-4 text-right text-slate-700"><%# Eval("ClassSessions") %></td>
+                                            <td class="py-2 pr-4 text-right text-slate-700"><%# Eval("PresentCount") %></td>
+                                            <td class="py-2 pr-4 text-right text-slate-700"><%# Eval("LateCount") %></td>
+                                            <td class="py-2 pr-4 text-right text-slate-700"><%# Eval("AbsentCount") %></td>
+                                            <td class="py-2 pr-4 text-right text-slate-700"><%# Eval("RecordedSessions") %></td>
+                                            <td class="py-2 text-right text-slate-900 font-semibold"><%# Eval("AttendancePercentageDisplay") %></td>
+                                        </tr>
+                                    </ItemTemplate>
+                                </asp:Repeater>
+                            </tbody>
+                        </table>
+
+                        <div class="mt-3 text-slate-400" style="font-size:11.5px">
+                            <asp:Literal ID="litAttendancePreviewCount" runat="server"></asp:Literal>
+                        </div>
+
+                        <asp:PlaceHolder ID="emptyAttendancePreviewPanel" runat="server" Visible="false">
+                            <p class="mt-3 rounded-lg border border-dashed border-slate-200 p-4 text-slate-500" style="font-size:13px">
+                                No attendance records found for the selected filters.
+                            </p>
+                        </asp:PlaceHolder>
+                    </div>
                 </div>
             </div>
         </div>
@@ -320,6 +367,14 @@
             tableId: "tblCoursePreview",
             fileBase: "Course_Performance_Report",
             sheetName: "Course Report",
+            usesStatus: false
+          },
+          attendance: {
+            title: "Attendance Summary Report",
+            description: "Attendance percentage by course",
+            tableId: "tblAttendancePreview",
+            fileBase: "Attendance_Summary_Report",
+            sheetName: "Attendance Report",
             usesStatus: false
           }
         };

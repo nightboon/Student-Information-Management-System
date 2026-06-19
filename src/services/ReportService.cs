@@ -448,6 +448,96 @@ namespace src.services
             return list;
         }
 
+        public List<AttendanceSummaryReportRow> GetAttendanceSummaryReport(
+            string semesterId,
+            string programmeId,
+            DateTime? dateFrom,
+            DateTime? dateTo)
+        {
+            var list = new List<AttendanceSummaryReportRow>();
+
+            using (SqlConnection conn = new SqlConnection(connStr))
+            {
+                conn.Open();
+
+                string sql = @"
+                    SELECT
+                        p.programme_code AS Programme,
+                        c.course_code AS CourseCode,
+                        c.course_name AS CourseName,
+                        sem.academic_year + ' ' + sem.semester AS SemesterName,
+                        COUNT(DISTINCT e.student_id) AS EnrolledStudents,
+                        COUNT(DISTINCT ats.session_id) AS ClassSessions,
+                        SUM(CASE WHEN UPPER(ISNULL(ar.status, '')) = 'PRESENT' THEN 1 ELSE 0 END) AS PresentCount,
+                        SUM(CASE WHEN UPPER(ISNULL(ar.status, '')) = 'LATE' THEN 1 ELSE 0 END) AS LateCount,
+                        SUM(CASE WHEN UPPER(ISNULL(ar.status, '')) = 'ABSENT' THEN 1 ELSE 0 END) AS AbsentCount,
+                        SUM(CASE WHEN NULLIF(LTRIM(RTRIM(ar.status)), '') IS NOT NULL THEN 1 ELSE 0 END) AS RecordedSessions,
+                        CAST(
+                            CASE
+                                WHEN SUM(CASE WHEN NULLIF(LTRIM(RTRIM(ar.status)), '') IS NOT NULL THEN 1 ELSE 0 END) = 0 THEN NULL
+                                ELSE SUM(CASE WHEN UPPER(ISNULL(ar.status, '')) = 'PRESENT' THEN 1 ELSE 0 END) * 100.0
+                                   / SUM(CASE WHEN NULLIF(LTRIM(RTRIM(ar.status)), '') IS NOT NULL THEN 1 ELSE 0 END)
+                            END
+                        AS DECIMAL(5,1)) AS AttendancePercentage
+                    FROM COURSE_OFFERINGS co
+                    INNER JOIN COURSES c
+                        ON c.course_id = co.course_id
+                    INNER JOIN PROGRAMMES p
+                        ON p.programme_id = c.programme_id
+                    INNER JOIN ACADEMIC_SESSIONS sem
+                        ON sem.academic_year = co.academic_year AND sem.semester = co.semester
+                    LEFT JOIN ENROLLMENTS e
+                        ON e.offer_id = co.offer_id AND e.status = 'ENROLLED'
+                    LEFT JOIN ATTENDANCE_SESSIONS ats
+                        ON ats.offer_id = co.offer_id
+                       AND (@DateFrom IS NULL OR ats.session_date >= @DateFrom)
+                       AND (@DateTo IS NULL OR ats.session_date <= @DateTo)
+                    LEFT JOIN ATTENDANCE_RECORDS ar
+                        ON ar.session_id = ats.session_id AND ar.student_id = e.student_id
+                    WHERE (@SemesterId IS NULL OR sem.session_id = @SemesterId)
+                      AND (@ProgrammeId IS NULL OR p.programme_id = @ProgrammeId)
+                    GROUP BY
+                        p.programme_code,
+                        co.offer_id,
+                        c.course_code,
+                        c.course_name,
+                        sem.academic_year,
+                        sem.semester
+                    ORDER BY c.course_code";
+
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@SemesterId", (object)semesterId ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@ProgrammeId", (object)programmeId ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@DateFrom", (object)dateFrom ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@DateTo", (object)dateTo ?? DBNull.Value);
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            list.Add(new AttendanceSummaryReportRow
+                            {
+                                Programme = Text(reader["Programme"]),
+                                CourseCode = Text(reader["CourseCode"]),
+                                CourseName = Text(reader["CourseName"]),
+                                SemesterName = Text(reader["SemesterName"]),
+                                EnrolledStudents = IntValue(reader["EnrolledStudents"]),
+                                ClassSessions = IntValue(reader["ClassSessions"]),
+                                PresentCount = IntValue(reader["PresentCount"]),
+                                LateCount = IntValue(reader["LateCount"]),
+                                AbsentCount = IntValue(reader["AbsentCount"]),
+                                RecordedSessions = IntValue(reader["RecordedSessions"]),
+                                AttendancePercentage = DecimalValue(reader["AttendancePercentage"])
+                            });
+                        }
+                    }
+                }
+            }
+
+            return list;
+        }
+
         private static string Text(object value)
         {
             return value == DBNull.Value || value == null ? "" : value.ToString();
@@ -581,6 +671,26 @@ namespace src.services
         public string PassRateDisplay
         {
             get { return PassRate.HasValue ? PassRate.Value.ToString("0.0") + "%" : "-"; }
+        }
+    }
+
+    public class AttendanceSummaryReportRow
+    {
+        public string Programme { get; set; }
+        public string CourseCode { get; set; }
+        public string CourseName { get; set; }
+        public string SemesterName { get; set; }
+        public int EnrolledStudents { get; set; }
+        public int ClassSessions { get; set; }
+        public int PresentCount { get; set; }
+        public int LateCount { get; set; }
+        public int AbsentCount { get; set; }
+        public int RecordedSessions { get; set; }
+        public decimal? AttendancePercentage { get; set; }
+
+        public string AttendancePercentageDisplay
+        {
+            get { return AttendancePercentage.HasValue ? AttendancePercentage.Value.ToString("0.0") + "%" : "-"; }
         }
     }
 }
