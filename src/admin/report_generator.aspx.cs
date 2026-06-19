@@ -125,6 +125,20 @@ namespace src.admin
             litAtRiskPreviewCount.Text = "Showing " + Math.Min(10, atRiskReportData.Count) + " of " + atRiskReportData.Count + " at-risk student(s).";
 
             emptyAtRiskPreviewPanel.Visible = atRiskReportData.Count == 0;
+
+            var topPerformingReportData = reportService.GetTopPerformingStudentReport(
+                semesterId,
+                programmeId,
+                dateFrom,
+                dateTo
+            );
+
+            rptTopPerformingPreview.DataSource = topPerformingReportData.Take(10).ToList();
+            rptTopPerformingPreview.DataBind();
+
+            litTopPerformingPreviewCount.Text = "Showing " + Math.Min(10, topPerformingReportData.Count) + " of " + topPerformingReportData.Count + " top-performing student(s).";
+
+            emptyTopPerformingPreviewPanel.Visible = topPerformingReportData.Count == 0;
         }
 
         private static string EmptyToNull(string value)
