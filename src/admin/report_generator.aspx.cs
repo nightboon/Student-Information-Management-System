@@ -139,6 +139,20 @@ namespace src.admin
             litTopPerformingPreviewCount.Text = "Showing " + Math.Min(10, topPerformingReportData.Count) + " of " + topPerformingReportData.Count + " top-performing student(s).";
 
             emptyTopPerformingPreviewPanel.Visible = topPerformingReportData.Count == 0;
+
+            var enrolmentReportData = reportService.GetEnrolmentSummaryReport(
+                semesterId,
+                programmeId,
+                dateFrom,
+                dateTo
+            );
+
+            rptEnrolmentPreview.DataSource = enrolmentReportData.Take(10).ToList();
+            rptEnrolmentPreview.DataBind();
+
+            litEnrolmentPreviewCount.Text = "Showing " + Math.Min(10, enrolmentReportData.Count) + " of " + enrolmentReportData.Count + " semester enrolment record(s).";
+
+            emptyEnrolmentPreviewPanel.Visible = enrolmentReportData.Count == 0;
         }
 
         private static string EmptyToNull(string value)

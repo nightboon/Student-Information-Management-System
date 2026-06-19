@@ -786,6 +786,83 @@ namespace src.services
             return list;
         }
 
+        public List<EnrolmentSummaryReportRow> GetEnrolmentSummaryReport(
+            string semesterId,
+            string programmeId,
+            DateTime? dateFrom,
+            DateTime? dateTo)
+        {
+            var list = new List<EnrolmentSummaryReportRow>();
+
+            using (SqlConnection conn = new SqlConnection(connStr))
+            {
+                conn.Open();
+
+                string sql = @"
+                    SELECT
+                        sem.academic_year AS AcademicYear,
+                        sem.semester AS SemesterName,
+                        p.programme_code AS ProgrammeCode,
+                        p.programme_name AS ProgrammeName,
+                        COUNT(DISTINCT CASE WHEN e.status = 'ENROLLED' THEN e.student_id END) AS ActiveStudents,
+                        SUM(CASE WHEN e.status = 'ENROLLED' THEN 1 ELSE 0 END) AS ActiveEnrolments,
+                        SUM(CASE WHEN e.status = 'PENDING' THEN 1 ELSE 0 END) AS PendingEnrolments,
+                        SUM(CASE WHEN e.status = 'DROPPED' THEN 1 ELSE 0 END) AS DroppedEnrolments,
+                        SUM(CASE WHEN e.status IN ('ENROLLED', 'PENDING', 'DROPPED') THEN 1 ELSE 0 END) AS TotalEnrolments
+                    FROM ACADEMIC_SESSIONS sem
+                    INNER JOIN COURSE_OFFERINGS co
+                        ON co.academic_year = sem.academic_year AND co.semester = sem.semester
+                    INNER JOIN COURSES c
+                        ON c.course_id = co.course_id
+                    INNER JOIN PROGRAMMES p
+                        ON p.programme_id = c.programme_id
+                    LEFT JOIN ENROLLMENTS e
+                        ON e.offer_id = co.offer_id
+                    WHERE (@SemesterId IS NULL OR sem.session_id = @SemesterId)
+                      AND (@ProgrammeId IS NULL OR p.programme_id = @ProgrammeId)
+                      AND (@DateFrom IS NULL OR sem.end_date >= @DateFrom)
+                      AND (@DateTo IS NULL OR sem.start_date <= @DateTo)
+                    GROUP BY
+                        sem.session_id,
+                        sem.academic_year,
+                        sem.semester,
+                        sem.start_date,
+                        p.programme_id,
+                        p.programme_code,
+                        p.programme_name
+                    ORDER BY sem.start_date DESC, p.programme_code";
+
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@SemesterId", (object)semesterId ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@ProgrammeId", (object)programmeId ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@DateFrom", (object)dateFrom ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@DateTo", (object)dateTo ?? DBNull.Value);
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            list.Add(new EnrolmentSummaryReportRow
+                            {
+                                AcademicYear = Text(reader["AcademicYear"]),
+                                SemesterName = Text(reader["SemesterName"]),
+                                ProgrammeCode = Text(reader["ProgrammeCode"]),
+                                ProgrammeName = Text(reader["ProgrammeName"]),
+                                ActiveStudents = IntValue(reader["ActiveStudents"]),
+                                ActiveEnrolments = IntValue(reader["ActiveEnrolments"]),
+                                PendingEnrolments = IntValue(reader["PendingEnrolments"]),
+                                DroppedEnrolments = IntValue(reader["DroppedEnrolments"]),
+                                TotalEnrolments = IntValue(reader["TotalEnrolments"])
+                            });
+                        }
+                    }
+                }
+            }
+
+            return list;
+        }
+
         private static string Text(object value)
         {
             return value == DBNull.Value || value == null ? "" : value.ToString();
@@ -979,5 +1056,18 @@ namespace src.services
         {
             get { return Cgpa.HasValue ? Cgpa.Value.ToString("0.00") : "-"; }
         }
+    }
+
+    public class EnrolmentSummaryReportRow
+    {
+        public string AcademicYear { get; set; }
+        public string SemesterName { get; set; }
+        public string ProgrammeCode { get; set; }
+        public string ProgrammeName { get; set; }
+        public int ActiveStudents { get; set; }
+        public int ActiveEnrolments { get; set; }
+        public int PendingEnrolments { get; set; }
+        public int DroppedEnrolments { get; set; }
+        public int TotalEnrolments { get; set; }
     }
 }
