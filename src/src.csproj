@@ -355,6 +355,7 @@
     <Compile Include="services\CourseDetailService.cs" />
     <Compile Include="services\EnrolmentService.cs" />
     <Compile Include="services\ModuleService.cs" />
+    <Compile Include="services\ReportService.cs" />
     <Compile Include="services\AssessmentService.cs" />
     <Compile Include="services\GradeService.cs" />
     <Compile Include="services\SemesterService.cs" />
