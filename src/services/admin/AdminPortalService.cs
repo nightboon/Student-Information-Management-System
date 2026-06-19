@@ -4,12 +4,70 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Web;
 using src.db;
 
 namespace src.services.admin
 {
     public class AdminPortalService
     {
+        public AdminLookupData GetLookups()
+        {
+            var data = new AdminLookupData();
+            using (var conn = Db.OpenConnection())
+            {
+                data.Programmes = QueryOptions(conn,
+                    "SELECT programme_code, programme_code + ' - ' + programme_name FROM PROGRAMMES ORDER BY programme_code");
+                data.Departments = QueryOptions(conn,
+                    "SELECT department_id, department_id + ' - ' + department_name FROM DEPARTMENTS ORDER BY department_name");
+                data.Lecturers = QueryOptions(conn,
+                    "SELECT lecturer_id, lecturer_name + ' (' + lecturer_id + ')' FROM LECTURERS WHERE status <> 'INACTIVE' OR status IS NULL ORDER BY lecturer_name");
+                data.AcademicSessions = QueryOptions(conn,
+                    "SELECT academic_year + ' ' + semester, academic_year + ' ' + semester FROM ACADEMIC_SESSIONS ORDER BY start_date DESC");
+                data.AcademicYears = QuerySingleColumnOptions(conn,
+                    "SELECT academic_year FROM (SELECT academic_year FROM ACADEMIC_SESSIONS UNION SELECT academic_year FROM COURSE_OFFERINGS) y ORDER BY academic_year DESC");
+                data.Semesters = QuerySingleColumnOptions(conn,
+                    "SELECT semester FROM (SELECT semester FROM ACADEMIC_SESSIONS UNION SELECT semester FROM COURSE_OFFERINGS) s ORDER BY semester");
+                data.StudentSemesters = QuerySingleColumnOptions(conn,
+                    "SELECT DISTINCT CONVERT(varchar(10), semester) FROM STUDENTS WHERE semester IS NOT NULL ORDER BY CONVERT(varchar(10), semester)");
+                data.EducationLevels = QuerySingleColumnOptions(conn,
+                    "SELECT DISTINCT education_level FROM PROGRAMMES WHERE education_level IS NOT NULL AND LTRIM(RTRIM(education_level)) <> '' ORDER BY education_level");
+                data.ProgrammeStatuses = QuerySingleColumnOptions(conn,
+                    "SELECT DISTINCT status FROM PROGRAMMES WHERE status IS NOT NULL AND LTRIM(RTRIM(status)) <> '' ORDER BY status");
+                data.CourseStatuses = QuerySingleColumnOptions(conn,
+                    "SELECT DISTINCT status FROM COURSES WHERE status IS NOT NULL AND LTRIM(RTRIM(status)) <> '' ORDER BY status");
+                data.UserStatuses = QuerySingleColumnOptions(conn,
+                    "SELECT DISTINCT status FROM USERS WHERE status IS NOT NULL AND LTRIM(RTRIM(status)) <> '' ORDER BY status");
+                data.UserRoles = QuerySingleColumnOptions(conn,
+                    "SELECT DISTINCT role FROM USERS WHERE role IN ('STUDENT','LECTURER') ORDER BY role");
+            }
+
+            EnsureOptions(data.UserRoles, "Student", "Lecturer");
+            EnsureOptions(data.UserStatuses, "Active", "Pending", "Inactive");
+            EnsureOptions(data.ProgrammeStatuses, "Active", "Inactive");
+            EnsureOptions(data.CourseStatuses, "Active", "Inactive");
+            EnsureOptions(data.EducationLevels, "Undergraduate", "Postgraduate", "Foundation");
+            EnsureOptions(data.EventTypes, "Semester start", "Semester end", "Examination period",
+                "Registration deadline", "Add/drop deadline", "Holiday", "Academic break", "Result release");
+            EnsureOptions(data.EventStatuses, "Upcoming", "Scheduled", "Completed");
+            EnsureOptions(data.AcademicStatuses, "Good Standing", "Probation", "At Risk", "Pending");
+            return data;
+        }
+
+        public static string RenderOptions(IEnumerable<AdminOption> options, string placeholder)
+        {
+            var html = new StringBuilder();
+            if (placeholder != null)
+            {
+                html.Append("<option value=\"\">").Append(HttpUtility.HtmlEncode(placeholder)).Append("</option>");
+            }
+            foreach (var option in options ?? Enumerable.Empty<AdminOption>())
+            {
+                html.Append("<option value=\"").Append(HttpUtility.HtmlAttributeEncode(option.Value ?? ""))
+                    .Append("\">").Append(HttpUtility.HtmlEncode(option.Text ?? "")).Append("</option>");
+            }
+            return html.ToString();
+        }
 
         public AdminDashboardData GetDashboard()
         {
@@ -832,6 +890,56 @@ namespace src.services.admin
             return list;
         }
 
+        private static List<AdminOption> QueryOptions(SqlConnection conn, string sql)
+        {
+            var list = new List<AdminOption>();
+            using (var cmd = new SqlCommand(sql, conn))
+            using (var reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    list.Add(new AdminOption { Value = Text(reader.GetValue(0)), Text = Text(reader.GetValue(1)) });
+                }
+            }
+            return list;
+        }
+
+        private static List<AdminOption> QuerySingleColumnOptions(SqlConnection conn, string sql)
+        {
+            var list = new List<AdminOption>();
+            using (var cmd = new SqlCommand(sql, conn))
+            using (var reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    var value = Text(reader.GetValue(0));
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        list.Add(new AdminOption { Value = TitleLookup(value), Text = TitleLookup(value) });
+                    }
+                }
+            }
+            return list;
+        }
+
+        private static void EnsureOptions(List<AdminOption> options, params string[] values)
+        {
+            foreach (var value in values)
+            {
+                if (!options.Any(o => string.Equals(o.Value, value, StringComparison.OrdinalIgnoreCase)))
+                {
+                    options.Add(new AdminOption { Value = value, Text = value });
+                }
+            }
+        }
+
+        private static string TitleLookup(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return "";
+            if (value.All(ch => !char.IsLetter(ch) || char.IsUpper(ch))) return Title(value);
+            return value.Trim();
+        }
+
         private static AdminPerformanceSummary QueryPerformance(SqlConnection conn)
         {
             var summary = new AdminPerformanceSummary();
@@ -1054,6 +1162,31 @@ namespace src.services.admin
         public string ProgrammeOrDepartment { get; set; }
         public string Status { get; set; }
         public string Password { get; set; }
+    }
+
+    public class AdminOption
+    {
+        public string Value { get; set; }
+        public string Text { get; set; }
+    }
+
+    public class AdminLookupData
+    {
+        public List<AdminOption> Programmes { get; set; } = new List<AdminOption>();
+        public List<AdminOption> Departments { get; set; } = new List<AdminOption>();
+        public List<AdminOption> Lecturers { get; set; } = new List<AdminOption>();
+        public List<AdminOption> AcademicSessions { get; set; } = new List<AdminOption>();
+        public List<AdminOption> AcademicYears { get; set; } = new List<AdminOption>();
+        public List<AdminOption> Semesters { get; set; } = new List<AdminOption>();
+        public List<AdminOption> StudentSemesters { get; set; } = new List<AdminOption>();
+        public List<AdminOption> EducationLevels { get; set; } = new List<AdminOption>();
+        public List<AdminOption> ProgrammeStatuses { get; set; } = new List<AdminOption>();
+        public List<AdminOption> CourseStatuses { get; set; } = new List<AdminOption>();
+        public List<AdminOption> UserStatuses { get; set; } = new List<AdminOption>();
+        public List<AdminOption> UserRoles { get; set; } = new List<AdminOption>();
+        public List<AdminOption> EventTypes { get; set; } = new List<AdminOption>();
+        public List<AdminOption> EventStatuses { get; set; } = new List<AdminOption>();
+        public List<AdminOption> AcademicStatuses { get; set; } = new List<AdminOption>();
     }
 
     public class AdminProgrammeSaveRequest

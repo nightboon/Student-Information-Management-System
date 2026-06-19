@@ -17,10 +17,12 @@ namespace src.admin
         protected int RejectedCount { get; private set; }
         protected int TotalCount { get; private set; }
         protected string RequestRowsHtml { get; private set; }
+        protected string ProgrammeOptionsHtml { get; private set; }
 
         protected void Page_Load(object sender, EventArgs e)
         {
             var rows = service.GetAddDropRequests();
+            ProgrammeOptionsHtml = AdminPortalService.RenderOptions(service.GetLookups().Programmes, "All programmes");
             PendingCount = rows.Count(r => IsPending(r.Status));
             ApprovedCount = rows.Count(r => IsApproved(r.Status));
             RejectedCount = rows.Count(r => IsRejected(r.Status));

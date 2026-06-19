@@ -17,6 +17,12 @@ namespace src.admin
         protected int LecturerUsers { get; private set; }
         protected int ActiveUsers { get; private set; }
         protected string UserRowsHtml { get; private set; }
+        protected string ProgrammeOptionsHtml { get; private set; }
+        protected string ProgrammeDepartmentOptionsHtml { get; private set; }
+        protected string RoleOptionsHtml { get; private set; }
+        protected string UserStatusOptionsHtml { get; private set; }
+        protected string RoleFilterOptionsHtml { get; private set; }
+        protected string UserStatusFilterOptionsHtml { get; private set; }
         protected AdminUserRow FirstUser { get; private set; }
         protected string FirstUserName { get { return Html(FirstUser.FullName); } }
         protected string FirstUserEmail { get { return Html(FirstUser.Email); } }
@@ -28,6 +34,14 @@ namespace src.admin
         protected void Page_Load(object sender, EventArgs e)
         {
             var users = service.GetUsers();
+            var lookups = service.GetLookups();
+            ProgrammeOptionsHtml = AdminPortalService.RenderOptions(lookups.Programmes, "All programmes");
+            ProgrammeDepartmentOptionsHtml = AdminPortalService.RenderOptions(
+                lookups.Programmes.Concat(lookups.Departments), null);
+            RoleOptionsHtml = AdminPortalService.RenderOptions(lookups.UserRoles, null);
+            UserStatusOptionsHtml = AdminPortalService.RenderOptions(lookups.UserStatuses, null);
+            RoleFilterOptionsHtml = AdminPortalService.RenderOptions(lookups.UserRoles, "All roles");
+            UserStatusFilterOptionsHtml = AdminPortalService.RenderOptions(lookups.UserStatuses, "All statuses");
             FirstUser = users.FirstOrDefault() ?? new AdminUserRow();
             TotalUsers = users.Count;
             StudentUsers = users.Count(u => u.Role == "Student");

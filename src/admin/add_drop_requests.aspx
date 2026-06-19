@@ -44,7 +44,7 @@
                     <input data-table-search placeholder="Search student, ID, course or request&hellip;" class="h-9 w-full rounded-md border border-slate-200 bg-white pl-9 pr-3 text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:12.5px" />
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
-                    <select data-table-filter="programme" class="h-9 rounded-md border border-slate-200 bg-white px-3 text-slate-700 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:12.5px"><option value="">All programmes</option><option>BCS</option><option>BIT</option><option>BBA</option><option>BME</option><option>BDS</option></select>
+                    <select data-table-filter="programme" class="h-9 rounded-md border border-slate-200 bg-white px-3 text-slate-700 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10" style="font-size:12.5px"><%= ProgrammeOptionsHtml %></select>
                     <div data-table-chip="type" class="inline-flex items-center rounded-md border border-slate-200 bg-white p-0.5">
                         <button type="button" data-chip="All" data-active="true" class="rounded px-2.5 py-1 text-slate-600 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020]" style="font-size:11.5px;font-weight:600">All</button>
                         <button type="button" data-chip="Add" class="rounded px-2.5 py-1 text-slate-600 hover:text-slate-900 data-[active=true]:bg-[#e0162b]/10 data-[active=true]:text-[#a01020]" style="font-size:11.5px;font-weight:600">Add</button>

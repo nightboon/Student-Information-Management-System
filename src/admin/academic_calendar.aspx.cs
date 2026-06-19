@@ -13,12 +13,23 @@ namespace src.admin
 
         protected int EventCount { get; private set; }
         protected string EventRowsHtml { get; private set; }
+        protected string SemesterOptionsHtml { get; private set; }
+        protected string SemesterFilterOptionsHtml { get; private set; }
+        protected string EventTypeOptionsHtml { get; private set; }
+        protected string EventTypeFilterOptionsHtml { get; private set; }
+        protected string EventStatusOptionsHtml { get; private set; }
 
         protected void Page_Load(object sender, EventArgs e)
         {
             var events = service.GetCalendarEvents();
             EventCount = events.Count;
             EventRowsHtml = BuildRows(events);
+            var lookups = service.GetLookups();
+            SemesterOptionsHtml = AdminPortalService.RenderOptions(lookups.AcademicSessions, null);
+            SemesterFilterOptionsHtml = AdminPortalService.RenderOptions(lookups.AcademicSessions, "All semesters");
+            EventTypeOptionsHtml = AdminPortalService.RenderOptions(lookups.EventTypes, null);
+            EventTypeFilterOptionsHtml = AdminPortalService.RenderOptions(lookups.EventTypes, "All types");
+            EventStatusOptionsHtml = AdminPortalService.RenderOptions(lookups.EventStatuses, null);
         }
 
         private static string BuildRows(IEnumerable<AdminCalendarEventRow> events)

@@ -13,12 +13,29 @@ namespace src.admin
         protected string ProgrammeRowsHtml { get; private set; }
         protected string CourseRowsHtml { get; private set; }
         protected string AssignmentRowsHtml { get; private set; }
+        protected string ProgrammeOptionsHtml { get; private set; }
+        protected string EducationLevelOptionsHtml { get; private set; }
+        protected string ProgrammeStatusOptionsHtml { get; private set; }
+        protected string CourseStatusOptionsHtml { get; private set; }
+        protected string SemesterOptionsHtml { get; private set; }
+        protected string LecturerOptionsHtml { get; private set; }
+        protected string ProgrammeStatusFilterOptionsHtml { get; private set; }
+        protected string CourseStatusFilterOptionsHtml { get; private set; }
 
         protected void Page_Load(object sender, EventArgs e)
         {
             ProgrammeRowsHtml = BuildProgrammeRows();
             CourseRowsHtml = BuildCourseRows();
             AssignmentRowsHtml = BuildAssignmentRows();
+            var lookups = service.GetLookups();
+            ProgrammeOptionsHtml = AdminPortalService.RenderOptions(lookups.Programmes, null);
+            EducationLevelOptionsHtml = AdminPortalService.RenderOptions(lookups.EducationLevels, null);
+            ProgrammeStatusOptionsHtml = AdminPortalService.RenderOptions(lookups.ProgrammeStatuses, null);
+            CourseStatusOptionsHtml = AdminPortalService.RenderOptions(lookups.CourseStatuses, null);
+            SemesterOptionsHtml = AdminPortalService.RenderOptions(lookups.Semesters, null);
+            LecturerOptionsHtml = AdminPortalService.RenderOptions(lookups.Lecturers, "Select lecturer...");
+            ProgrammeStatusFilterOptionsHtml = AdminPortalService.RenderOptions(lookups.ProgrammeStatuses, "All statuses");
+            CourseStatusFilterOptionsHtml = AdminPortalService.RenderOptions(lookups.CourseStatuses, "All statuses");
         }
 
         private string BuildProgrammeRows()

@@ -13,6 +13,10 @@ namespace src.admin
         protected AdminDashboardData Summary { get; private set; }
         protected string PassFailRowsHtml { get; private set; }
         protected string AttendanceRowsHtml { get; private set; }
+        protected string AcademicYearOptionsHtml { get; private set; }
+        protected string SemesterOptionsHtml { get; private set; }
+        protected string ProgrammeOptionsHtml { get; private set; }
+        protected string LecturerOptionsHtml { get; private set; }
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -20,6 +24,11 @@ namespace src.admin
             var courses = service.GetCourseMetrics();
             PassFailRowsHtml = BuildPassFailRows(courses);
             AttendanceRowsHtml = BuildAttendanceRows(courses);
+            var lookups = service.GetLookups();
+            AcademicYearOptionsHtml = AdminPortalService.RenderOptions(lookups.AcademicYears, null);
+            SemesterOptionsHtml = AdminPortalService.RenderOptions(lookups.StudentSemesters, "All semesters");
+            ProgrammeOptionsHtml = AdminPortalService.RenderOptions(lookups.Programmes, "All programmes");
+            LecturerOptionsHtml = AdminPortalService.RenderOptions(lookups.Lecturers, "Select mentor...");
         }
 
         protected string Percent(decimal value)
