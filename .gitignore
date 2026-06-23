@@ -58,18 +58,7 @@ $tf/
 *.db-wal
 *.vsidx
 
-# AI assistant local state and caches
-.codex/
-**/.codex/
-.claude/
-**/.claude/
-.aider*
-.continue/
-**/.continue/
-.cursor/
-**/.cursor/
-.windsurf/
-**/.windsurf/
+
 
 # Logs and temporary files
 *.log
