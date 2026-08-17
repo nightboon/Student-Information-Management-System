@@ -142,6 +142,37 @@ namespace src.lecturer
                     IsRead = n.IsRead
                 }));
 
+            notifications.AddRange(SubmissionNotificationService.GetForUser(user)
+                .Select(n =>
+                {
+                    bool isLate = string.Equals(n.SubmissionStatus, "LATE", StringComparison.OrdinalIgnoreCase);
+                    string assessment = string.IsNullOrWhiteSpace(n.AssessmentTitle)
+                        ? "an assessment"
+                        : n.AssessmentTitle;
+                    string student = string.IsNullOrWhiteSpace(n.StudentName)
+                        ? n.StudentId
+                        : n.StudentName;
+                    return new LecturerNotificationItem
+                    {
+                        NotificationId = n.NotificationId,
+                        NotificationType = SubmissionNotificationService.NotificationType,
+                        AnnouncementId = n.NotificationId,
+                        OfferingId = n.OfferingId,
+                        AcademicYear = n.AcademicYear,
+                        Semester = n.Semester,
+                        CourseLabel = n.CourseCode + " - " + n.CourseName,
+                        Title = (isLate ? "Late submission: " : "New submission: ") + assessment,
+                        Content = student + " (" + n.StudentId + ") " +
+                            (isLate ? "submitted late for " : "submitted ") + assessment +
+                            " on " + n.SubmittedAt.ToString("d MMM yyyy, HH:mm") + ".",
+                        AuthorName = student,
+                        Category = SubmissionNotificationService.NotificationType,
+                        CreatedAt = n.CreatedAt,
+                        IsPinned = false,
+                        IsRead = n.IsRead
+                    };
+                }));
+
             return notifications
                 .OrderByDescending(n => n.CreatedAt)
                 .ThenByDescending(n => n.NotificationId)
@@ -181,11 +212,19 @@ namespace src.lecturer
                 .Count(a => !readIds.Contains(a.AnnouncementId));
             var adminReadIds = AdminNotificationService.GetReadIds(user);
             unread += AdminNotificationService.GetForUser(user, adminReadIds).Count(n => !n.IsRead);
+            unread += SubmissionNotificationService.GetForUser(user).Count(n => !n.IsRead);
             return new { ok = true, unreadCount = unread, badgeText = unread > 9 ? "9+" : unread.ToString() };
         }
 
         private static void SetReadState(UserContext user, string notificationType, int notificationId, bool read)
         {
+            if (string.Equals(notificationType, SubmissionNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase))
+            {
+                if (read) SubmissionNotificationService.MarkRead(user, notificationId);
+                else SubmissionNotificationService.MarkUnread(user, notificationId);
+                return;
+            }
+
             if (string.Equals(notificationType, AdminNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase))
             {
                 if (read) AdminNotificationService.MarkRead(user, notificationId);
@@ -226,6 +265,9 @@ namespace src.lecturer
             AdminNotificationService.MarkAllRead(
                 user,
                 AdminNotificationService.GetForUser(user, AdminNotificationService.GetReadIds(user)).Select(n => n.NotificationId));
+            SubmissionNotificationService.MarkAllRead(
+                user,
+                SubmissionNotificationService.GetForUser(user).Select(n => n.NotificationId));
             return CountResponse(user);
         }
     }

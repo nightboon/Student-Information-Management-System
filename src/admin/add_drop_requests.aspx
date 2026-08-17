@@ -123,8 +123,11 @@
             credentials: "same-origin",
             body: JSON.stringify(payload || {})
           }).then(function (r) {
-            if (!r.ok) throw new Error("Request failed");
-            return r.json();
+            return r.json().then(function (json) {
+              var data = json && json.d ? json.d : json;
+              if (!r.ok || (data && data.ok === false)) throw new Error((data && data.message) || "Request failed");
+              return data;
+            });
           });
         }
         document.addEventListener("click", function (e) {
@@ -141,8 +144,8 @@
           }).then(function () {
             if (window.toast) window.toast.success(actionType === "approve" ? "Request approved" : "Request rejected");
             setTimeout(function () { location.reload(); }, 450);
-          }).catch(function () {
-            if (window.toast) window.toast.error("Could not update request");
+          }).catch(function (error) {
+            if (window.toast) window.toast.error(error && error.message ? error.message : "Could not update request");
           });
         }, true);
       })();

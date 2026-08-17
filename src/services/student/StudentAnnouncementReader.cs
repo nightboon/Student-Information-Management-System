@@ -103,6 +103,8 @@ namespace src.services
             notifications.AddRange(AdminNotificationService.GetForUser(user, adminReadIds)
                 .Select(AdminNotificationService.ToStudentNotification)
                 .Where(n => n != null));
+            notifications.AddRange(GradeNotificationService.GetForUser(user));
+            notifications.AddRange(ExtensionNotificationService.GetForUser(user));
 
             return notifications
                 .OrderByDescending(n => n.CreatedAt)

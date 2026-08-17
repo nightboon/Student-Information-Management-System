@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using src.db;
 using static src.services.ServiceMap;
@@ -66,10 +67,12 @@ namespace src.services
             // and their current published course letter grade (if any).
             const string sql =
                 "SELECT s.student_id, s.student_name, s.student_email, " +
-                "a.due_date, " +
+                "a.due_date, ISNULL(a.submission_mode, 'FILE') AS submission_mode, " +
                 "sub.submission_id, sub.marks_obtained, sub.submitted_at, sub.file_url, " +
                 "ISNULL(sub.feedback, '') AS feedback, ISNULL(sub.annotated_file_url, '') AS annotated_file_url, " +
-                "ISNULL(sub.status, '') AS sub_status, " +
+                "ISNULL(sub.status, '') AS sub_status, sub.extension_deadline, sub.extension_granted_at, " +
+                "sub.published_at, sub.published_marks_obtained, ISNULL(sub.published_feedback, '') AS published_feedback, " +
+                "ISNULL(sub.published_annotated_file_url, '') AS published_annotated_file_url, " +
                 "ISNULL(g.letter_grade, '') AS letter_grade " +
                 "FROM ASSIGNMENTS a " +
                 "JOIN ENROLLMENTS e ON e.offer_id = a.offer_id AND e.status = 'ENROLLED' " +
@@ -82,6 +85,7 @@ namespace src.services
             using (var conn = Db.OpenConnection())
             {
                 if (!ServiceAccess.CanManageAssignment(conn, user, assessmentId)) return rows;
+                EnsureAssessmentRows(conn, assessmentId);
                 EnsureMissingSubmissions(conn, assessmentId, null);
                 using (var cmd = new SqlCommand(sql, conn))
                 {
@@ -95,7 +99,22 @@ namespace src.services
                             var submissionId = IntValue(reader["submission_id"]);
                             var subStatus = Text(reader["sub_status"]);
                             var dueDate = DateValue(reader["due_date"]);
+                            var mode = Text(reader["submission_mode"]).ToUpperInvariant();
+                            bool requiresSubmission = mode != "MANUAL";
                             bool isMissing = string.Equals(subStatus, "MISSING", StringComparison.OrdinalIgnoreCase);
+                            bool isPublished = reader["published_at"] != DBNull.Value &&
+                                Nullable.Equals(marks, DecimalValue(reader["published_marks_obtained"])) &&
+                                string.Equals(Text(reader["feedback"]), Text(reader["published_feedback"]), StringComparison.Ordinal) &&
+                                string.Equals(Text(reader["annotated_file_url"]), Text(reader["published_annotated_file_url"]), StringComparison.Ordinal);
+                            var extensionDeadline = DateValue(reader["extension_deadline"]);
+                            var extensionGrantedAt = DateValue(reader["extension_granted_at"]);
+                            string markStatus = isMissing
+                                ? "Missing · Auto 0"
+                                : extensionDeadline.HasValue && string.IsNullOrWhiteSpace(Text(reader["file_url"]))
+                                    ? "Awaiting late submission"
+                                : !marks.HasValue
+                                    ? (requiresSubmission ? "Draft" : "Awaiting marks")
+                                    : isPublished ? "Published" : "Ready to publish";
                             rows.Add(new LecturerGradeRow
                             {
                                 SubmissionId = submissionId,
@@ -113,9 +132,21 @@ namespace src.services
                                 IsMissing = isMissing,
                                 SubmissionStatus = isMissing
                                     ? "MISSING"
+                                    : extensionDeadline.HasValue && string.IsNullOrWhiteSpace(Text(reader["file_url"]))
+                                    ? "EXTENDED UNTIL " + extensionDeadline.Value.ToString("d MMM yyyy, HH:mm")
+                                    : !requiresSubmission && string.IsNullOrWhiteSpace(Text(reader["file_url"]))
+                                    ? "NO UPLOAD REQUIRED"
                                     : !string.IsNullOrWhiteSpace(subStatus)
                                     ? subStatus
                                     : (marks.HasValue ? "GRADED" : (submissionId > 0 ? "SUBMITTED" : "PENDING"))
+                                ,
+                                MarkStatus = markStatus,
+                                SubmissionMode = mode,
+                                RequiresSubmission = requiresSubmission,
+                                CanEnterMarks = !isMissing && (!requiresSubmission || !string.IsNullOrWhiteSpace(Text(reader["file_url"]))),
+                                IsPublished = isPublished,
+                                ExtensionDeadline = extensionDeadline,
+                                ExtensionGrantedAt = extensionGrantedAt
                             });
                         }
                     }
@@ -185,7 +216,7 @@ namespace src.services
             }
         }
 
-        private static void EnsureReviewColumns()
+        internal static void EnsureReviewColumns()
         {
             const string sql =
                 "IF COL_LENGTH('SUBMISSIONS', 'feedback') IS NULL " +
@@ -193,10 +224,40 @@ namespace src.services
                 "IF COL_LENGTH('SUBMISSIONS', 'annotated_file_url') IS NULL " +
                 "ALTER TABLE SUBMISSIONS ADD annotated_file_url varchar(255) NULL; " +
                 "IF COL_LENGTH('SUBMISSIONS', 'annotation_draft_json') IS NULL " +
-                "ALTER TABLE SUBMISSIONS ADD annotation_draft_json nvarchar(max) NULL;";
+                "ALTER TABLE SUBMISSIONS ADD annotation_draft_json nvarchar(max) NULL; " +
+                "IF COL_LENGTH('SUBMISSIONS', 'published_marks_obtained') IS NULL " +
+                "BEGIN " +
+                "ALTER TABLE SUBMISSIONS ADD published_marks_obtained decimal(5,2) NULL; " +
+                "IF COL_LENGTH('SUBMISSIONS', 'published_feedback') IS NULL " +
+                "ALTER TABLE SUBMISSIONS ADD published_feedback varchar(2000) NULL; " +
+                "IF COL_LENGTH('SUBMISSIONS', 'published_annotated_file_url') IS NULL " +
+                "ALTER TABLE SUBMISSIONS ADD published_annotated_file_url varchar(255) NULL; " +
+                "EXEC(N'UPDATE sub SET published_marks_obtained = sub.marks_obtained, " +
+                "published_feedback = sub.feedback, published_annotated_file_url = sub.annotated_file_url " +
+                "FROM SUBMISSIONS sub JOIN ASSIGNMENTS a ON a.assignment_id = sub.assignment_id " +
+                "WHERE EXISTS (SELECT 1 FROM GRADES g WHERE g.offer_id = a.offer_id AND g.student_id = sub.student_id)'); " +
+                "END; " +
+                "IF COL_LENGTH('SUBMISSIONS', 'published_feedback') IS NULL " +
+                "ALTER TABLE SUBMISSIONS ADD published_feedback varchar(2000) NULL; " +
+                "IF COL_LENGTH('SUBMISSIONS', 'published_annotated_file_url') IS NULL " +
+                "ALTER TABLE SUBMISSIONS ADD published_annotated_file_url varchar(255) NULL; " +
+                "IF COL_LENGTH('SUBMISSIONS', 'published_at') IS NULL ALTER TABLE SUBMISSIONS ADD published_at datetime NULL; " +
+                "IF COL_LENGTH('SUBMISSIONS', 'extension_deadline') IS NULL ALTER TABLE SUBMISSIONS ADD extension_deadline datetime NULL; " +
+                "IF COL_LENGTH('SUBMISSIONS', 'extension_granted_at') IS NULL ALTER TABLE SUBMISSIONS ADD extension_granted_at datetime NULL; " +
+                "IF COL_LENGTH('SUBMISSIONS', 'file_url') < 1000 ALTER TABLE SUBMISSIONS ALTER COLUMN file_url varchar(1000) NULL; " +
+                "IF COL_LENGTH('ASSIGNMENTS', 'submission_mode') IS NULL ALTER TABLE ASSIGNMENTS ADD submission_mode varchar(20) NULL;";
             using (var conn = Db.OpenConnection())
-            using (var cmd = new SqlCommand(sql, conn))
-                cmd.ExecuteNonQuery();
+            {
+                using (var cmd = new SqlCommand(sql, conn))
+                    cmd.ExecuteNonQuery();
+                using (var cmd = new SqlCommand(
+                    "UPDATE sub SET published_at = GETDATE() FROM SUBMISSIONS sub " +
+                    "JOIN ASSIGNMENTS a ON a.assignment_id = sub.assignment_id " +
+                    "WHERE sub.published_at IS NULL AND " +
+                    "(sub.published_marks_obtained IS NOT NULL OR sub.published_feedback IS NOT NULL OR sub.published_annotated_file_url IS NOT NULL) " +
+                    "AND EXISTS (SELECT 1 FROM GRADES g WHERE g.offer_id = a.offer_id AND g.student_id = sub.student_id)", conn))
+                    cmd.ExecuteNonQuery();
+            }
         }
 
         public static void SaveGradeMarks(UserContext user, int assessmentId, IDictionary<int, decimal?> marks)
@@ -225,13 +286,16 @@ namespace src.services
 
         // Computes each enrolled student's average submission percentage across the
         // offering, maps to a letter + grade point, and UPSERTs into GRADES.
-        public static void PublishGrades(UserContext user, int assessmentId)
+        public static GradeNotificationService.GradeEmailSendResult PublishGrades(UserContext user, int assessmentId)
         {
-            if (user == null) return;
+            var emailResult = new GradeNotificationService.GradeEmailSendResult();
+            if (user == null) return emailResult;
+            EnsureReviewColumns();
+            GradeNotificationService.EnsureTables();
 
             using (var conn = Db.OpenConnection())
             {
-                if (!ServiceAccess.CanManageAssignment(conn, user, assessmentId)) return;
+                if (!ServiceAccess.CanManageAssignment(conn, user, assessmentId)) return emailResult;
 
                 int offerId;
                 string semester;
@@ -243,7 +307,7 @@ namespace src.services
                     cmd.Parameters.AddWithValue("@id", assessmentId);
                     using (var reader = cmd.ExecuteReader())
                     {
-                        if (!reader.Read()) return;
+                        if (!reader.Read()) return emailResult;
                         offerId = IntValue(reader["offer_id"]);
                         semester = Text(reader["sem"]);
                     }
@@ -251,10 +315,34 @@ namespace src.services
 
                 EnsureMissingSubmissions(conn, null, offerId);
 
+                // Detect changed marks before replacing the previous student-visible
+                // snapshot, then commit the alert and new snapshot atomically.
+                var gradeEmailNotifications = new List<GradeNotificationService.GradeEmailNotification>();
+                using (var transaction = conn.BeginTransaction(IsolationLevel.Serializable))
+                {
+                    gradeEmailNotifications = GradeNotificationService.InsertChangedMarks(conn, transaction, assessmentId);
+                    using (var cmd = new SqlCommand(
+                        "UPDATE SUBMISSIONS SET " +
+                        "published_marks_obtained = marks_obtained, " +
+                        "published_feedback = feedback, " +
+                        "published_annotated_file_url = annotated_file_url, published_at = GETDATE(), " +
+                        "auto_zero_notified = CASE WHEN status = 'MISSING' AND marks_obtained = 0 " +
+                        "THEN 1 ELSE auto_zero_notified END " +
+                        "WHERE assignment_id = @assignmentId", conn, transaction))
+                    {
+                        cmd.Parameters.AddWithValue("@assignmentId", assessmentId);
+                        cmd.ExecuteNonQuery();
+                    }
+                    transaction.Commit();
+                }
+                emailResult = GradeNotificationService.SendPublishedGradeEmails(gradeEmailNotifications);
+
                 var percentByStudent = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
                 var countByStudent = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
                 using (var cmd = new SqlCommand(
-                    "SELECT s.student_id, a.total_marks, sub.marks_obtained " +
+                    "SELECT s.student_id, a.total_marks, " +
+                    "CASE WHEN sub.status = 'MISSING' THEN CAST(0 AS decimal(5,2)) " +
+                    "ELSE sub.published_marks_obtained END AS marks_obtained " +
                     "FROM ENROLLMENTS e " +
                     "JOIN STUDENTS s ON s.student_id = e.student_id " +
                     "JOIN ASSIGNMENTS a ON a.offer_id = e.offer_id " +
@@ -288,17 +376,27 @@ namespace src.services
                     var point = PointFor(letter);
                     UpsertGrade(conn, offerId, sid, point, letter, semester);
                 }
+
+                return emailResult;
             }
         }
 
         private static void EnsureMissingSubmissions(SqlConnection conn, int? assessmentId, int? offerId)
         {
+            const string expireExtensions =
+                "UPDATE sub SET status = 'MISSING', marks_obtained = 0 " +
+                "FROM SUBMISSIONS sub JOIN ASSIGNMENTS a ON a.assignment_id = sub.assignment_id " +
+                "WHERE ISNULL(a.submission_mode, 'FILE') IN ('FILE','LINK') AND sub.extension_granted_at IS NOT NULL " +
+                "AND sub.extension_deadline < GETDATE() AND sub.file_url IS NULL AND sub.status = 'EXTENDED' " +
+                "AND (@assignmentId IS NULL OR a.assignment_id = @assignmentId) " +
+                "AND (@offerId IS NULL OR a.offer_id = @offerId);";
             const string sql =
                 "INSERT INTO SUBMISSIONS (assignment_id, student_id, submitted_at, file_url, marks_obtained, status) " +
                 "SELECT a.assignment_id, e.student_id, NULL, NULL, 0, 'MISSING' " +
                 "FROM ASSIGNMENTS a " +
                 "JOIN ENROLLMENTS e ON e.offer_id = a.offer_id AND e.status = 'ENROLLED' " +
-                "WHERE a.due_date IS NOT NULL AND a.due_date < GETDATE() " +
+                "WHERE ISNULL(a.submission_mode, 'FILE') IN ('FILE','LINK') " +
+                "AND a.due_date IS NOT NULL AND a.due_date < GETDATE() " +
                 "AND (@assignmentId IS NULL OR a.assignment_id = @assignmentId) " +
                 "AND (@offerId IS NULL OR a.offer_id = @offerId) " +
                 "AND (@offerId IS NULL OR EXISTS (" +
@@ -308,6 +406,14 @@ namespace src.services
                 "SELECT 1 FROM SUBMISSIONS existing WITH (UPDLOCK, HOLDLOCK) " +
                 "WHERE existing.assignment_id = a.assignment_id AND existing.student_id = e.student_id);";
 
+            using (var expire = new SqlCommand(expireExtensions, conn))
+            {
+                expire.Parameters.AddWithValue("@assignmentId",
+                    assessmentId.HasValue ? (object)assessmentId.Value : DBNull.Value);
+                expire.Parameters.AddWithValue("@offerId",
+                    offerId.HasValue ? (object)offerId.Value : DBNull.Value);
+                expire.ExecuteNonQuery();
+            }
             using (var cmd = new SqlCommand(sql, conn))
             {
                 cmd.Parameters.AddWithValue("@assignmentId",
@@ -315,6 +421,79 @@ namespace src.services
                 cmd.Parameters.AddWithValue("@offerId",
                     offerId.HasValue ? (object)offerId.Value : DBNull.Value);
                 cmd.ExecuteNonQuery();
+            }
+        }
+
+        private static void EnsureAssessmentRows(SqlConnection conn, int assessmentId)
+        {
+            const string sql =
+                "INSERT INTO SUBMISSIONS (assignment_id, student_id, submitted_at, file_url, marks_obtained, status) " +
+                "SELECT a.assignment_id, e.student_id, NULL, NULL, NULL, 'AWAITING_MARKS' " +
+                "FROM ASSIGNMENTS a JOIN ENROLLMENTS e ON e.offer_id = a.offer_id AND e.status = 'ENROLLED' " +
+                "WHERE a.assignment_id = @assignmentId AND ISNULL(a.submission_mode, 'FILE') = 'MANUAL' " +
+                "AND NOT EXISTS (SELECT 1 FROM SUBMISSIONS sub WHERE sub.assignment_id = a.assignment_id AND sub.student_id = e.student_id);";
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@assignmentId", assessmentId);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public static bool GrantExtension(UserContext user, int submissionId, DateTime deadline)
+        {
+            if (user == null || submissionId <= 0 || deadline <= DateTime.Now) return false;
+            EnsureReviewColumns();
+            ExtensionNotificationService.EnsureTables();
+            using (var conn = Db.OpenConnection())
+            {
+                if (!ServiceAccess.CanManageSubmission(conn, user, submissionId)) return false;
+                using (var transaction = conn.BeginTransaction(IsolationLevel.Serializable))
+                {
+                    const string sql =
+                        "UPDATE sub SET extension_deadline = @deadline, extension_granted_at = GETDATE(), " +
+                        "status = 'EXTENDED', marks_obtained = NULL, published_marks_obtained = NULL, " +
+                        "published_feedback = NULL, published_annotated_file_url = NULL, published_at = NULL " +
+                        "FROM SUBMISSIONS sub JOIN ASSIGNMENTS a ON a.assignment_id = sub.assignment_id " +
+                        "WHERE sub.submission_id = @submissionId AND sub.status = 'MISSING' " +
+                        "AND sub.extension_granted_at IS NULL AND ISNULL(a.submission_mode, 'FILE') IN ('FILE','LINK');";
+                    using (var cmd = new SqlCommand(sql, conn, transaction))
+                    {
+                        cmd.Parameters.AddWithValue("@deadline", deadline);
+                        cmd.Parameters.AddWithValue("@submissionId", submissionId);
+                        if (cmd.ExecuteNonQuery() == 0) return false;
+                    }
+
+                    ExtensionNotificationService.InsertGrantedExtension(
+                        conn, transaction, submissionId, deadline);
+                    transaction.Commit();
+                    return true;
+                }
+            }
+        }
+
+        public static bool ExpireExtension(UserContext user, int submissionId)
+        {
+            if (user == null || submissionId <= 0) return false;
+            EnsureReviewColumns();
+            using (var conn = Db.OpenConnection())
+            {
+                if (!ServiceAccess.CanManageSubmission(conn, user, submissionId)) return false;
+                const string sql =
+                    "UPDATE sub SET status = 'MISSING', marks_obtained = 0 " +
+                    "FROM SUBMISSIONS sub JOIN ASSIGNMENTS a ON a.assignment_id = sub.assignment_id " +
+                    "WHERE sub.submission_id = @submissionId AND sub.status = 'EXTENDED' " +
+                    "AND sub.extension_deadline <= GETDATE() AND sub.file_url IS NULL " +
+                    "AND ISNULL(a.submission_mode, 'FILE') IN ('FILE','LINK'); " +
+                    "SELECT CASE WHEN EXISTS (" +
+                    "SELECT 1 FROM SUBMISSIONS sub JOIN ASSIGNMENTS a ON a.assignment_id = sub.assignment_id " +
+                    "WHERE sub.submission_id = @submissionId AND sub.status = 'MISSING' " +
+                    "AND sub.extension_deadline <= GETDATE() AND sub.file_url IS NULL " +
+                    "AND ISNULL(a.submission_mode, 'FILE') IN ('FILE','LINK')) THEN 1 ELSE 0 END;";
+                using (var cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@submissionId", submissionId);
+                    return Convert.ToInt32(cmd.ExecuteScalar()) == 1;
+                }
             }
         }
 

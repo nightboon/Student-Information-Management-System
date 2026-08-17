@@ -93,11 +93,25 @@
                     </div>
 
                     <div class="mt-4" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
-                        <label id="statusFilterField" class="block">
-                            <span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Status</span>
+                        <label id="studentStatusFilterField" class="block">
+                            <span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Academic Status</span>
                             <div class="mt-1.5">
                                 <asp:DropDownList 
                                     ID="ddlStatus" 
+                                    runat="server"
+                                    AutoPostBack="true"
+                                    OnSelectedIndexChanged="Filter_Changed"
+                                    CssClass="h-10 w-full rounded-md border border-slate-200 bg-white px-3 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10"
+                                    style="font-size:13px">
+                                </asp:DropDownList>
+                            </div>
+                        </label>
+
+                        <label id="programmeStatusFilterField" class="block" style="display:none">
+                            <span class="block text-slate-500 uppercase" style="font-size:11px;font-weight:600;letter-spacing:0.06em">Programme Status</span>
+                            <div class="mt-1.5">
+                                <asp:DropDownList
+                                    ID="ddlProgrammeStatus"
                                     runat="server"
                                     AutoPostBack="true"
                                     OnSelectedIndexChanged="Filter_Changed"
@@ -149,8 +163,12 @@
                             </tbody>
                         </table>
 
-                        <div class="mt-3 text-slate-400" style="font-size:11.5px">
+                        <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-slate-400" style="font-size:11.5px">
                             <asp:Literal ID="litPreviewCount" runat="server"></asp:Literal>
+                            <div class="flex items-center gap-2">
+                                <asp:LinkButton ID="btnStudentPrev" runat="server" OnCommand="PreviewPage_Command" CommandArgument="student:prev" CssClass="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-slate-600 hover:bg-slate-50 disabled:opacity-40" style="font-size:12px;font-weight:600">Previous</asp:LinkButton>
+                                <asp:LinkButton ID="btnStudentNext" runat="server" OnCommand="PreviewPage_Command" CommandArgument="student:next" CssClass="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-slate-600 hover:bg-slate-50 disabled:opacity-40" style="font-size:12px;font-weight:600">Next</asp:LinkButton>
+                            </div>
                         </div>
 
                         <asp:PlaceHolder ID="emptyPreviewPanel" runat="server" Visible="false">
@@ -194,8 +212,12 @@
                             </tbody>
                         </table>
 
-                        <div class="mt-3 text-slate-400" style="font-size:11.5px">
+                        <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-slate-400" style="font-size:11.5px">
                             <asp:Literal ID="litProgrammePreviewCount" runat="server"></asp:Literal>
+                            <div class="flex items-center gap-2">
+                                <asp:LinkButton ID="btnProgrammePrev" runat="server" OnCommand="PreviewPage_Command" CommandArgument="programme:prev" CssClass="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-slate-600 hover:bg-slate-50 disabled:opacity-40" style="font-size:12px;font-weight:600">Previous</asp:LinkButton>
+                                <asp:LinkButton ID="btnProgrammeNext" runat="server" OnCommand="PreviewPage_Command" CommandArgument="programme:next" CssClass="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-slate-600 hover:bg-slate-50 disabled:opacity-40" style="font-size:12px;font-weight:600">Next</asp:LinkButton>
+                            </div>
                         </div>
 
                         <asp:PlaceHolder ID="emptyProgrammePreviewPanel" runat="server" Visible="false">
@@ -245,8 +267,12 @@
                             </tbody>
                         </table>
 
-                        <div class="mt-3 text-slate-400" style="font-size:11.5px">
+                        <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-slate-400" style="font-size:11.5px">
                             <asp:Literal ID="litCoursePreviewCount" runat="server"></asp:Literal>
+                            <div class="flex items-center gap-2">
+                                <asp:LinkButton ID="btnCoursePrev" runat="server" OnCommand="PreviewPage_Command" CommandArgument="course:prev" CssClass="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-slate-600 hover:bg-slate-50 disabled:opacity-40" style="font-size:12px;font-weight:600">Previous</asp:LinkButton>
+                                <asp:LinkButton ID="btnCourseNext" runat="server" OnCommand="PreviewPage_Command" CommandArgument="course:next" CssClass="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-slate-600 hover:bg-slate-50 disabled:opacity-40" style="font-size:12px;font-weight:600">Next</asp:LinkButton>
+                            </div>
                         </div>
 
                         <asp:PlaceHolder ID="emptyCoursePreviewPanel" runat="server" Visible="false">
@@ -292,8 +318,12 @@
                             </tbody>
                         </table>
 
-                        <div class="mt-3 text-slate-400" style="font-size:11.5px">
+                        <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-slate-400" style="font-size:11.5px">
                             <asp:Literal ID="litAttendancePreviewCount" runat="server"></asp:Literal>
+                            <div class="flex items-center gap-2">
+                                <asp:LinkButton ID="btnAttendancePrev" runat="server" OnCommand="PreviewPage_Command" CommandArgument="attendance:prev" CssClass="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-slate-600 hover:bg-slate-50 disabled:opacity-40" style="font-size:12px;font-weight:600">Previous</asp:LinkButton>
+                                <asp:LinkButton ID="btnAttendanceNext" runat="server" OnCommand="PreviewPage_Command" CommandArgument="attendance:next" CssClass="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-slate-600 hover:bg-slate-50 disabled:opacity-40" style="font-size:12px;font-weight:600">Next</asp:LinkButton>
+                            </div>
                         </div>
 
                         <asp:PlaceHolder ID="emptyAttendancePreviewPanel" runat="server" Visible="false">
@@ -337,8 +367,12 @@
                             </tbody>
                         </table>
 
-                        <div class="mt-3 text-slate-400" style="font-size:11.5px">
+                        <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-slate-400" style="font-size:11.5px">
                             <asp:Literal ID="litAtRiskPreviewCount" runat="server"></asp:Literal>
+                            <div class="flex items-center gap-2">
+                                <asp:LinkButton ID="btnAtRiskPrev" runat="server" OnCommand="PreviewPage_Command" CommandArgument="atrisk:prev" CssClass="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-slate-600 hover:bg-slate-50 disabled:opacity-40" style="font-size:12px;font-weight:600">Previous</asp:LinkButton>
+                                <asp:LinkButton ID="btnAtRiskNext" runat="server" OnCommand="PreviewPage_Command" CommandArgument="atrisk:next" CssClass="inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-slate-600 hover:bg-slate-50 disabled:opacity-40" style="font-size:12px;font-weight:600">Next</asp:LinkButton>
+                            </div>
                         </div>
 
                         <asp:PlaceHolder ID="emptyAtRiskPreviewPanel" runat="server" Visible="false">
@@ -368,7 +402,7 @@
             tableId: "tblReportPreview",
             fileBase: "Student_Academic_Report",
             sheetName: "Academic Report",
-            usesStatus: true
+            statusFilter: "student"
           },
           programme: {
             title: "Programme Performance Report",
@@ -376,7 +410,7 @@
             tableId: "tblProgrammePreview",
             fileBase: "Programme_Performance_Report",
             sheetName: "Programme Report",
-            usesStatus: true
+            statusFilter: "programme"
           },
           course: {
             title: "Course Performance Report",
@@ -384,7 +418,7 @@
             tableId: "tblCoursePreview",
             fileBase: "Course_Performance_Report",
             sheetName: "Course Report",
-            usesStatus: false
+            statusFilter: ""
           },
           attendance: {
             title: "Attendance Summary Report",
@@ -392,7 +426,7 @@
             tableId: "tblAttendancePreview",
             fileBase: "Attendance_Summary_Report",
             sheetName: "Attendance Report",
-            usesStatus: false
+            statusFilter: ""
           },
           atrisk: {
             title: "At-Risk Student Report",
@@ -400,7 +434,7 @@
             tableId: "tblAtRiskPreview",
             fileBase: "At_Risk_Student_Report",
             sheetName: "At-Risk Students",
-            usesStatus: false
+            statusFilter: ""
           }
         };
         var activeKey = "student";
@@ -425,6 +459,11 @@
           });
         }
 
+        function selectedStatusText(report) {
+          if (!report || !report.statusFilter) return "Not applicable";
+          return getSelectedTextByIdEnding(report.statusFilter === "programme" ? "ddlProgrammeStatus" : "ddlStatus");
+        }
+
         function setReport(key) {
           activeKey = config[key] ? key : "student";
           var current = getActiveConfig();
@@ -433,13 +472,15 @@
           var desc = document.getElementById("reportDescription");
           var pdfBtn = document.getElementById("btnGeneratePdf");
           var excelBtn = document.getElementById("btnGenerateExcel");
-          var statusFilter = document.getElementById("statusFilterField");
+          var studentStatusFilter = document.getElementById("studentStatusFilterField");
+          var programmeStatusFilter = document.getElementById("programmeStatusFilterField");
           if (hidden) hidden.value = activeKey;
           if (title) title.textContent = current.title;
           if (desc) desc.textContent = current.description;
           if (pdfBtn) pdfBtn.setAttribute("data-toast", current.title + " generated");
           if (excelBtn) excelBtn.setAttribute("data-toast", current.title + " generated");
-          if (statusFilter) statusFilter.style.display = current.usesStatus === false ? "none" : "";
+          if (studentStatusFilter) studentStatusFilter.style.display = current.statusFilter === "student" ? "" : "none";
+          if (programmeStatusFilter) programmeStatusFilter.style.display = current.statusFilter === "programme" ? "" : "none";
           document.querySelectorAll("[data-report-preview]").forEach(function (panel) {
             panel.style.display = panel.getAttribute("data-report-preview") === activeKey ? "" : "none";
           });
@@ -458,7 +499,8 @@
           getActiveConfig: getActiveConfig,
           getVisibleTable: visibleTable,
           getTableHeaders: tableHeaders,
-          getBodyRows: bodyRows
+          getBodyRows: bodyRows,
+          getSelectedStatusText: selectedStatusText
         };
         var hidden = document.querySelector("[id$='hdnReportType']");
         setReport(hidden && hidden.value ? hidden.value : "student");
@@ -513,7 +555,9 @@
 
                 var semester = getSelectedTextByIdEnding("ddlSemester");
                 var programme = getSelectedTextByIdEnding("ddlProgramme");
-                var status = report.usesStatus === false ? "Not applicable" : getSelectedTextByIdEnding("ddlStatus");
+                var status = window.REPORT_GENERATOR && window.REPORT_GENERATOR.getSelectedStatusText
+                    ? window.REPORT_GENERATOR.getSelectedStatusText(report)
+                    : getSelectedTextByIdEnding("ddlStatus");
 
                 var generatedAt = new Date().toLocaleString();
                 // Row 1
@@ -670,7 +714,9 @@
 
                 var semester = getSelectedTextByIdEnding("ddlSemester");
                 var programme = getSelectedTextByIdEnding("ddlProgramme");
-                var status = report.usesStatus === false ? "Not applicable" : getSelectedTextByIdEnding("ddlStatus");
+                var status = window.REPORT_GENERATOR && window.REPORT_GENERATOR.getSelectedStatusText
+                    ? window.REPORT_GENERATOR.getSelectedStatusText(report)
+                    : getSelectedTextByIdEnding("ddlStatus");
 
                 var bodyRows = window.REPORT_GENERATOR && window.REPORT_GENERATOR.getBodyRows
                     ? window.REPORT_GENERATOR.getBodyRows(table)

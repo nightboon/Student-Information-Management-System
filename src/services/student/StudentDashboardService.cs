@@ -34,6 +34,7 @@ namespace src.services
             var currentAttendanceCourses = attendance == null ? new List<StudentAttendanceCourse>() : attendance.Courses.Where(c => c.IsCurrent).ToList();
             var total = currentAttendanceCourses.Sum(c => c.TotalCount);
             var present = currentAttendanceCourses.Sum(c => c.PresentCount);
+            var late = currentAttendanceCourses.Sum(c => c.LateCount);
 
             return new StudentDashboardData
             {
@@ -44,7 +45,7 @@ namespace src.services
                 AssignmentsDueThisWeek = dueSoon,
                 Announcements = StudentAnnouncementReader.GetNotifications(user, readIds).Take(5).ToList(),
                 Cgpa = gradePage == null ? null : gradePage.Cgpa,
-                AttendanceRate = total == 0 ? (decimal?)null : Math.Round((decimal)present / total, 4),
+                AttendanceRate = total == 0 ? (decimal?)null : Math.Round((decimal)(present + late) / total, 4),
                 CreditsEarned = gradePage == null ? 0 : gradePage.CreditsEarned,
                 PendingTaskCount = assignments.Count(a => !a.HasSubmission && currentOfferingIds.Contains(a.OfferId))
             };

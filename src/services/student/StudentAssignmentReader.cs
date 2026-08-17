@@ -17,9 +17,16 @@ namespace src.services
 
             var sql =
                 "SELECT mat.material_id, a.assignment_id, a.offer_id, a.title, CAST(a.description AS varchar(max)) AS description, a.total_marks, a.due_date, " +
+                "ISNULL(a.submission_mode, 'FILE') AS submission_mode, sub.extension_deadline, sub.extension_granted_at, " +
                 "mat.material_type, mat.weight, mat.file_url AS material_file_url, " +
-                "c.course_code, sub.submission_id, sub.file_url, sub.marks_obtained, sub.status AS submission_status, " +
-                "ISNULL(sub.feedback, '') AS feedback, ISNULL(sub.annotated_file_url, '') AS annotated_file_url " +
+                "c.course_code, sub.submission_id, sub.file_url, " +
+                "CASE WHEN ISNULL(a.submission_mode, 'FILE') IN ('FILE','LINK') AND (sub.status = 'MISSING' OR " +
+                "(sub.status = 'EXTENDED' AND sub.extension_deadline < GETDATE()) OR " +
+                "(sub.submission_id IS NULL AND a.due_date < GETDATE())) " +
+                "THEN CAST(0 AS decimal(5,2)) ELSE sub.published_marks_obtained END AS student_marks, " +
+                "sub.status AS submission_status, " +
+                "ISNULL(sub.published_feedback, '') AS feedback, " +
+                "ISNULL(sub.published_annotated_file_url, '') AS annotated_file_url " +
                 "FROM ASSIGNMENTS a " +
                 "JOIN MATERIALS mat ON mat.assignment_id = a.assignment_id " +
                 "JOIN COURSE_OFFERINGS co ON co.offer_id = a.offer_id " +
@@ -43,10 +50,15 @@ namespace src.services
                     {
                         while (reader.Read())
                         {
-                            var hasSubmission = reader["submission_id"] != DBNull.Value;
                             var rawStatus = Text(reader["submission_status"]).ToUpperInvariant();
+                            var hasSubmission = reader["submission_id"] != DBNull.Value &&
+                                rawStatus != "MISSING" && !string.IsNullOrWhiteSpace(Text(reader["file_url"]));
                             var dueDate = DateValue(reader["due_date"]) ?? DateTime.Today;
-                            var marks = DecimalValue(reader["marks_obtained"]);
+                            var mode = Text(reader["submission_mode"]).ToUpperInvariant();
+                            bool requiresSubmission = mode != "MANUAL";
+                            var extensionDeadline = DateValue(reader["extension_deadline"]);
+                            bool extensionOpen = extensionDeadline.HasValue && extensionDeadline.Value >= DateTime.Now;
+                            var marks = DecimalValue(reader["student_marks"]);
                             assignments.Add(new StudentCourseAssignment
                             {
                                 MaterialId = IntValue(reader["material_id"]),
@@ -54,12 +66,19 @@ namespace src.services
                                 OfferId = IntValue(reader["offer_id"]),
                                 Title = Text(reader["title"]),
                                 Description = Text(reader["description"]),
-                                DueDate = dueDate,
+                                DueDate = extensionOpen ? extensionDeadline.Value : dueDate,
                                 Weight = DecimalValue(reader["weight"]),
                                 AssignmentType = Text(reader["material_type"]),
+                                SubmissionMode = mode,
+                                RequiresSubmission = requiresSubmission,
+                                CanSubmit = requiresSubmission && (DateTime.Now <= dueDate || extensionOpen),
+                                ExtensionDeadline = extensionDeadline,
                                 GroupSize = "",
-                                SubmissionStatus = marks.HasValue || rawStatus == "GRADED" ? "MARKED" : hasSubmission ? "SUBMITTED" : "PENDING",
-                                HasSubmission = hasSubmission,
+                                SubmissionStatus = marks.HasValue ? "MARKED" :
+                                    extensionOpen && !hasSubmission ? "EXTENDED" :
+                                    hasSubmission ? (rawStatus == "LATE" ? "LATE" : "SUBMITTED") :
+                                    requiresSubmission ? "PENDING" : "NO UPLOAD REQUIRED",
+                                HasSubmission = hasSubmission && requiresSubmission,
                                 SubmissionFileUrl = Text(reader["file_url"]),
                                 MaterialFileUrl = Text(reader["material_file_url"]),
                                 Feedback = Text(reader["feedback"]),
@@ -97,6 +116,7 @@ namespace src.services
             using (var conn = Db.OpenConnection())
             using (var cmd = new SqlCommand(sql, conn))
                 cmd.ExecuteNonQuery();
+            LecturerGradeReader.EnsureReviewColumns();
             LecturerMaterialReader.EnsureAssessmentAssignments();
         }
 
@@ -151,28 +171,100 @@ namespace src.services
             var account = StudentProfileReader.GetAccount(user);
             if (account == null) return false;
 
-            var assignments = AssignmentService.GetData(user);
-            var assignment = assignments.FirstOrDefault(a => a.AssignmentId == assignmentId);
-            if (assignment == null) return false;
-
-            var status = assignment.DueDate.HasValue && DateTime.Now > assignment.DueDate.Value ? "LATE" : "SUBMITTED";
-            var existing = SubmissionService.GetData(user).FirstOrDefault(s => s.AssignmentId == assignmentId && string.Equals(s.StudentId, account.StudentId, StringComparison.OrdinalIgnoreCase));
-            var request = new SubmissionSaveRequest
+            EnsureReviewColumns();
+            SubmissionNotificationService.EnsureTables();
+            using (var conn = Db.OpenConnection())
             {
-                SubmissionId = existing == null ? 0 : existing.SubmissionId,
-                AssignmentId = assignmentId,
-                StudentId = account.StudentId,
-                SubmittedAt = DateTime.Now,
-                FileUrl = fileUrl,
-                MarksObtained = existing == null ? null : existing.MarksObtained,
-                Status = status
-            };
+                const string lookup =
+                    "SELECT a.due_date, ISNULL(a.submission_mode, 'FILE') AS submission_mode, " +
+                    "sub.submission_id, sub.extension_deadline " +
+                    "FROM ASSIGNMENTS a JOIN ENROLLMENTS e ON e.offer_id = a.offer_id " +
+                    "AND e.student_id = @studentId AND e.status = 'ENROLLED' " +
+                    "LEFT JOIN SUBMISSIONS sub ON sub.assignment_id = a.assignment_id AND sub.student_id = @studentId " +
+                    "WHERE a.assignment_id = @assignmentId";
+                DateTime? dueDate;
+                DateTime? extensionDeadline;
+                int submissionId;
+                string mode;
+                using (var cmd = new SqlCommand(lookup, conn))
+                {
+                    cmd.Parameters.AddWithValue("@studentId", account.StudentId);
+                    cmd.Parameters.AddWithValue("@assignmentId", assignmentId);
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        if (!reader.Read()) return false;
+                        dueDate = DateValue(reader["due_date"]);
+                        extensionDeadline = DateValue(reader["extension_deadline"]);
+                        submissionId = IntValue(reader["submission_id"]);
+                        mode = Text(reader["submission_mode"]).ToUpperInvariant();
+                    }
+                }
 
-            if (existing == null)
-            {
-                return SubmissionService.Add(user, request) > 0;
+                if (mode == "MANUAL") return false;
+                Uri submittedUrl = null;
+                if (mode == "LINK" && !IsGoogleDriveUrl(fileUrl, out submittedUrl)) return false;
+                if (mode == "LINK") fileUrl = submittedUrl.AbsoluteUri;
+                if (mode == "FILE" &&
+                    !fileUrl.StartsWith("~/uploads/submissions/", StringComparison.OrdinalIgnoreCase))
+                    return false;
+                var now = DateTime.Now;
+                bool onTime = !dueDate.HasValue || now <= dueDate.Value;
+                bool extensionOpen = extensionDeadline.HasValue && now <= extensionDeadline.Value;
+                if (!onTime && !extensionOpen) return false;
+                string status = onTime ? "SUBMITTED" : "LATE";
+
+                using (var transaction = conn.BeginTransaction())
+                {
+                    try
+                    {
+                        int savedSubmissionId = submissionId;
+                        string sql = submissionId > 0
+                            ? "UPDATE SUBMISSIONS SET submitted_at=@now,file_url=@file,status=@status,marks_obtained=NULL," +
+                              "published_marks_obtained=NULL,published_feedback=NULL,published_annotated_file_url=NULL,published_at=NULL " +
+                              "WHERE submission_id=@submissionId"
+                            : "INSERT INTO SUBMISSIONS (assignment_id,student_id,submitted_at,file_url,marks_obtained,status) " +
+                              "OUTPUT INSERTED.submission_id VALUES (@assignmentId,@studentId,@now,@file,NULL,@status)";
+                        using (var cmd = new SqlCommand(sql, conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@assignmentId", assignmentId);
+                            cmd.Parameters.AddWithValue("@studentId", account.StudentId);
+                            cmd.Parameters.AddWithValue("@submissionId", submissionId);
+                            cmd.Parameters.AddWithValue("@now", now);
+                            cmd.Parameters.AddWithValue("@file", fileUrl);
+                            cmd.Parameters.AddWithValue("@status", status);
+                            if (submissionId > 0)
+                            {
+                                if (cmd.ExecuteNonQuery() != 1) return false;
+                            }
+                            else
+                            {
+                                savedSubmissionId = Convert.ToInt32(cmd.ExecuteScalar());
+                            }
+                        }
+
+                        SubmissionNotificationService.InsertSubmitted(
+                            conn, transaction, savedSubmissionId, now, status);
+                        transaction.Commit();
+                        return true;
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
             }
-            return SubmissionService.Edit(user, request);
+        }
+
+        private static bool IsGoogleDriveUrl(string value, out Uri uri)
+        {
+            if (!Uri.TryCreate((value ?? "").Trim(), UriKind.Absolute, out uri) ||
+                uri.Scheme != Uri.UriSchemeHttps)
+                return false;
+
+            return string.Equals(uri.Host.TrimEnd('.'), "drive.google.com", StringComparison.OrdinalIgnoreCase) &&
+                uri.AbsolutePath.StartsWith("/file/d/", StringComparison.OrdinalIgnoreCase) &&
+                uri.AbsolutePath.Length > "/file/d/".Length;
         }
     }
 }

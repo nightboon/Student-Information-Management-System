@@ -12,7 +12,7 @@
                 <%= DateTime.Now.ToString("dddd, dd MMMM yyyy") %>
             </div>
             <h1 class="mt-4 text-white" style="font-size:32px;font-weight:700;letter-spacing:-0.015em;line-height:1.15">
-                Good Morning, <%= Server.HtmlEncode(Session["username"] as string ?? "Administrator") %> <span role="img" aria-label="wave">&#128075;</span>
+                <%= Greeting %>, <%= Server.HtmlEncode(Session["username"] as string ?? "Administrator") %> <span role="img" aria-label="wave">&#128075;</span>
             </h1>
             <p class="mt-2 max-w-2xl text-white/75" style="font-size:15px;line-height:1.6">
                 You have <span class="text-white font-semibold"><%= Number(Dashboard.PendingRequests) %> add/drop requests</span> and

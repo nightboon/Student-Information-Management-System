@@ -37,7 +37,9 @@ namespace src.services
 
         public static void SaveGradeMarks(UserContext user, int assessmentId, IDictionary<int, decimal?> marks) => LecturerGradeReader.SaveGradeMarks(user, assessmentId, marks);
 
-        public static void PublishGrades(UserContext user, int assessmentId) => LecturerGradeReader.PublishGrades(user, assessmentId);
+        public static GradeNotificationService.GradeEmailSendResult PublishGrades(UserContext user, int assessmentId) => LecturerGradeReader.PublishGrades(user, assessmentId);
+        public static bool GrantSubmissionExtension(UserContext user, int submissionId, DateTime deadline) => LecturerGradeReader.GrantExtension(user, submissionId, deadline);
+        public static bool ExpireSubmissionExtension(UserContext user, int submissionId) => LecturerGradeReader.ExpireExtension(user, submissionId);
 
         public static bool SaveSubmissionReview(UserContext user, int submissionId, string feedback, string annotatedFileUrl) => LecturerGradeReader.SaveReview(user, submissionId, feedback, annotatedFileUrl);
         public static string GetAnnotationDraft(UserContext user, int submissionId) => LecturerGradeReader.GetAnnotationDraft(user, submissionId);
@@ -58,6 +60,7 @@ namespace src.services
         public static int AddMaterial(UserContext user, LecturerMaterialInput input) => LecturerMaterialReader.Add(user, input);
 
         public static decimal GetMaterialWeightTotal(UserContext user, int offeringId) => LecturerMaterialReader.GetWeightTotal(user, offeringId);
+        public static MaterialWeightUpdateResult UpdateMaterialWeight(UserContext user, int materialId, decimal weight) => LecturerMaterialReader.UpdateWeight(user, materialId, weight);
 
         public static bool DeleteMaterial(UserContext user, int materialId) => LecturerMaterialReader.Delete(user, materialId);
         public static bool UpdateModule(UserContext user, int offeringId, string moduleId, string title, string description) => LecturerMaterialReader.UpdateModule(user, offeringId, moduleId, title, description);

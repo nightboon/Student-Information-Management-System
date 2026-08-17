@@ -23,5 +23,19 @@ namespace src.services
             var result = AccountPasswordService.ChangePassword(userId, currentPassword, newPassword);
             return new { ok = result.Ok, message = result.Message };
         }
+
+        public static object SaveProfile(string phone, string mailingAddress)
+        {
+            var ctx = HttpContext.Current;
+            var user = ctx == null ? null : UserContextFactory.FromSession(ctx.Session);
+            if (user == null)
+            {
+                if (ctx != null) ctx.Response.StatusCode = 401;
+                return new { ok = false, message = "Your session has expired. Please sign in again." };
+            }
+
+            var result = AccountProfileService.SaveProfile(user, phone, mailingAddress);
+            return new { ok = result.Ok, message = result.Message };
+        }
     }
 }

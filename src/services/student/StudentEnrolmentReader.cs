@@ -21,7 +21,7 @@ namespace src.services
             if (account == null) return null;
 
             var semesterCount = account.ProgrammeSemesterCount;
-            var isGraduated = semesterCount > 0 && account.CurrentSemesterNo >= semesterCount;
+            var isGraduated = semesterCount > 0 && account.CurrentSemesterNo > semesterCount;
             var term = AcademicTermReader.GetRegistrationTerm(user);
             var alreadyRegisteredCount = term == null ? 0 : GetRegisteredCount(account.StudentId, term);
             return new StudentEnrollmentPage
@@ -51,13 +51,13 @@ namespace src.services
             }
         }
 
-        /// <summary>Course codes the student has passed (a GRADES row with a letter grade other than 'F').</summary>
+        /// <summary>Course codes the student has passed with a grade of C- or above (prerequisite-eligible).</summary>
         private static HashSet<string> GetPassedCourseIds(SqlConnection conn, string studentId)
         {
             const string sql =
                 "SELECT DISTINCT co.course_id FROM GRADES g " +
                 "JOIN COURSE_OFFERINGS co ON co.offer_id = g.offer_id " +
-                "WHERE g.student_id = @studentId AND g.letter_grade IS NOT NULL AND g.letter_grade <> 'F'";
+                "WHERE g.student_id = @studentId AND g.letter_grade IS NOT NULL AND g.letter_grade NOT IN ('D', 'F')";
             var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             using (var cmd = new SqlCommand(sql, conn))
             {
@@ -78,12 +78,12 @@ namespace src.services
             return passedCourseIds.Contains(required);
         }
 
-        /// <summary>SQL fragment (uses @studentId) verifying a course's prerequisite, if any, has been passed.</summary>
+        /// <summary>SQL fragment (uses @studentId) verifying a course's prerequisite, if any, has been passed with a grade of C- or above.</summary>
         private const string PrerequisiteMetSql =
             "(c.prerequisites IS NULL OR c.prerequisites = '' OR c.prerequisites = 'None' " +
             "OR EXISTS (SELECT 1 FROM GRADES g JOIN COURSE_OFFERINGS gco ON gco.offer_id = g.offer_id " +
             "WHERE g.student_id = @studentId AND gco.course_id = c.prerequisites " +
-            "AND g.letter_grade IS NOT NULL AND g.letter_grade <> 'F'))";
+            "AND g.letter_grade IS NOT NULL AND g.letter_grade NOT IN ('D', 'F')))";
 
         private static List<StudentOfferingOption> GetOfferingOptions(UserContext user, string studentId, StudentRegistrationTerm term)
         {

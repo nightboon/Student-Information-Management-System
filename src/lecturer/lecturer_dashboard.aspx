@@ -97,21 +97,23 @@
             <asp:Repeater ID="scheduleRepeater" runat="server">
                 <HeaderTemplate><ul class="divide-y divide-slate-100"></HeaderTemplate>
                 <ItemTemplate>
-                    <li class="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/60 transition-colors">
-                        <div class="w-1.5 h-12 rounded-full" style="background-color:<%# ClassColor(Eval("Color") as string) %>"></div>
-                        <div class="min-w-0 flex-1">
-                            <div class="flex items-center gap-2">
-                                <span class="text-slate-900 truncate" style="font-size:14px;font-weight:600"><%# Server.HtmlEncode(Eval("CourseName").ToString()) %></span>
-                                <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-600" style="font-size:10.5px;font-weight:600"><%# Server.HtmlEncode(Eval("CourseCode").ToString()) %></span>
-                                <asp:Literal runat="server" Visible='<%# IsLiveNow((TimeSpan)Eval("StartTime"), (TimeSpan)Eval("EndTime")) %>'
-                                    Text='<span class="inline-flex items-center gap-1 rounded-md bg-[#e0162b]/10 px-1.5 py-0.5 text-[#a01020]" style="font-size:10.5px;font-weight:600"><span class="h-1.5 w-1.5 rounded-full bg-[#e0162b] animate-pulse"></span>LIVE</span>' />
+                    <li>
+                        <a href='<%# ResolveUrl("~/lecturer/lecturer_attendance.aspx#weekly-schedule") %>' class="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/60 transition-colors">
+                            <div class="w-1.5 h-12 rounded-full" style="background-color:<%# ClassColor(Eval("Color") as string) %>"></div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-slate-900 truncate" style="font-size:14px;font-weight:600"><%# Server.HtmlEncode(Eval("CourseName").ToString()) %></span>
+                                    <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-600" style="font-size:10.5px;font-weight:600"><%# Server.HtmlEncode(Eval("CourseCode").ToString()) %></span>
+                                    <asp:Literal runat="server" Visible='<%# IsLiveNow((TimeSpan)Eval("StartTime"), (TimeSpan)Eval("EndTime")) %>'
+                                        Text='<span class="inline-flex items-center gap-1 rounded-md bg-[#e0162b]/10 px-1.5 py-0.5 text-[#a01020]" style="font-size:10.5px;font-weight:600"><span class="h-1.5 w-1.5 rounded-full bg-[#e0162b] animate-pulse"></span>LIVE</span>' />
+                                </div>
+                                <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-500" style="font-size:12.5px">
+                                    <span class="inline-flex items-center gap-1"><i data-lucide="clock" class="h-3.5 w-3.5"></i><%# FormatTimeRange((TimeSpan)Eval("StartTime"), (TimeSpan)Eval("EndTime")) %></span>
+                                    <span class="inline-flex items-center gap-1"><i data-lucide="map-pin" class="h-3.5 w-3.5"></i><%# Server.HtmlEncode(Eval("Venue").ToString()) %></span>
+                                </div>
                             </div>
-                            <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-500" style="font-size:12.5px">
-                                <span class="inline-flex items-center gap-1"><i data-lucide="clock" class="h-3.5 w-3.5"></i><%# FormatTimeRange((TimeSpan)Eval("StartTime"), (TimeSpan)Eval("EndTime")) %></span>
-                                <span class="inline-flex items-center gap-1"><i data-lucide="map-pin" class="h-3.5 w-3.5"></i><%# Server.HtmlEncode(Eval("Venue").ToString()) %></span>
-                            </div>
-                        </div>
-                        <i data-lucide="chevron-right" class="h-4 w-4 text-slate-300"></i>
+                            <i data-lucide="chevron-right" class="h-4 w-4 text-slate-300"></i>
+                        </a>
                     </li>
                 </ItemTemplate>
                 <FooterTemplate></ul></FooterTemplate>

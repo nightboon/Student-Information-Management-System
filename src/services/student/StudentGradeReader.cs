@@ -13,6 +13,7 @@ namespace src.services
         public static StudentGradePage GetGradePage(UserContext user)
         {
             if (!IsStudent(user)) return null;
+            LecturerGradeReader.EnsureReviewColumns();
 
             var account = StudentProfileReader.GetAccount(user);
             if (account == null) return null;
@@ -132,7 +133,11 @@ namespace src.services
         private static AssessmentSummary GetAssessmentSummary(UserContext user, string studentId, int offerId)
         {
             const string sql =
-                "SELECT a.total_marks, sub.marks_obtained " +
+                "SELECT a.total_marks, " +
+                "CASE WHEN ISNULL(a.submission_mode, 'FILE') IN ('FILE','LINK') AND (sub.status = 'MISSING' OR " +
+                "(sub.status = 'EXTENDED' AND sub.extension_deadline < GETDATE()) OR " +
+                "(sub.submission_id IS NULL AND a.due_date < GETDATE())) " +
+                "THEN CAST(0 AS decimal(5,2)) ELSE sub.published_marks_obtained END AS student_marks " +
                 "FROM ASSIGNMENTS a " +
                 "LEFT JOIN SUBMISSIONS sub ON sub.assignment_id = a.assignment_id AND sub.student_id = @studentId " +
                 "WHERE a.offer_id = @offerId";
@@ -150,7 +155,7 @@ namespace src.services
                     while (reader.Read())
                     {
                         total++;
-                        var marks = DecimalValue(reader["marks_obtained"]);
+                        var marks = DecimalValue(reader["student_marks"]);
                         if (!marks.HasValue) continue;
                         var max = IntValue(reader["total_marks"]);
                         if (max <= 0) max = 100;

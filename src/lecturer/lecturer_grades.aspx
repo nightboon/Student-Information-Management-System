@@ -2,6 +2,11 @@
 
 <asp:Content ContentPlaceHolderID="MainContent" runat="server">
     <style>
+        [data-extension-dialog]::backdrop {
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(1px);
+        }
+
         @media print {
             body * {
                 visibility: hidden !important;
@@ -60,9 +65,9 @@
 
     <section class="mt-6 grid gap-4 md:grid-cols-4">
         <div class="rounded-lg border border-slate-200 bg-white p-5"><p class="text-slate-500" style="font-size:12.5px">Students</p><p class="mt-1 text-slate-900" style="font-size:28px;font-weight:700"><%= StudentCount %></p></div>
-        <div class="rounded-lg border border-slate-200 bg-white p-5"><p class="text-slate-500" style="font-size:12.5px">Marked</p><p class="mt-1 text-emerald-700" style="font-size:28px;font-weight:700"><%= MarksDisplay %></p></div>
-        <div class="rounded-lg border border-slate-200 bg-white p-5"><p class="text-slate-500" style="font-size:12.5px">Pending</p><p class="mt-1 text-amber-700" style="font-size:28px;font-weight:700"><%= PendingCount %></p></div>
-        <div class="rounded-lg border border-slate-200 bg-white p-5"><p class="text-slate-500" style="font-size:12.5px">Average</p><p class="mt-1 text-slate-900" style="font-size:28px;font-weight:700"><%= AverageDisplay %></p></div>
+        <div class="rounded-lg border border-slate-200 bg-white p-5"><p class="text-slate-500" style="font-size:12.5px">Marked</p><p data-stat-marked class="mt-1 text-emerald-700" style="font-size:28px;font-weight:700"><%= MarksDisplay %></p></div>
+        <div class="rounded-lg border border-slate-200 bg-white p-5"><p class="text-slate-500" style="font-size:12.5px">Pending</p><p data-stat-pending class="mt-1 text-amber-700" style="font-size:28px;font-weight:700"><%= PendingCount %></p></div>
+        <div class="rounded-lg border border-slate-200 bg-white p-5"><p class="text-slate-500" style="font-size:12.5px">Average</p><p data-stat-average class="mt-1 text-slate-900" style="font-size:28px;font-weight:700"><%= AverageDisplay %></p></div>
     </section>
 
     <section id="submissions" class="mt-6 scroll-mt-20 rounded-lg border border-slate-200 bg-white">
@@ -85,15 +90,53 @@
                 <tbody class="divide-y divide-slate-100" style="font-size:13px">
                     <asp:Repeater ID="gradeRepeater" runat="server" OnItemDataBound="gradeRepeater_ItemDataBound" OnItemCommand="gradeRepeater_ItemCommand">
                         <ItemTemplate>
-                            <tr data-grade-row data-filter-text='<%# Html(Eval("StudentName")) %> <%# Html(Eval("StudentNo")) %> <%# Html(Eval("SubmissionStatus")) %>' class="hover:bg-slate-50/60">
+                            <tr data-grade-row data-submission-id='<%# Eval("SubmissionId") %>' data-extension-deadline='<%# Convert.ToString(Eval("MarkStatus")) == "Awaiting late submission" ? ExtensionDeadlineValue(Eval("ExtensionDeadline")) : "" %>' data-filter-text='<%# Html(Eval("StudentName")) %> <%# Html(Eval("StudentNo")) %> <%# Html(Eval("SubmissionStatus")) %>' class="hover:bg-slate-50/60">
                                 <td class="px-6 py-4"><asp:HiddenField ID="studentId" runat="server" Value='<%# Eval("StudentId") %>' /><asp:HiddenField ID="submissionId" runat="server" Value='<%# Eval("SubmissionId") %>' /><div class="font-semibold text-slate-900"><%# Html(Eval("StudentName")) %></div><div class="text-slate-500"><%# Html(Eval("StudentNo")) %></div></td>
                                 <td class="break-words px-6 py-4 text-slate-600"><%# Html(Eval("StudentEmail")) %></td>
                                 <td class="px-6 py-4 align-top">
-                                    <button type="button" data-review-open='<%# ReviewModalId(Eval("SubmissionId")) %>' class='<%# Convert.ToBoolean(Eval("HasSubmission")) ? "inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 text-slate-700 hover:bg-slate-50" : "hidden" %>' style="font-size:12.5px;font-weight:600">
+                                    <button type="button" data-review-open='<%# ReviewModalId(Eval("SubmissionId")) %>' class='<%# Convert.ToBoolean(Eval("CanReviewFile")) ? "inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 text-slate-700 hover:bg-slate-50" : "hidden" %>' style="font-size:12.5px;font-weight:600">
                                         <i data-lucide="file-search" class="h-4 w-4"></i>Review submission
                                     </button>
+                                    <a runat="server" Visible='<%# Convert.ToBoolean(Eval("IsLinkSubmission")) && Convert.ToBoolean(Eval("HasSubmission")) %>'
+                                        href='<%# SubmissionPreviewUrl(Eval("SubmissionFileUrl")) %>' target="_blank" rel="noopener"
+                                        class="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 text-slate-700 hover:bg-slate-50"
+                                        style="font-size:12.5px;font-weight:600">
+                                        <i data-lucide="video" class="h-4 w-4"></i>Open Google Drive Link
+                                    </a>
                                     <span class='<%# Convert.ToBoolean(Eval("HasSubmission")) ? "hidden" : "text-slate-400" %>' style="font-size:12.5px">No attachment</span>
-                                    <div class='mt-1 <%# SubmissionStatusClass(Eval("IsMissing")) %>' style="font-size:11.5px"><%# Html(Eval("SubmissionStatus")) %><%# SubmittedAtDisplay(Eval("SubmittedAt")) %></div>
+                                    <div data-submission-state class='mt-1 <%# SubmissionStatusClass(Eval("IsMissing")) %>' style="font-size:11.5px"><%# Html(Eval("SubmissionStatus")) %><%# SubmittedAtDisplay(Eval("SubmittedAt")) %></div>
+                                    <asp:PlaceHolder runat="server" Visible='<%# Convert.ToBoolean(Eval("IsMissing")) && !Convert.ToBoolean(Eval("HasExtension")) %>'>
+                                        <button type="button" data-extension-open='<%# ExtensionDialogId(Eval("SubmissionId")) %>'
+                                            class="mt-2 inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-amber-800 hover:bg-amber-100"
+                                            style="font-size:11.5px;font-weight:700">
+                                            <i data-lucide="calendar-plus" class="h-3.5 w-3.5"></i>Allow late submission
+                                        </button>
+                                        <dialog id='<%# ExtensionDialogId(Eval("SubmissionId")) %>' data-extension-dialog
+                                            class="m-auto w-[min(92vw,430px)] rounded-xl border border-slate-200 bg-white p-0 shadow-2xl">
+                                        <div class="flex items-start justify-between border-b border-slate-100 px-5 py-4">
+                                            <div>
+                                                <h3 class="text-slate-900" style="font-size:16px;font-weight:800">Allow late submission</h3>
+                                                <p class="mt-1 text-slate-500" style="font-size:12px">Set a one-time personal deadline for <%# Html(Eval("StudentName")) %>.</p>
+                                            </div>
+                                            <button type="button" data-extension-close class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100" aria-label="Close">
+                                                <i data-lucide="x" class="h-4 w-4"></i>
+                                            </button>
+                                        </div>
+                                        <div class="px-5 py-4">
+                                            <p class="text-slate-700" style="font-size:12px;font-weight:700">One-time personal deadline</p>
+                                            <div class="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                                <asp:TextBox ID="extensionDateInput" runat="server" TextMode="Date" data-extension-date CssClass="h-10 w-full rounded-md border border-slate-200 px-3" style="font-size:12.5px" />
+                                                <asp:TextBox ID="extensionTimeInput" runat="server" TextMode="Time" data-extension-time CssClass="h-10 w-full rounded-md border border-slate-200 px-3" style="font-size:12.5px" />
+                                            </div>
+                                            <p class="mt-3 text-amber-700" style="font-size:11.5px">This extension can only be granted once.</p>
+                                            <div class="mt-4 flex justify-end gap-2">
+                                                <button type="button" data-extension-close class="inline-flex h-9 items-center justify-center rounded-md border border-slate-200 px-4 text-slate-700 hover:bg-slate-50" style="font-size:12px;font-weight:700">Cancel</button>
+                                                <asp:LinkButton runat="server" CausesValidation="false" data-extension-confirm CommandName="GrantExtension" CommandArgument='<%# Eval("SubmissionId") %>' CssClass="inline-flex h-9 items-center justify-center rounded-md bg-[#e0162b] px-4 text-white hover:bg-[#a01020]" style="font-size:12px;font-weight:700">Confirm extension</asp:LinkButton>
+                                            </div>
+                                        </div>
+                                        </dialog>
+                                    </asp:PlaceHolder>
+                                    <span runat="server" Visible='<%# Convert.ToBoolean(Eval("HasExtension")) %>' class="mt-2 inline-flex cursor-not-allowed items-center gap-1.5 rounded-md border border-slate-200 bg-slate-100 px-2.5 py-1.5 text-slate-400" style="font-size:11.5px;font-weight:700"><i data-lucide="calendar-x" class="h-3.5 w-3.5"></i>Extension already granted</span>
                                     <div data-review-modal='<%# ReviewModalId(Eval("SubmissionId")) %>' data-submission-id='<%# Eval("SubmissionId") %>' class="fixed inset-0 z-[70] hidden bg-slate-950/55 px-4 py-5">
                                         <div class="mx-auto flex h-full max-w-[1500px] flex-col overflow-hidden rounded-lg bg-white shadow-2xl">
                                             <div class="flex items-center justify-between border-b border-slate-200 px-5 py-3">
@@ -116,9 +159,9 @@
                                                         <span class="mx-2 h-5 w-px bg-white/25"></span>
                                                         <button type="button" data-annotate-tool="pointer" class="inline-flex h-8 w-8 items-center justify-center rounded-md bg-white/15 hover:bg-white/20" title="Select"><i data-lucide="mouse-pointer-2" class="h-4 w-4"></i></button>
                                                         <button type="button" data-annotate-tool="highlight" class="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-white/10" title="Highlight"><i data-lucide="highlighter" class="h-4 w-4"></i></button>
-                                                        <button type="button" data-annotate-tool="bookmark" class="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-white/10" title="Bookmark comment"><i data-lucide="map-pin" class="h-4 w-4"></i></button>
+                                                        <button type="button" data-annotate-tool="bookmark" class="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-white/10" title="Add bookmark"><i data-lucide="bookmark" class="h-4 w-4"></i></button>
                                                         <button type="button" data-annotate-tool="text" class="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-white/10" title="Text"><i data-lucide="type" class="h-4 w-4"></i></button>
-                                                        <button type="button" data-annotate-tool="strike" class="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-white/10" title="Strikeout"><i data-lucide="strikethrough" class="h-4 w-4"></i></button>
+                                                        <button type="button" data-annotate-tool="strike" class="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-white/10" title="Strike out words"><i data-lucide="strikethrough" class="h-4 w-4"></i></button>
                                                         <button type="button" data-annotate-tool="draw" class="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-white/10" title="Freehand writing"><i data-lucide="pencil" class="h-4 w-4"></i></button>
                                                         <div data-annotation-color-wrap class="hidden h-8 items-center gap-1.5 rounded-md px-2" title="Annotation colour">
                                                             <span style="font-size:11px;font-weight:700">Colour</span>
@@ -141,9 +184,27 @@
                                                         <span data-annotation-draft-status class="hidden text-white/80" style="font-size:11.5px"></span>
                                                         <button type="button" data-annotate-clear class="inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-3 hover:bg-white/10" style="font-size:12px;font-weight:700"><i data-lucide="trash-2" class="h-4 w-4"></i>Clear all</button>
                                                     </div>
-                                                    <div data-preview-shell class="relative min-h-0 flex-1 overflow-auto p-5">
-                                                        <div data-pdf-review data-pdf-url='<%# SubmissionPreviewUrl(Eval("SubmissionFileUrl")) %>' class="mx-auto min-h-[620px] max-w-5xl space-y-5">
-                                                            <div data-pdf-loading class="rounded border border-slate-300 bg-white px-6 py-12 text-center text-slate-500" style="font-size:13px">Loading PDF...</div>
+                                                    <div class="grid min-h-0 flex-1 grid-cols-[200px_minmax(0,1fr)] xl:grid-cols-[230px_minmax(0,1fr)]">
+                                                        <aside data-bookmark-panel class="min-h-0 overflow-y-auto border-r border-slate-200 bg-white">
+                                                            <div class="sticky top-0 z-10 border-b border-slate-100 bg-white px-4 py-3">
+                                                                <div class="flex items-center justify-between gap-2">
+                                                                    <h4 class="flex items-center gap-2 text-slate-900" style="font-size:13px;font-weight:800">
+                                                                        <i data-lucide="bookmark" class="h-4 w-4 text-[#e0162b]"></i>Bookmarks
+                                                                    </h4>
+                                                                    <span data-bookmark-count class="rounded-full bg-slate-100 px-2 py-0.5 text-slate-500" style="font-size:10.5px;font-weight:800">0</span>
+                                                                </div>
+                                                                <p class="mt-1 text-slate-500" style="font-size:11px">Jump to marked sections.</p>
+                                                            </div>
+                                                            <div data-bookmark-list class="space-y-1 p-2"></div>
+                                                            <div data-bookmark-empty class="px-4 py-8 text-center text-slate-400">
+                                                                <i data-lucide="bookmark-plus" class="mx-auto h-5 w-5"></i>
+                                                                <p class="mt-2" style="font-size:11.5px">No bookmarks yet</p>
+                                                            </div>
+                                                        </aside>
+                                                        <div data-preview-shell class="relative min-h-0 overflow-auto p-5">
+                                                            <div data-pdf-review data-pdf-url='<%# SubmissionPreviewUrl(Eval("SubmissionFileUrl")) %>' class="mx-auto min-h-[620px] max-w-5xl space-y-5">
+                                                                <div data-pdf-loading class="rounded border border-slate-300 bg-white px-6 py-12 text-center text-slate-500" style="font-size:13px">Loading PDF...</div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -163,9 +224,9 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4"><asp:TextBox ID="marksInput" runat="server" Text='<%# MarksValue(Eval("Marks")) %>' TextMode="Number" Enabled='<%# Convert.ToBoolean(Eval("HasSubmission")) %>' CssClass="h-9 w-24 rounded-md border border-slate-200 px-3 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500" /></td>
-                                <td class="px-6 py-4"><span class='rounded-full px-2 py-1 <%# GradeBadgeClass(Eval("LetterGrade")) %>' style="font-size:12px;font-weight:700"><%# Html(Eval("LetterGrade")) %></span></td>
-                                <td class="px-6 py-4"><span class='<%# MarkStatusClass(Eval("IsMissing"), Eval("HasMarks")) %> font-semibold'><%# MarkStatusText(Eval("IsMissing"), Eval("HasMarks")) %></span></td>
+                                <td class="px-6 py-4"><asp:TextBox ID="marksInput" runat="server" data-mark-input Text='<%# MarksValue(Eval("Marks")) %>' TextMode="Number" Enabled='<%# Convert.ToBoolean(Eval("CanEnterMarks")) %>' CssClass="h-9 w-24 rounded-md border border-slate-200 px-3 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500" /></td>
+                                <td class="px-6 py-4"><span data-grade-badge class='rounded-full px-2 py-1 <%# GradeBadgeClass(Eval("LetterGrade")) %>' style="font-size:12px;font-weight:700"><%# Html(Eval("LetterGrade")) %></span></td>
+                                <td class="px-6 py-4"><span data-mark-status class='<%# MarkStatusClass(Eval("MarkStatus")) %> font-semibold'><%# Html(Eval("MarkStatus")) %></span></td>
                             </tr>
                         </ItemTemplate>
                     </asp:Repeater>
@@ -179,5 +240,5 @@
     <script src="<%= ResolveUrl("~/js/lecturer/lecturer-portal.js") %>?v=8"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <script src="<%= ResolveUrl("~/js/lecturer/grades.js") %>?v=13"></script>
+    <script src="<%= ResolveUrl("~/js/lecturer/grades.js") %>?v=19"></script>
 </asp:Content>

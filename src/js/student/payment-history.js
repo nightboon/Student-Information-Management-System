@@ -22,6 +22,58 @@
         btn.innerHTML = original;
     });
 
+    // ----- Method + year filtering of the transactions table -----
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initPaymentFilters);
+    } else {
+        initPaymentFilters();
+    }
+
+    function initPaymentFilters() {
+        var methodSel = document.getElementById("pm-filter-method");
+        var yearSel = document.getElementById("pm-filter-year");
+        var countEl = document.getElementById("pm-count");
+        var rows = document.querySelectorAll(".js-pm-row");
+        if ((!methodSel && !yearSel) || !rows.length) return;
+
+        // Build the year dropdown from the years that actually appear in the
+        // payments, newest first — so it never lists a year with no records.
+        if (yearSel) {
+            var years = {};
+            for (var r = 0; r < rows.length; r++) {
+                var y = rows[r].getAttribute("data-year");
+                if (y) years[y] = true;
+            }
+            Object.keys(years).sort().reverse().forEach(function (y) {
+                var opt = document.createElement("option");
+                opt.value = y;
+                opt.textContent = y;
+                yearSel.appendChild(opt);
+            });
+        }
+
+        function applyFilters() {
+            var method = methodSel ? methodSel.value : "all";
+            var year = yearSel ? yearSel.value : "all";
+            var visible = 0;
+
+            for (var i = 0; i < rows.length; i++) {
+                var row = rows[i];
+                var methodOk = method === "all" || row.getAttribute("data-method") === method;
+                var yearOk = year === "all" || row.getAttribute("data-year") === year;
+                var show = methodOk && yearOk;
+                row.style.display = show ? "" : "none";
+                if (show) visible++;
+            }
+
+            if (countEl) countEl.textContent = visible + " of " + rows.length + " shown";
+        }
+
+        if (methodSel) methodSel.addEventListener("change", applyFilters);
+        if (yearSel) yearSel.addEventListener("change", applyFilters);
+        applyFilters();
+    }
+
     function generateInvoicePdf(data) {
         if (!window.jspdf || !window.jspdf.jsPDF) {
             alert("jsPDF is not loaded.");

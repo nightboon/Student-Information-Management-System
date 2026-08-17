@@ -225,13 +225,30 @@
             credentials: "same-origin",
             body: JSON.stringify(payload || {})
           }).then(function (r) {
-            if (!r.ok) throw new Error("Request failed");
-            return r.json();
+            return r.json().then(function (json) {
+              var data = json && json.d ? json.d : json;
+              if (!r.ok || (data && data.ok === false)) throw new Error((data && data.message) || "Request failed");
+              return data;
+            });
           });
         }
         function field(modal, name) {
           var el = modal.querySelector('[data-field="' + name + '"]');
           return el ? el.value.trim() : "";
+        }
+        // Returns true when every listed field has a value; otherwise flags the
+        // first empty one and returns false so the caller can stop before posting.
+        function requireFields(modal, specs) {
+          for (var i = 0; i < specs.length; i++) {
+            var el = modal.querySelector('[data-field="' + specs[i].name + '"]');
+            var value = el ? String(el.value).trim() : "";
+            if (!value) {
+              if (window.toast) window.toast.error(specs[i].label + " is required");
+              if (el && el.focus) el.focus();
+              return false;
+            }
+          }
+          return true;
         }
         function setField(modal, name, value) {
           var el = modal.querySelector('[data-field="' + name + '"]');
@@ -319,6 +336,10 @@
             e.stopImmediatePropagation();
             if (create.disabled) return;
             var modal = document.getElementById("create-user");
+            if (!requireFields(modal, [
+              { name: "fullName", label: "Full name" },
+              { name: "email", label: "Email" }
+            ])) return;
             var request = {
               fullName: field(modal, "fullName"),
               email: field(modal, "email"),
@@ -338,8 +359,8 @@
               + '<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg> Creating...';
             post("CreateUser", { request: request })
               .then(function () { reloadSuccess("User created"); })
-              .catch(function () {
-                if (window.toast) window.toast.error("Could not create user");
+              .catch(function (error) {
+                if (window.toast) window.toast.error(error && error.message ? error.message : "Could not create user");
                 create.disabled = false;
                 create.style.opacity = "";
                 create.style.cursor = "";
@@ -353,6 +374,10 @@
             e.preventDefault();
             e.stopImmediatePropagation();
             var updateModal = document.getElementById("edit-user");
+            if (!requireFields(updateModal, [
+              { name: "fullName", label: "Full name" },
+              { name: "email", label: "Email" }
+            ])) return;
             var updateRequest = {
               userId: parseInt(field(updateModal, "userId"), 10),
               fullName: field(updateModal, "fullName"),
@@ -364,7 +389,22 @@
             };
             post("UpdateUser", { request: updateRequest })
               .then(function () { reloadSuccess("User updated"); })
-              .catch(function () { if (window.toast) window.toast.error("Could not update user"); });
+              .catch(function (error) { if (window.toast) window.toast.error(error && error.message ? error.message : "Could not update user"); });
+            return;
+          }
+
+          var reset = e.target.closest("[data-admin-reset-password]");
+          if (reset) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            var resetRow = reset.closest("tr");
+            var resetEmail = resetRow && resetRow.dataset.email;
+            var resetName = (resetRow && resetRow.dataset.fullName) || "this user";
+            if (!resetEmail) { if (window.toast) window.toast.error("No email on file for this user"); return; }
+            if (!confirm("Send a password reset email to " + resetName + " (" + resetEmail + ")?")) return;
+            post("ResetUserPassword", { email: resetEmail })
+              .then(function () { if (window.toast) window.toast.success("Password reset email sent"); })
+              .catch(function () { if (window.toast) window.toast.error("Could not send reset email"); });
             return;
           }
 
@@ -377,7 +417,7 @@
             if (!confirm((next === "ACTIVE" ? "Activate " : "Deactivate ") + name + "?")) return;
             post("SetUserStatus", { userId: parseInt(status.getAttribute("data-user-id"), 10), status: next })
               .then(function () { reloadSuccess("User updated"); })
-              .catch(function () { if (window.toast) window.toast.error("Could not update user"); });
+              .catch(function (error) { if (window.toast) window.toast.error(error && error.message ? error.message : "Could not update user"); });
           }
         }, true);
       })();

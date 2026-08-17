@@ -43,11 +43,16 @@ namespace src.shared
             return ((bool)isRead) ? "true" : "false";
         }
 
-        protected string Category(object role)
+        protected string Category(object dataItem)
         {
-            return string.Equals(role as string, "ADMIN", StringComparison.OrdinalIgnoreCase)
-                ? "SYSTEM"
-                : "ANNOUNCEMENT";
+            var notification = dataItem as StudentPortalNotification;
+            if (notification == null) return "ANNOUNCEMENT";
+            if (string.Equals(notification.NotificationType, GradeNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase))
+                return "GRADE";
+            if (string.Equals(notification.NotificationType, ExtensionNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase))
+                return "EXTENSION";
+            return string.Equals(notification.AuthorRole, "ADMIN", StringComparison.OrdinalIgnoreCase)
+                ? "SYSTEM" : "ANNOUNCEMENT";
         }
 
         protected string CourseLabel(StudentPortalNotification n)
@@ -127,6 +132,20 @@ namespace src.shared
 
         private static void SetReadState(UserContext user, string notificationType, int notificationId, bool read)
         {
+            if (string.Equals(notificationType, ExtensionNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase))
+            {
+                if (read) ExtensionNotificationService.MarkRead(user, notificationId);
+                else ExtensionNotificationService.MarkUnread(user, notificationId);
+                return;
+            }
+
+            if (string.Equals(notificationType, GradeNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase))
+            {
+                if (read) GradeNotificationService.MarkRead(user, notificationId);
+                else GradeNotificationService.MarkUnread(user, notificationId);
+                return;
+            }
+
             if (string.Equals(notificationType, AdminNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase))
             {
                 if (read) AdminNotificationService.MarkRead(user, notificationId);
@@ -169,12 +188,24 @@ namespace src.shared
             NotificationReadService.MarkAllRead(
                 user,
                 notifications
-                    .Where(n => !string.Equals(n.NotificationType, AdminNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase))
+                    .Where(n => !string.Equals(n.NotificationType, AdminNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase) &&
+                                !string.Equals(n.NotificationType, GradeNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase) &&
+                                !string.Equals(n.NotificationType, ExtensionNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase))
                     .Select(n => n.NotificationId));
             AdminNotificationService.MarkAllRead(
                 user,
                 notifications
                     .Where(n => string.Equals(n.NotificationType, AdminNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase))
+                    .Select(n => n.NotificationId));
+            GradeNotificationService.MarkAllRead(
+                user,
+                notifications
+                    .Where(n => string.Equals(n.NotificationType, GradeNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase))
+                    .Select(n => n.NotificationId));
+            ExtensionNotificationService.MarkAllRead(
+                user,
+                notifications
+                    .Where(n => string.Equals(n.NotificationType, ExtensionNotificationService.NotificationType, StringComparison.OrdinalIgnoreCase))
                     .Select(n => n.NotificationId));
             return CountResponse(user);
         }

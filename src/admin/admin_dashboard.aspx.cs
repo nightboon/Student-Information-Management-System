@@ -15,6 +15,18 @@ namespace src.admin
         protected string PendingActionsHtml { get; private set; }
         protected string AdminNoticesHtml { get; private set; }
 
+        protected string Greeting
+        {
+            get
+            {
+                int hour = DateTime.Now.Hour;
+                if (hour >= 5 && hour < 12) return "Good Morning";
+                if (hour >= 12 && hour < 17) return "Good Afternoon";
+                if (hour >= 17 && hour < 21) return "Good Evening";
+                return "Good Night";
+            }
+        }
+
         protected void Page_Load(object sender, EventArgs e)
         {
             Dashboard = service.GetDashboard();

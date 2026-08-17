@@ -30,12 +30,24 @@ namespace student_information_management_system
                 int offeringId;
                 int.TryParse(context.Request.Form["offeringId"], out offeringId);
                 string materialType = (context.Request.Form["materialType"] ?? "").Trim();
+                string submissionMode = (context.Request.Form["submissionMode"] ?? "").Trim().ToUpperInvariant();
                 string title = (context.Request.Form["title"] ?? "").Trim();
                 string description = (context.Request.Form["description"] ?? "").Trim();
                 bool lectureNotes = materialType.Equals("Lecture Notes", StringComparison.OrdinalIgnoreCase);
                 bool quiz = materialType.Equals("Quiz", StringComparison.OrdinalIgnoreCase);
-                bool assessment = materialType.Equals("Assignment", StringComparison.OrdinalIgnoreCase) ||
-                                  materialType.Equals("Test", StringComparison.OrdinalIgnoreCase);
+                bool viva = materialType.Equals("Viva", StringComparison.OrdinalIgnoreCase);
+                bool assessment = quiz || materialType.Equals("Assignment", StringComparison.OrdinalIgnoreCase) ||
+                                  materialType.Equals("Test", StringComparison.OrdinalIgnoreCase) || viva;
+                bool requiresPositiveWeight = materialType.Equals("Assignment", StringComparison.OrdinalIgnoreCase) ||
+                                              materialType.Equals("Test", StringComparison.OrdinalIgnoreCase) ||
+                                              viva;
+                if (materialType.Equals("Assignment", StringComparison.OrdinalIgnoreCase))
+                    submissionMode = "FILE";
+                else if (quiz || materialType.Equals("Test", StringComparison.OrdinalIgnoreCase))
+                    submissionMode = "MANUAL";
+                else if (viva && submissionMode != "LINK" && submissionMode != "MANUAL")
+                    throw new InvalidOperationException(
+                        "Choose whether this Viva uses a Google Drive video link or lecturer-entered marks.");
 
                 int weekValue;
                 int? week = lectureNotes && int.TryParse(context.Request.Form["week"], out weekValue)
@@ -56,11 +68,11 @@ namespace student_information_management_system
                 if (lectureNotes && (!week.HasValue || week.Value < 1 || week.Value > 14))
                     throw new InvalidOperationException("Please choose a week between Week 1 and Week 14 for lecture notes.");
                 if (assessment && !dueDate.HasValue)
-                    throw new InvalidOperationException("Due date and due time are required for assignments and tests.");
+                    throw new InvalidOperationException("Due date and due time are required for assessments.");
                 if (assessment && !weight.HasValue)
-                    throw new InvalidOperationException("Course weight is required for assignments and tests.");
-                if (assessment && weight.Value <= 0m)
-                    throw new InvalidOperationException("Course weight for assignments and tests must be greater than 0%.");
+                    throw new InvalidOperationException("Course weight is required for assessments.");
+                if (requiresPositiveWeight && weight.Value <= 0m)
+                    throw new InvalidOperationException("Course weight for assessments must be greater than 0%.");
                 if (dueDate.HasValue && dueDate.Value < DateTime.Now)
                     throw new InvalidOperationException("Due date and time cannot be in the past.");
                 if (weight.HasValue && (weight.Value < 0m || weight.Value > 100m))
@@ -76,7 +88,7 @@ namespace student_information_management_system
                 if (assessment && currentWeight >= 100m)
                     throw new InvalidOperationException(
                         "This course has already reached 100% course weight. " +
-                        "Assignments and Tests cannot be added until the course weight is below 100%.");
+                        "Assessments cannot be added until the course weight is below 100%.");
                 if (weight.HasValue && currentWeight + weight.Value > 100m)
                     throw new InvalidOperationException(
                         "This course already uses " + currentWeight.ToString("0.##", CultureInfo.InvariantCulture) +
@@ -93,6 +105,7 @@ namespace student_information_management_system
                     Title = title,
                     Description = description,
                     MaterialType = materialType,
+                    SubmissionMode = submissionMode,
                     Week = week,
                     DueDate = lectureNotes ? null : dueDate,
                     Weight = lectureNotes ? null : weight,

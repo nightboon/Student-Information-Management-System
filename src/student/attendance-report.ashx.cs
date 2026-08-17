@@ -92,7 +92,7 @@ namespace src.student
                 course.TotalCount = course.PresentCount + course.LateCount + course.AbsentCount;
                 course.AttendanceRate = course.TotalCount == 0
                     ? (decimal?)null
-                    : Math.Round((decimal)course.PresentCount / course.TotalCount, 4);
+                    : Math.Round((decimal)(course.PresentCount + course.LateCount) / course.TotalCount, 4);
             }
 
             if (hasRecordFilter)

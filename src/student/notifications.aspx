@@ -37,7 +37,7 @@
                                 data-id="<%# Eval("NotificationId") %>"
                                 data-type="<%# Eval("NotificationType") %>"
                                 data-read="<%# ReadFlag(Eval("IsRead")) %>"
-                                data-category="<%# Category(Eval("AuthorRole")) %>"
+                                data-category="<%# Category(Container.DataItem) %>"
                                 data-course="<%# Server.HtmlEncode(CourseLabel((StudentPortalNotification)Container.DataItem)) %>"
                                 data-title="<%# Server.HtmlEncode((string)Eval("Title")) %>"
                                 data-author="<%# Server.HtmlEncode((string)Eval("AuthorName")) %>"
@@ -48,7 +48,7 @@
                                 <span class="notif-dot mt-1.5 h-2 w-2 shrink-0 rounded-full"></span>
                                 <div class="min-w-0 flex-1">
                                     <div class="flex items-center gap-2">
-                                        <span class="notif-badge rounded border px-1.5 py-0.5" style="font-size:9.5px;font-weight:700;letter-spacing:0.04em"><%# Category(Eval("AuthorRole")) %></span>
+                                        <span class="notif-badge rounded border px-1.5 py-0.5" style="font-size:9.5px;font-weight:700;letter-spacing:0.04em"><%# Category(Container.DataItem) %></span>
                                         <i data-lucide="pin" class="notif-pin h-3 w-3 text-amber-500"></i>
                                         <span class="ml-auto text-slate-400 truncate" style="font-size:10.5px"><%# ListTime((DateTime)Eval("CreatedAt")) %></span>
                                     </div>
@@ -125,5 +125,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/shared/notifications.js") %>?v=6"></script>
+    <script src="<%= ResolveUrl("~/js/shared/notifications.js") %>?v=11"></script>
 </asp:Content>

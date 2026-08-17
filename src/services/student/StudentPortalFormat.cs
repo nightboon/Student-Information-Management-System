@@ -15,6 +15,12 @@ namespace src.services
             return !string.IsNullOrWhiteSpace(grade) && !string.Equals(grade, "N/A", StringComparison.OrdinalIgnoreCase);
         }
 
+        public static bool IsAttendedStatus(string status)
+        {
+            return string.Equals(status, "PRESENT", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(status, "LATE", StringComparison.OrdinalIgnoreCase);
+        }
+
         public static string TermLabel(StudentRegistrationTerm term)
         {
             return term == null ? "" : term.AcademicYear + " " + term.Name;

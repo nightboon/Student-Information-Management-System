@@ -57,9 +57,16 @@ namespace src.admin
         [WebMethod(EnableSession = true)]
         public static object SaveNotification(AdminNotificationInput request)
         {
-            var user = CurrentAdmin();
-            var id = AdminNotificationService.Save(user, request);
-            return new { ok = true, notificationId = id };
+            try
+            {
+                var user = CurrentAdmin();
+                var id = AdminNotificationService.Save(user, request);
+                return new { ok = true, notificationId = id };
+            }
+            catch (Exception ex)
+            {
+                return new { ok = false, message = ex.Message };
+            }
         }
 
         private static UserContext CurrentAdmin()

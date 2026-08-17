@@ -55,6 +55,18 @@
         if (url) { window.location.href = url; }
     }
 
+    function isGoogleDriveUrl(value) {
+        try {
+            var url = new URL((value || "").trim());
+            return url.protocol === "https:" &&
+                url.hostname.toLowerCase().replace(/\.$/, "") === "drive.google.com" &&
+                url.pathname.toLowerCase().indexOf("/file/d/") === 0 &&
+                url.pathname.length > "/file/d/".length;
+        } catch (error) {
+            return false;
+        }
+    }
+
     function init() {
         // Tabs
         Array.prototype.forEach.call(
@@ -68,7 +80,9 @@
         // Normalise to the default active tab (the one marked data-active="true",
         // falling back to "modules") so tab styling is consistent on load.
         var current = document.querySelector('[data-action="switch-tab"][data-active="true"]');
-        switchTab(current ? current.getAttribute("data-tab") : "modules");
+        var assignmentStatus = document.querySelector("[data-assignment-status]");
+        switchTab(assignmentStatus ? "assignments" :
+            current ? current.getAttribute("data-tab") : "modules");
 
         // Module accordion
         Array.prototype.forEach.call(
@@ -96,6 +110,28 @@
                 });
             }
         );
+
+        document.addEventListener("click", function (event) {
+            var submit = event.target.closest("[data-submit-assignment]");
+            if (!submit) return;
+            var card = submit.closest('[data-action="open-assignment-material"]');
+            var driveInput = card && card.querySelector("[data-google-drive-link]");
+            if (!driveInput) return;
+
+            driveInput.setCustomValidity("");
+            if (isGoogleDriveUrl(driveInput.value)) return;
+            event.preventDefault();
+            driveInput.setCustomValidity(
+                "Paste a valid https://drive.google.com sharing link for your Viva video."
+            );
+            driveInput.reportValidity();
+            driveInput.focus();
+        });
+
+        document.addEventListener("input", function (event) {
+            if (event.target.matches("[data-google-drive-link]"))
+                event.target.setCustomValidity("");
+        });
     }
 
     if (document.readyState === "loading") {

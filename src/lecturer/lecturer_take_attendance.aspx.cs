@@ -24,13 +24,14 @@ namespace src.lecturer
 
             if (!IsPostBack)
             {
-                BindCourses(user);
+                int requestedOffering;
+                int.TryParse(Request.QueryString["offering"], out requestedOffering);
+                BindCourses(user, requestedOffering);
                 dateInput.Text = ParseDate(Request.QueryString["date"]).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
                 startTimeInput.Text = ParseTime(Request.QueryString["start"], new TimeSpan(9, 0, 0)).ToString(@"hh\:mm");
                 endTimeInput.Text = ParseTime(Request.QueryString["end"], new TimeSpan(10, 0, 0)).ToString(@"hh\:mm");
 
-                int requestedOffering;
-                if (int.TryParse(Request.QueryString["offering"], out requestedOffering) &&
+                if (requestedOffering > 0 &&
                     courseSelect.Items.FindByValue(requestedOffering.ToString(CultureInfo.InvariantCulture)) != null)
                 {
                     courseSelect.SelectedValue = requestedOffering.ToString(CultureInfo.InvariantCulture);
@@ -77,12 +78,19 @@ namespace src.lecturer
                 true);
         }
 
-        private void BindCourses(UserContext user)
+        private void BindCourses(UserContext user, int requestedOfferingId)
         {
-            var courses = LecturerPortalService.GetCourses(user)
+            var allCourses = LecturerPortalService.GetCourses(user);
+            var courses = allCourses
                 .Where(c => string.Equals(c.Status, "In progress", StringComparison.OrdinalIgnoreCase))
                 .ToList();
-            if (courses.Count == 0) courses = LecturerPortalService.GetCourses(user);
+            if (requestedOfferingId > 0)
+            {
+                var requested = allCourses.FirstOrDefault(c => c.OfferingId == requestedOfferingId);
+                if (requested != null && courses.All(c => c.OfferingId != requestedOfferingId))
+                    courses.Add(requested);
+            }
+            if (courses.Count == 0) courses = allCourses;
 
             courseSelect.DataSource = courses;
             courseSelect.DataTextField = "CourseCode";

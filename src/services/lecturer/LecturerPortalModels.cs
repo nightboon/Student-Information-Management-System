@@ -132,11 +132,21 @@ namespace src.services
         public string FileUrl { get; set; }
         public string Grade { get; set; }
         public string SubmissionStatus { get; set; }
+        public string MarkStatus { get; set; }
+        public string SubmissionMode { get; set; }
+        public bool IsLinkSubmission { get { return string.Equals(SubmissionMode, "LINK", StringComparison.OrdinalIgnoreCase); } }
+        public bool CanReviewFile { get { return HasSubmission && !IsLinkSubmission; } }
         public bool IsMissing { get; set; }
+        public bool RequiresSubmission { get; set; }
+        public bool CanEnterMarks { get; set; }
+        public bool IsPublished { get; set; }
+        public DateTime? ExtensionDeadline { get; set; }
+        public DateTime? ExtensionGrantedAt { get; set; }
+        public bool HasExtension { get { return ExtensionGrantedAt.HasValue; } }
         public string StudentName { get { return FullName; } }
         public string StudentNo { get { return StudentId; } }
         public string LetterGrade { get { return Grade; } }
-        public bool HasSubmission { get { return SubmissionId > 0 && !IsMissing; } }
+        public bool HasSubmission { get { return SubmissionId > 0 && RequiresSubmission && !IsMissing && !string.IsNullOrWhiteSpace(FileUrl); } }
         public string SubmissionFileUrl { get { return FileUrl; } }
         public string AnnotatedFileUrl { get; set; }
         public string Feedback { get; set; }
@@ -159,6 +169,7 @@ namespace src.services
         public string MaterialType { get; set; }
         public int? Week { get; set; }
         public DateTime? DueDate { get; set; }
+        public string SubmissionMode { get; set; }
         public decimal? Weight { get; set; }
         public int? FileSizeBytes { get; set; }
     }
@@ -277,6 +288,7 @@ namespace src.services
         public string Title { get; set; }
         public string Description { get; set; }
         public string MaterialType { get; set; }
+        public string SubmissionMode { get; set; }
         public int? Week { get; set; }
         public DateTime? DueDate { get; set; }
         public decimal? Weight { get; set; }
@@ -284,5 +296,13 @@ namespace src.services
         public string FileType { get; set; }
         public int? FileSizeBytes { get; set; }
         public DateTime UploadedAt { get; set; }
+    }
+
+    public class MaterialWeightUpdateResult
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; }
+        public decimal Weight { get; set; }
+        public decimal CourseTotal { get; set; }
     }
 }

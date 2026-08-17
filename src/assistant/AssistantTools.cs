@@ -102,7 +102,7 @@ namespace src.assistant
                     var total = courses.Sum(c => c.TotalCount);
                     return Serialize(new
                     {
-                        attendanceRate = total == 0 ? null : (decimal?)System.Math.Round((decimal)present / total, 4),
+                        attendanceRate = total == 0 ? null : (decimal?)System.Math.Round((decimal)(present + late) / total, 4),
                         present = present,
                         late = late,
                         absent = absent,

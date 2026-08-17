@@ -67,31 +67,61 @@ namespace src.student
             int assignmentId;
             if (!int.TryParse(Convert.ToString(e.CommandArgument), out assignmentId)) return;
 
-            var upload = e.Item.FindControl("submissionInput") as FileUpload;
-            if (upload == null || !upload.HasFile)
+            var user = UserContextFactory.FromSession(Session);
+            var assignment = StudentPortalService.GetAssignments(user, null)
+                .Find(a => a.AssignmentId == assignmentId);
+            if (assignment == null || !assignment.RequiresSubmission || !assignment.CanSubmit)
             {
-                assignmentStatusMessage.Text = "Choose a file before submitting.";
+                assignmentStatusMessage.Text = "The submission window for this assignment is closed.";
                 assignmentStatusPanel.CssClass = "mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800";
                 assignmentStatusPanel.Visible = true;
                 return;
             }
 
             string fileUrl;
-            try
+            if (assignment.IsLinkSubmission)
             {
-                fileUrl = SaveUploadedSubmission(upload, assignmentId);
+                var linkInput = e.Item.FindControl("submissionLinkInput") as TextBox;
+                string postedLink = linkInput == null ? "" : linkInput.Text;
+                if (linkInput != null && string.IsNullOrWhiteSpace(postedLink))
+                    postedLink = Request.Form[linkInput.UniqueID] ?? "";
+                Uri driveUrl;
+                if (linkInput == null || !IsGoogleDriveUrl(postedLink, out driveUrl))
+                {
+                    assignmentStatusMessage.Text =
+                        "Viva video submissions must use a valid drive.google.com sharing link.";
+                    assignmentStatusPanel.CssClass = "mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800";
+                    assignmentStatusPanel.Visible = true;
+                    return;
+                }
+                fileUrl = driveUrl.AbsoluteUri;
             }
-            catch (InvalidOperationException ex)
+            else
             {
-                assignmentStatusMessage.Text = ex.Message;
-                assignmentStatusPanel.CssClass = "mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800";
-                assignmentStatusPanel.Visible = true;
-                return;
+                var upload = e.Item.FindControl("submissionInput") as FileUpload;
+                if (upload == null || !upload.HasFile)
+                {
+                    assignmentStatusMessage.Text = "Choose a file before submitting.";
+                    assignmentStatusPanel.CssClass = "mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800";
+                    assignmentStatusPanel.Visible = true;
+                    return;
+                }
+
+                try
+                {
+                    fileUrl = SaveUploadedSubmission(upload, assignmentId);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    assignmentStatusMessage.Text = ex.Message;
+                    assignmentStatusPanel.CssClass = "mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800";
+                    assignmentStatusPanel.Visible = true;
+                    return;
+                }
             }
 
-            var user = UserContextFactory.FromSession(Session);
             bool saved = StudentPortalService.SaveSubmission(user, assignmentId, fileUrl);
-            assignmentStatusMessage.Text = saved ? "Assignment submitted." : "Unable to submit this assignment.";
+            assignmentStatusMessage.Text = saved ? "Submission received." : "Unable to save this submission.";
             assignmentStatusPanel.CssClass = saved
                 ? "mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800"
                 : "mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800";
@@ -117,6 +147,13 @@ namespace src.student
         {
             string url = Convert.ToString(value);
             return string.IsNullOrWhiteSpace(url) ? "" : ResolveUrl(url);
+        }
+
+        protected string SubmissionUrl(object value)
+        {
+            string url = Convert.ToString(value);
+            Uri absolute;
+            return Uri.TryCreate(url, UriKind.Absolute, out absolute) ? url : ResolveUrl(url);
         }
 
         protected bool IsQuiz(object dataItem)
@@ -155,6 +192,17 @@ namespace src.student
             string physicalPath = Path.Combine(folder, fileName);
             upload.SaveAs(physicalPath);
             return "~/uploads/submissions/" + fileName;
+        }
+
+        private static bool IsGoogleDriveUrl(string value, out Uri uri)
+        {
+            if (!Uri.TryCreate((value ?? "").Trim(), UriKind.Absolute, out uri) ||
+                uri.Scheme != Uri.UriSchemeHttps)
+                return false;
+
+            return string.Equals(uri.Host.TrimEnd('.'), "drive.google.com", StringComparison.OrdinalIgnoreCase) &&
+                uri.AbsolutePath.StartsWith("/file/d/", StringComparison.OrdinalIgnoreCase) &&
+                uri.AbsolutePath.Length > "/file/d/".Length;
         }
 
         private StudentGradebook _gradebook;
@@ -214,6 +262,8 @@ namespace src.student
             string deadline = due.ToString("d MMM yyyy 'at' h:mm", CultureInfo.InvariantCulture) +
                 (due.Hour < 12 ? " a.m." : " p.m.");
             if (status == "MARKED") return "Graded · Due " + deadline;
+            if (status == "EXTENDED") return "Late submission allowed until " + deadline;
+            if (status == "NO UPLOAD REQUIRED") return "No file submission required";
             if (status == "SUBMITTED") return "Submitted · Due " + deadline;
             int days = (int)(due.Date - DateTime.Today).TotalDays;
             if (due < DateTime.Now) return "Overdue · " + deadline;

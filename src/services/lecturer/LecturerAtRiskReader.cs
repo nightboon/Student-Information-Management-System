@@ -4,6 +4,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using src.db;
 using static src.services.ServiceMap;
+using static src.services.StudentPortalFormat;
 
 namespace src.services
 {
@@ -173,7 +174,7 @@ namespace src.services
                     while (reader.Read())
                     {
                         total++;
-                        if (string.Equals(Text(reader["status"]), "PRESENT", StringComparison.OrdinalIgnoreCase)) present++;
+                        if (IsAttendedStatus(Text(reader["status"]))) present++;
                     }
                 }
             }

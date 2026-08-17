@@ -254,5 +254,5 @@
     <script type="text/javascript">
         window.attendanceData = <%= AttendancePayloadJson %>;
     </script>
-    <script src='<%= ResolveUrl("~/js/student/attendance.js?v=2") %>'></script>
+    <script src='<%= ResolveUrl("~/js/student/attendance.js?v=3") %>'></script>
 </asp:Content>

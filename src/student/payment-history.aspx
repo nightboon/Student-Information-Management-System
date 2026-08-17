@@ -55,38 +55,22 @@
         <header class="flex flex-col gap-4 p-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
                 <h2 class="text-slate-900" style="font-size:16px;font-weight:600">Transactions</h2>
-                <p class="text-slate-500 mt-0.5" style="font-size:13px"><asp:Literal ID="litShown" runat="server" /> shown</p>
+                <p id="pm-count" class="text-slate-500 mt-0.5" style="font-size:13px"><asp:Literal ID="litShown" runat="server" /> shown</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-
-                <%-- Status filter --%>
-                <div class="relative">
-                    <span class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400">
-                        <i data-lucide="receipt" class="h-3.5 w-3.5"></i>
-                    </span>
-                    <select class="h-9 appearance-none rounded-xl border border-slate-200 bg-white pl-7 pr-8 text-slate-700 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10"
-                            style="font-size:12.5px;font-weight:500">
-                        <option value="all">All statuses</option>
-                        <option value="paid">Paid</option>
-                        <option value="pending">Pending</option>
-                        <option value="refunded">Refunded</option>
-                        <option value="failed">Failed</option>
-                    </select>
-                    <i data-lucide="chevron-down" class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400"></i>
-                </div>
 
                 <%-- Method filter --%>
                 <div class="relative">
                     <span class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400">
                         <i data-lucide="credit-card" class="h-3.5 w-3.5"></i>
                     </span>
-                    <select class="h-9 appearance-none rounded-xl border border-slate-200 bg-white pl-7 pr-8 text-slate-700 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10"
+                    <select id="pm-filter-method"
+                            class="h-9 appearance-none rounded-xl border border-slate-200 bg-white pl-7 pr-8 text-slate-700 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10"
                             style="font-size:12.5px;font-weight:500">
                         <option value="all">All methods</option>
-                        <option value="fpx">FPX</option>
-                        <option value="card">Card</option>
-                        <option value="ewallet">E-Wallet</option>
-                        <option value="bank">Bank transfer</option>
+                        <option value="Credit / Debit Card">Credit / Debit Card</option>
+                        <option value="FPX Online Banking">FPX Online Banking</option>
+                        <option value="E-Wallet">E-Wallet</option>
                     </select>
                     <i data-lucide="chevron-down" class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400"></i>
                 </div>
@@ -96,24 +80,12 @@
                     <span class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400">
                         <i data-lucide="calendar" class="h-3.5 w-3.5"></i>
                     </span>
-                    <select class="h-9 appearance-none rounded-xl border border-slate-200 bg-white pl-7 pr-8 text-slate-700 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10"
+                    <select id="pm-filter-year"
+                            class="h-9 appearance-none rounded-xl border border-slate-200 bg-white pl-7 pr-8 text-slate-700 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10"
                             style="font-size:12.5px;font-weight:500">
                         <option value="all">All years</option>
-                        <option value="2026">2026</option>
-                        <option value="2025">2025</option>
-                        <option value="2024">2024</option>
                     </select>
                     <i data-lucide="chevron-down" class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400"></i>
-                </div>
-
-                <%-- Search --%>
-                <div class="relative w-44">
-                    <i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400"></i>
-                    <input
-                        type="text"
-                        placeholder="Search invoice&#8230;"
-                        class="h-9 w-full rounded-xl border border-slate-200 bg-white pl-8 pr-3 text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#e0162b]/40 focus:ring-4 focus:ring-[#e0162b]/10"
-                        style="font-size:12.5px" />
                 </div>
 
             </div>
@@ -136,7 +108,9 @@
                 <tbody class="divide-y divide-slate-100">
                     <asp:Repeater ID="rptPayments" runat="server">
                         <ItemTemplate>
-                            <tr class="hover:bg-slate-50/60">
+                            <tr class="js-pm-row hover:bg-slate-50/60"
+                                data-method="<%# Attr(Eval("Method")) %>"
+                                data-year="<%# Attr(Eval("PaidDate", "{0:yyyy}")) %>">
                                 <td class="px-6 py-3.5 text-slate-900" style="font-size:12.5px;font-weight:600"><%# Eval("InvoiceNo") %></td>
                                 <td class="px-3 py-3.5 text-slate-700" style="font-size:12.5px">
                                     <div><%# Eval("Description") %></div>
@@ -185,6 +159,6 @@
     </script>
 
     <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <script src="<%= ResolveUrl("~/js/student/payment-history.js") %>"></script>
+    <script src="<%= ResolveUrl("~/js/student/payment-history.js") %>?v=3"></script>
 
 </asp:Content>

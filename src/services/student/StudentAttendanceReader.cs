@@ -73,7 +73,8 @@ namespace src.services
 
             foreach (var course in courses)
             {
-                course.AttendanceRate = course.TotalCount == 0 ? (decimal?)null : Math.Round((decimal)course.PresentCount / course.TotalCount, 4);
+                // Late counts as present for the attendance rate (still tracked/shown separately).
+                course.AttendanceRate = course.TotalCount == 0 ? (decimal?)null : Math.Round((decimal)(course.PresentCount + course.LateCount) / course.TotalCount, 4);
             }
 
             return new StudentAttendancePage { Courses = courses };

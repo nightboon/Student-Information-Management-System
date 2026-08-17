@@ -1,15 +1,55 @@
 ﻿(function () {
-    // Profile save: show "Profile saved" for 2.2s
+    // Profile save
     var profileSaveBtn = document.getElementById('profile-save-btn');
     var profileSaved = document.getElementById('profile-saved');
-    if (profileSaveBtn && profileSaved) {
+    var profilePhone = document.getElementById('phone');
+    var profileAddress = document.getElementById('address');
+    var profileTimer = null;
+    if (profileSaveBtn && profileSaved && profilePhone && profileAddress) {
+        function setProfileMessage(ok, text) {
+            profileSaved.className = 'inline-flex items-center gap-1 ' + (ok ? 'text-emerald-600' : 'text-[#a01020]');
+            profileSaved.innerHTML = '<i data-lucide="' + (ok ? 'check' : 'alert-circle') + '" class="h-4 w-4"></i> <span></span>';
+            profileSaved.querySelector('span').textContent = text;
+            if (window.lucide) lucide.createIcons();
+
+            if (profileTimer) clearTimeout(profileTimer);
+            if (ok) {
+                profileTimer = setTimeout(function () {
+                    profileSaved.classList.add('hidden');
+                    profileSaved.classList.remove('inline-flex');
+                }, 2200);
+            }
+        }
+
         profileSaveBtn.addEventListener('click', function () {
-            profileSaved.classList.remove('hidden');
-            profileSaved.classList.add('inline-flex');
-            setTimeout(function () {
-                profileSaved.classList.add('hidden');
-                profileSaved.classList.remove('inline-flex');
-            }, 2200);
+            profileSaveBtn.disabled = true;
+            var originalLabel = profileSaveBtn.textContent;
+            profileSaveBtn.textContent = 'Saving...';
+
+            fetch(window.location.pathname + '/SaveProfile', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json; charset=utf-8' },
+                body: JSON.stringify({
+                    phone: profilePhone.value,
+                    mailingAddress: profileAddress.value
+                })
+            }).then(function (response) {
+                if (!response.ok) throw new Error('Request failed');
+                return response.json();
+            }).then(function (json) {
+                var result = json.d || json;
+                if (result && result.ok) {
+                    setProfileMessage(true, result.message || 'Profile saved.');
+                } else {
+                    setProfileMessage(false, (result && result.message) || 'Profile could not be saved.');
+                }
+            }).catch(function () {
+                setProfileMessage(false, 'Profile could not be saved. Please try again.');
+            }).then(function () {
+                profileSaveBtn.disabled = false;
+                profileSaveBtn.textContent = originalLabel;
+            });
         });
     }
 

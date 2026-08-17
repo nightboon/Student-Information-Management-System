@@ -16,6 +16,12 @@ namespace src.shared
             return AccountWebMethods.ChangePassword(currentPassword, newPassword);
         }
 
+        [WebMethod(EnableSession = true)]
+        public static object SaveProfile(string phone, string mailingAddress)
+        {
+            return AccountWebMethods.SaveProfile(phone, mailingAddress);
+        }
+
         protected void Page_Load(object sender, EventArgs e)
         {
             Response.Cache.SetCacheability(HttpCacheability.NoCache);

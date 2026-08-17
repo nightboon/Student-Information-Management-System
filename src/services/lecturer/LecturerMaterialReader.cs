@@ -231,12 +231,19 @@ namespace src.services
                     }
 
                     int? assignmentId = null;
-                    if (normalizedType == "Assignment" || normalizedType == "Quiz" || normalizedType == "Test")
+                    if (normalizedType == "Assignment" || normalizedType == "Quiz" ||
+                        normalizedType == "Test" || normalizedType == "Viva")
                     {
+                        string submissionMode = normalizedType == "Assignment"
+                            ? "FILE"
+                            : normalizedType == "Viva" &&
+                              string.Equals(input.SubmissionMode, "LINK", StringComparison.OrdinalIgnoreCase)
+                                ? "LINK"
+                                : "MANUAL";
                         const string assignmentSql =
-                            "INSERT INTO ASSIGNMENTS (offer_id, title, description, file_path, total_marks, due_date) " +
+                            "INSERT INTO ASSIGNMENTS (offer_id, title, description, file_path, total_marks, due_date, submission_mode) " +
                             "OUTPUT INSERTED.assignment_id " +
-                            "VALUES (@offerId, @title, @description, @filePath, 100, @dueDate)";
+                            "VALUES (@offerId, @title, @description, @filePath, 100, @dueDate, @submissionMode)";
                         using (var assignmentCommand = new SqlCommand(assignmentSql, conn, transaction))
                         {
                             assignmentCommand.Parameters.AddWithValue("@offerId", input.OfferingId);
@@ -244,6 +251,7 @@ namespace src.services
                             assignmentCommand.Parameters.AddWithValue("@description", ServiceAccess.DbValue(input.Description));
                             assignmentCommand.Parameters.AddWithValue("@filePath", ServiceAccess.DbValue(input.FileUrl));
                             assignmentCommand.Parameters.AddWithValue("@dueDate", ServiceAccess.DbValue(input.DueDate));
+                            assignmentCommand.Parameters.AddWithValue("@submissionMode", submissionMode);
                             assignmentId = Convert.ToInt32(assignmentCommand.ExecuteScalar());
                         }
                     }
@@ -292,6 +300,94 @@ namespace src.services
             }
         }
 
+        public static MaterialWeightUpdateResult UpdateWeight(UserContext user, int materialId, decimal weight)
+        {
+            var result = new MaterialWeightUpdateResult
+            {
+                Success = false,
+                Message = "Course weight could not be updated."
+            };
+            if (user == null || materialId <= 0) return result;
+
+            weight = Math.Round(weight, 2);
+            if (weight <= 0m || weight > 100m)
+            {
+                result.Message = "Course weight must be greater than 0% and no more than 100%.";
+                return result;
+            }
+
+            EnsureMaterialColumns();
+            using (var conn = Db.OpenConnection())
+            {
+                if (!ServiceAccess.CanManageMaterial(conn, user, materialId))
+                {
+                    result.Message = "You do not have permission to edit this assessment.";
+                    return result;
+                }
+
+                using (var transaction = conn.BeginTransaction(IsolationLevel.Serializable))
+                {
+                    int offerId;
+                    using (var lookup = new SqlCommand(
+                        "SELECT md.offer_id FROM MATERIALS mat WITH (UPDLOCK, HOLDLOCK) " +
+                        "JOIN MODULES md ON md.module_id = mat.module_id " +
+                        "WHERE mat.material_id = @materialId AND mat.assignment_id IS NOT NULL",
+                        conn, transaction))
+                    {
+                        lookup.Parameters.AddWithValue("@materialId", materialId);
+                        var value = lookup.ExecuteScalar();
+                        if (value == null || value == DBNull.Value)
+                        {
+                            result.Message = "Only published assessments have editable course weight.";
+                            return result;
+                        }
+                        offerId = Convert.ToInt32(value);
+                    }
+
+                    decimal otherWeight;
+                    using (var total = new SqlCommand(
+                        "SELECT ISNULL(SUM(mat.weight), 0) FROM MATERIALS mat WITH (UPDLOCK, HOLDLOCK) " +
+                        "JOIN MODULES md ON md.module_id = mat.module_id " +
+                        "WHERE md.offer_id = @offerId AND mat.material_id <> @materialId",
+                        conn, transaction))
+                    {
+                        total.Parameters.AddWithValue("@offerId", offerId);
+                        total.Parameters.AddWithValue("@materialId", materialId);
+                        otherWeight = Convert.ToDecimal(total.ExecuteScalar());
+                    }
+
+                    decimal maximum = Math.Max(0m, 100m - otherWeight);
+                    if (weight > maximum)
+                    {
+                        result.Message = "Other assessments already use " +
+                            otherWeight.ToString("0.##") + "%. The maximum available weight is " +
+                            maximum.ToString("0.##") + "%.";
+                        return result;
+                    }
+
+                    using (var update = new SqlCommand(
+                        "UPDATE MATERIALS SET weight = @weight WHERE material_id = @materialId",
+                        conn, transaction))
+                    {
+                        var parameter = update.Parameters.Add("@weight", SqlDbType.Decimal);
+                        parameter.Precision = 5;
+                        parameter.Scale = 2;
+                        parameter.Value = weight;
+                        update.Parameters.AddWithValue("@materialId", materialId);
+                        if (update.ExecuteNonQuery() != 1) return result;
+                    }
+
+                    transaction.Commit();
+                    result.Success = true;
+                    result.Weight = weight;
+                    result.CourseTotal = otherWeight + weight;
+                    result.Message = "Course weight updated to " + weight.ToString("0.##") +
+                        "%. Existing submissions were preserved.";
+                    return result;
+                }
+            }
+        }
+
         public static bool UpdateModule(UserContext user, int offeringId, string moduleId, string title, string description)
         {
             if (user == null || offeringId <= 0 || string.IsNullOrWhiteSpace(moduleId) ||
@@ -331,7 +427,8 @@ namespace src.services
                 "IF COL_LENGTH('MATERIALS', 'material_type') IS NULL ALTER TABLE MATERIALS ADD material_type varchar(30) NULL; " +
                 "IF COL_LENGTH('MATERIALS', 'due_date') IS NULL ALTER TABLE MATERIALS ADD due_date date NULL; " +
                 "IF COL_LENGTH('MATERIALS', 'weight') IS NULL ALTER TABLE MATERIALS ADD weight decimal(5,2) NULL; " +
-                "IF COL_LENGTH('MATERIALS', 'assignment_id') IS NULL ALTER TABLE MATERIALS ADD assignment_id int NULL";
+                "IF COL_LENGTH('MATERIALS', 'assignment_id') IS NULL ALTER TABLE MATERIALS ADD assignment_id int NULL; " +
+                "IF COL_LENGTH('ASSIGNMENTS', 'submission_mode') IS NULL ALTER TABLE ASSIGNMENTS ADD submission_mode varchar(20) NULL";
 
             const string dataSql =
                 "UPDATE MATERIALS SET material_type = CASE " +
@@ -353,6 +450,17 @@ namespace src.services
                 {
                     dataCommand.ExecuteNonQuery();
                 }
+                using (var modeCommand = new SqlCommand(
+                    "UPDATE a SET submission_mode = CASE WHEN mat.material_type IN ('Quiz','Test') THEN 'MANUAL' " +
+                    "WHEN mat.material_type = 'Viva' THEN 'MANUAL' ELSE 'FILE' END " +
+                    "FROM ASSIGNMENTS a LEFT JOIN MATERIALS mat ON mat.assignment_id = a.assignment_id " +
+                    "WHERE a.submission_mode IS NULL OR LTRIM(RTRIM(a.submission_mode)) = ''; " +
+                    "UPDATE sub SET status = 'AWAITING_MARKS', marks_obtained = NULL " +
+                    "FROM SUBMISSIONS sub JOIN ASSIGNMENTS a ON a.assignment_id = sub.assignment_id " +
+                    "WHERE a.submission_mode = 'MANUAL' AND sub.status = 'MISSING' AND sub.file_url IS NULL", conn))
+                {
+                    modeCommand.ExecuteNonQuery();
+                }
                 BackfillAssessmentAssignments(conn);
             }
         }
@@ -360,11 +468,11 @@ namespace src.services
         private static void BackfillAssessmentAssignments(SqlConnection conn)
         {
             const string selectSql =
-                "SELECT mat.material_id, md.offer_id, mat.title, mat.description, mat.file_url, mat.due_date " +
+                "SELECT mat.material_id, md.offer_id, mat.title, mat.description, mat.file_url, mat.due_date, mat.material_type " +
                 "FROM MATERIALS mat JOIN MODULES md ON md.module_id = mat.module_id " +
-                "WHERE mat.assignment_id IS NULL AND mat.material_type IN ('Assignment', 'Quiz', 'Test')";
+                "WHERE mat.assignment_id IS NULL AND mat.material_type IN ('Assignment', 'Quiz', 'Test', 'Viva')";
 
-            var pending = new List<Tuple<int, int, string, string, string, DateTime?>>();
+            var pending = new List<Tuple<int, int, string, string, string, DateTime?, string>>();
             using (var select = new SqlCommand(selectSql, conn))
             using (var reader = select.ExecuteReader())
             {
@@ -376,7 +484,8 @@ namespace src.services
                         Text(reader["title"]),
                         Text(reader["description"]),
                         Text(reader["file_url"]),
-                        DateValue(reader["due_date"])));
+                        DateValue(reader["due_date"]),
+                        Text(reader["material_type"])));
                 }
             }
 
@@ -385,9 +494,9 @@ namespace src.services
                 using (var transaction = conn.BeginTransaction())
                 {
                     const string insertSql =
-                        "INSERT INTO ASSIGNMENTS (offer_id, title, description, file_path, total_marks, due_date) " +
+                        "INSERT INTO ASSIGNMENTS (offer_id, title, description, file_path, total_marks, due_date, submission_mode) " +
                         "OUTPUT INSERTED.assignment_id " +
-                        "VALUES (@offerId, @title, @description, @filePath, 100, @dueDate)";
+                        "VALUES (@offerId, @title, @description, @filePath, 100, @dueDate, @submissionMode)";
                     int assignmentId;
                     using (var insert = new SqlCommand(insertSql, conn, transaction))
                     {
@@ -396,6 +505,9 @@ namespace src.services
                         insert.Parameters.AddWithValue("@description", ServiceAccess.DbValue(material.Item4));
                         insert.Parameters.AddWithValue("@filePath", ServiceAccess.DbValue(material.Item5));
                         insert.Parameters.AddWithValue("@dueDate", ServiceAccess.DbValue(material.Item6));
+                        insert.Parameters.AddWithValue("@submissionMode",
+                            string.Equals(material.Item7, "Assignment", StringComparison.OrdinalIgnoreCase)
+                                ? "FILE" : "MANUAL");
                         assignmentId = Convert.ToInt32(insert.ExecuteScalar());
                     }
 
@@ -425,6 +537,8 @@ namespace src.services
             if (string.Equals(materialType, "Assignment", StringComparison.OrdinalIgnoreCase)) return "Assignment";
             if (string.Equals(materialType, "Quiz", StringComparison.OrdinalIgnoreCase)) return "Quiz";
             if (string.Equals(materialType, "Test", StringComparison.OrdinalIgnoreCase)) return "Test";
+            if (string.Equals(materialType, "Viva", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(materialType, "Viva / Presentation", StringComparison.OrdinalIgnoreCase)) return "Viva";
             return "Lecture Notes";
         }
 

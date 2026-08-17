@@ -4,6 +4,9 @@
     // so the list and the detail panel stay in sync from one source.
     var CATS = {
         ANNOUNCEMENT: { badge: 'bg-sky-50 text-sky-700 border-sky-100', dot: '#0ea5e9' },
+        GRADE: { badge: 'bg-emerald-50 text-emerald-700 border-emerald-100', dot: '#10b981' },
+        EXTENSION: { badge: 'bg-amber-50 text-amber-700 border-amber-100', dot: '#f59e0b' },
+        SUBMISSION: { badge: 'bg-violet-50 text-violet-700 border-violet-100', dot: '#8b5cf6' },
         SYSTEM: { badge: 'bg-slate-100 text-slate-700 border-slate-200', dot: '#64748b' }
     };
 
@@ -119,6 +122,15 @@
         item.setAttribute('data-read', read ? 'true' : 'false');
         item.style.opacity = read ? '0.7' : '';
         paintDot(item);
+        if (item === current) syncReadButton(item);
+    }
+
+    function syncReadButton(item) {
+        var button = document.getElementById('mark-unread');
+        if (!button) return;
+        var read = item && item.getAttribute('data-read') === 'true';
+        button.textContent = read ? 'Mark unread' : 'Mark read';
+        button.disabled = !item;
     }
 
     function setRead(item, read) {
@@ -255,7 +267,8 @@
 
     var markUnread = document.getElementById('mark-unread');
     if (markUnread) markUnread.addEventListener('click', function () {
-        if (current) setRead(current, false);
+        if (!current) return;
+        setRead(current, current.getAttribute('data-read') !== 'true');
     });
 
     if (search) search.addEventListener('input', function () {

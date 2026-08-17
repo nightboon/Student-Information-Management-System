@@ -127,7 +127,7 @@ namespace src.services
 
         // PendingGrading = submissions for this offering's assignments with no marks yet.
         // AverageGrade   = average submission percentage (marks_obtained / total_marks).
-        // AttendanceRate = present rate over recorded attendance for the offering.
+        // AttendanceRate = attended (present or late) over recorded attendance for the offering.
         private static void FillCourseMetrics(SqlConnection conn, int offeringId, CourseDashboardStats stats)
         {
             const string gradeSql =
@@ -171,7 +171,7 @@ namespace src.services
                     while (reader.Read())
                     {
                         total++;
-                        if (string.Equals(Text(reader["status"]), "PRESENT", StringComparison.OrdinalIgnoreCase)) present++;
+                        if (IsAttendedStatus(Text(reader["status"]))) present++;
                     }
                 }
             }

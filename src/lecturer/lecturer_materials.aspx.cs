@@ -75,7 +75,11 @@ namespace student_information_management_system
                     uploadCourse.Attributes["data-year"] = course.AcademicYear;
                     uploadCourse.Attributes["data-semester"] = course.Semester;
                     courseSelect.Items.Add(uploadCourse);
-                    courseFilterSelect.Items.Add(new ListItem(course.CourseCode + " - " + course.CourseName, course.OfferingId.ToString(CultureInfo.InvariantCulture)));
+
+                    var filterCourse = new ListItem(course.CourseCode + " - " + course.CourseName, course.OfferingId.ToString(CultureInfo.InvariantCulture));
+                    filterCourse.Attributes["data-year"] = course.AcademicYear;
+                    filterCourse.Attributes["data-semester"] = course.Semester;
+                    courseFilterSelect.Items.Add(filterCourse);
                 }
 
                 var filterYears = sessions.Select(term => term.AcademicYear)
@@ -109,6 +113,7 @@ namespace student_information_management_system
                 materialTypeSelect.Items.Add(new ListItem("Lecture Notes", "Lecture Notes"));
                 materialTypeSelect.Items.Add(new ListItem("Quiz", "Quiz"));
                 materialTypeSelect.Items.Add(new ListItem("Test", "Test"));
+                materialTypeSelect.Items.Add(new ListItem("Viva", "Viva"));
 
                 weekSelect.Items.Clear();
                 for (int week = 1; week <= 14; week++)
@@ -137,9 +142,16 @@ namespace student_information_management_system
             string materialType = materialTypeSelect.SelectedValue;
             bool isLectureNotes = string.Equals(materialType, "Lecture Notes", StringComparison.OrdinalIgnoreCase);
             bool isQuiz = string.Equals(materialType, "Quiz", StringComparison.OrdinalIgnoreCase);
+            bool isViva = string.Equals(materialType, "Viva", StringComparison.OrdinalIgnoreCase);
             bool requiresAssessmentDetails =
                 string.Equals(materialType, "Assignment", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(materialType, "Test", StringComparison.OrdinalIgnoreCase);
+                string.Equals(materialType, "Quiz", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(materialType, "Test", StringComparison.OrdinalIgnoreCase) ||
+                isViva;
+            bool requiresPositiveWeight =
+                string.Equals(materialType, "Assignment", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(materialType, "Test", StringComparison.OrdinalIgnoreCase) ||
+                isViva;
             int selectedWeek;
             int? weekNumber = isLectureNotes &&
                 int.TryParse(weekSelect.SelectedValue, out selectedWeek) &&
@@ -179,18 +191,18 @@ namespace student_information_management_system
 
             if (requiresAssessmentDetails && !parsedDueDate.HasValue)
             {
-                ShowStatus("Due date and due time are required for assignments and tests.", false);
+                ShowStatus("Due date and due time are required for assessments.", false);
                 return;
             }
 
             if (requiresAssessmentDetails && !parsedWeight.HasValue)
             {
-                ShowStatus("Course weight is required for assignments and tests.", false);
+                ShowStatus("Course weight is required for assessments.", false);
                 return;
             }
-            if (requiresAssessmentDetails && parsedWeight.Value <= 0m)
+            if (requiresPositiveWeight && parsedWeight.Value <= 0m)
             {
-                ShowStatus("Course weight for assignments and tests must be greater than 0%.", false);
+                ShowStatus("Course weight for assessments must be greater than 0%.", false);
                 return;
             }
 
@@ -201,6 +213,17 @@ namespace student_information_management_system
             if (isQuiz && !validQuizUrl)
             {
                 ShowStatus("Quiz links must use Google Forms. Please paste a forms.gle or docs.google.com/forms sharing link.", false);
+                return;
+            }
+
+            string submissionMode = string.Equals(materialType, "Assignment", StringComparison.OrdinalIgnoreCase)
+                ? "FILE"
+                : isViva
+                    ? (Request.Form["assessmentMode"] ?? "").Trim().ToUpperInvariant()
+                    : "MANUAL";
+            if (isViva && submissionMode != "LINK" && submissionMode != "MANUAL")
+            {
+                ShowStatus("Choose whether this Viva uses a Google Drive video link or lecturer-entered marks.", false);
                 return;
             }
 
@@ -227,7 +250,7 @@ namespace student_information_management_system
             if (requiresAssessmentDetails && currentWeight >= 100m)
             {
                 ShowStatus(
-                    "This course has already reached 100% course weight. Assignments and Tests cannot be added until the course weight is below 100%.",
+                    "This course has already reached 100% course weight. Assessments cannot be added until the course weight is below 100%.",
                     false);
                 return;
             }
@@ -263,6 +286,7 @@ namespace student_information_management_system
                 Title = titleInput.Text,
                 Description = description,
                 MaterialType = materialType,
+                SubmissionMode = submissionMode,
                 Week = weekNumber,
                 DueDate = parsedDueDate,
                 Weight = parsedWeight,
@@ -321,6 +345,25 @@ namespace student_information_management_system
             {
                 success = deleted,
                 message = deleted ? "Material deleted." : "Material could not be deleted."
+            };
+        }
+
+        [WebMethod(EnableSession = true)]
+        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+        public static object UpdateMaterialWeight(int materialId, decimal weight)
+        {
+            var context = HttpContext.Current;
+            var user = context == null ? null : UserContextFactory.FromSession(context.Session);
+            if (user == null || !user.IsLecturer)
+                return new { success = false, message = "Your lecturer session has expired." };
+
+            var result = LecturerPortalService.UpdateMaterialWeight(user, materialId, weight);
+            return new
+            {
+                success = result.Success,
+                message = result.Message,
+                weight = result.Weight,
+                courseTotal = result.CourseTotal
             };
         }
 
@@ -433,6 +476,7 @@ namespace student_information_management_system
             if (type == "assignment") return "clipboard-check";
             if (type == "quiz") return "circle-help";
             if (type == "test") return "clipboard-list";
+            if (type == "viva") return "presentation";
             return "book-open";
         }
 
@@ -442,6 +486,7 @@ namespace student_information_management_system
             if (type == "assignment") return "bg-emerald-50 text-emerald-700";
             if (type == "quiz") return "bg-blue-50 text-blue-700";
             if (type == "test") return "bg-amber-50 text-amber-700";
+            if (type == "viva") return "bg-purple-50 text-purple-700";
             return "bg-[#e0162b]/10 text-[#a01020]";
         }
 
@@ -469,6 +514,13 @@ namespace student_information_management_system
         {
             if (value == null || value == DBNull.Value) return "-";
             return Convert.ToDecimal(value).ToString("0.##", CultureInfo.InvariantCulture) + "%";
+        }
+
+        protected string WeightInputValue(object value)
+        {
+            return value == null || value == DBNull.Value
+                ? ""
+                : Convert.ToDecimal(value).ToString("0.##", CultureInfo.InvariantCulture);
         }
 
         protected string CourseWeightLabel(object value)

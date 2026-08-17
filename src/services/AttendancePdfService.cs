@@ -138,7 +138,7 @@ namespace src.services
 
         private static void DrawSummary(PdfPage page, float y, int courseCount, int present, int late, int absent, int total)
         {
-            var rate = total == 0 ? "N/A" : ((decimal)present / total * 100m).ToString("0.#", Invariant) + "%";
+            var rate = total == 0 ? "N/A" : ((decimal)(present + late) / total * 100m).ToString("0.#", Invariant) + "%";
             FillRect(page, Left, y - 7f, Right - Left, 42f, 0.97f, 0.97f, 0.98f);
             page.Content.Append("0 0 0 rg\n");
             SummaryValue(page, Left + 10f, y + 14f, "ATTENDANCE", rate);
@@ -171,7 +171,7 @@ namespace src.services
             Text(page, Left + 8f, y, "F2", 9.5f, Shorten(title, 70));
             Text(page, Left + 8f, y - 14f, "F1", 7.5f, "Lecturer: " + Default(course.LecturerName, "Not assigned"));
             var summary = "Present " + course.PresentCount + "   Late " + course.LateCount + "   Absent " + course.AbsentCount +
-                "   Rate " + Rate(course.PresentCount, course.TotalCount);
+                "   Rate " + Rate(course.PresentCount + course.LateCount, course.TotalCount);
             TextRight(page, Right - 8f, y - 14f, "F1", 7.5f, summary);
         }
 

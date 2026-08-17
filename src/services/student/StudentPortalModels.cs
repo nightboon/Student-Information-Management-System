@@ -118,6 +118,12 @@ namespace src.services
         public DateTime DueDate { get; set; }
         public decimal? Weight { get; set; }
         public string AssignmentType { get; set; }
+        public string SubmissionMode { get; set; }
+        public bool IsLinkSubmission { get { return string.Equals(SubmissionMode, "LINK", StringComparison.OrdinalIgnoreCase); } }
+        public bool IsFileSubmission { get { return string.Equals(SubmissionMode, "FILE", StringComparison.OrdinalIgnoreCase); } }
+        public bool RequiresSubmission { get; set; }
+        public bool CanSubmit { get; set; }
+        public DateTime? ExtensionDeadline { get; set; }
         public string GroupSize { get; set; }
         public string SubmissionStatus { get; set; }
         public bool HasSubmission { get; set; }

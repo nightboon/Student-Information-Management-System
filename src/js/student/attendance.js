@@ -153,11 +153,11 @@
         updateCards(current);
         updateExport(current);
         text("hero-label", advanced ? "FILTERED ATTENDANCE" : "OVERALL ATTENDANCE");
-        text("hero-rate", rate(summary.present, summary.total));
+        text("hero-rate", rate(summary.present + summary.late, summary.total));
         text("hero-present", summary.present);
         text("hero-late", summary.late);
         text("hero-absent", summary.absent);
-        text("hero-subtext", rows.length ? summary.present + " present / " + summary.total + " recorded across " + courses.length + " " + (courses.length === 1 ? "course" : "courses") : "No attendance records match the selected filters");
+        text("hero-subtext", rows.length ? (summary.present + summary.late) + " present / " + summary.total + " recorded across " + courses.length + " " + (courses.length === 1 ? "course" : "courses") : "No attendance records match the selected filters");
 
         if (el("detail-accent")) el("detail-accent").style.backgroundColor = one ? one.color : "#e0162b";
         text("detail-code", one ? one.code : "FILTERED RECORDS");

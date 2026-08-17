@@ -67,9 +67,16 @@ namespace src.admin
         [WebMethod(EnableSession = true)]
         public static object SetRequestStatus(int enrollmentId, string action)
         {
-            EnsureAdmin();
-            bool ok = AdminPortalService.SetEnrollmentStatus(enrollmentId, action);
-            return new { ok = ok };
+            try
+            {
+                EnsureAdmin();
+                bool ok = AdminPortalService.SetEnrollmentStatus(enrollmentId, action);
+                return new { ok = ok, message = ok ? "" : "Could not update request." };
+            }
+            catch (Exception ex)
+            {
+                return new { ok = false, message = ex.Message };
+            }
         }
 
         private static bool IsPending(string status) { return DisplayStatus(status) == "Pending"; }

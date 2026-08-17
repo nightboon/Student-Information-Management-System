@@ -70,13 +70,6 @@
 
         <div class="min-h-[620px] overflow-hidden rounded-lg border border-slate-200 bg-white lg:min-h-0">
             <article class="flex h-full flex-col">
-                <header class="flex items-center justify-between border-b border-slate-100 px-5 py-3">
-                    <div class="ml-auto flex items-center gap-1">
-                        <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors hover:bg-slate-100" title="Pin"><i data-lucide="pin" id="detail-pin" class="h-4 w-4 text-amber-500"></i></button>
-                        <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors hover:bg-slate-100" title="Archive"><i data-lucide="archive" class="h-4 w-4 text-slate-500"></i></button>
-                    </div>
-                </header>
-
                 <div id="detail-empty" class="flex flex-1 items-center justify-center px-7 py-16 text-slate-400" style="display:none;font-size:13px">Select a notification to read it.</div>
                 <div id="detail-card" class="flex-1 overflow-y-auto px-7 py-6">
                     <div class="flex items-center gap-2">
@@ -100,5 +93,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/shared/notifications.js") %>?v=6"></script>
+    <script src="<%= ResolveUrl("~/js/shared/notifications.js") %>?v=11"></script>
 </asp:Content>

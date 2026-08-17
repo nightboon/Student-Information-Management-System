@@ -106,7 +106,7 @@ namespace src.services
                     while (reader.Read())
                     {
                         total++;
-                        if (string.Equals(Text(reader["status"]), "PRESENT", StringComparison.OrdinalIgnoreCase)) present++;
+                        if (IsAttendedStatus(Text(reader["status"]))) present++;
                     }
                 }
             }

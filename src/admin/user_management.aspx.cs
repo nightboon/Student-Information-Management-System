@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Services;
+using src.services;
 using src.services.admin;
 using src.services.email;
 
@@ -193,7 +194,7 @@ namespace src.admin
                 html.Append("<td class=\"px-6 py-3 text-right\" style=\"font-size:12.5px\"><div class=\"flex items-center justify-end gap-1\">");
                 html.Append("<button type=\"button\" data-admin-view-user data-drawer-open=\"view-user\" title=\"View\" class=\"inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50\"><i data-lucide=\"eye\" class=\"h-3.5 w-3.5\"></i></button>");
                 html.Append("<button type=\"button\" data-admin-edit-user data-modal-open=\"edit-user\" title=\"Edit\" class=\"inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50\"><i data-lucide=\"pencil\" class=\"h-3.5 w-3.5\"></i></button>");
-                html.Append("<button type=\"button\" data-toast=\"Password reset email is not configured\" data-toast-type=\"info\" title=\"Reset password\" class=\"inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50\"><i data-lucide=\"key-round\" class=\"h-3.5 w-3.5\"></i></button>");
+                html.Append("<button type=\"button\" data-admin-reset-password title=\"Reset password\" class=\"inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50\"><i data-lucide=\"key-round\" class=\"h-3.5 w-3.5\"></i></button>");
                 html.Append("<button type=\"button\" data-admin-status data-user-id=\"").Append(user.UserId).Append("\" data-next-status=\"").Append(user.Status == "Active" ? "INACTIVE" : "ACTIVE").Append("\" data-user-name=\"").Append(Attr(user.FullName)).Append("\" title=\"").Append(user.Status == "Active" ? "Deactivate" : "Activate").Append("\" class=\"inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50\"><i data-lucide=\"power\" class=\"h-3.5 w-3.5\"></i></button>");
                 html.Append("</div></td></tr>");
             }
@@ -208,24 +209,63 @@ namespace src.admin
         [WebMethod(EnableSession = true)]
         public static object CreateUser(AdminUserSaveRequest request)
         {
-            EnsureAdmin();
-            var id = new AdminPortalService().CreateUser(request);
-            return new { ok = true, userId = id };
+            try
+            {
+                EnsureAdmin();
+                var id = new AdminPortalService().CreateUser(request);
+                return new { ok = true, userId = id };
+            }
+            catch (Exception ex)
+            {
+                return new { ok = false, message = ex.Message };
+            }
         }
 
         [WebMethod(EnableSession = true)]
         public static object SetUserStatus(int userId, string status)
         {
-            EnsureAdmin();
-            new AdminPortalService().SetUserStatus(userId, status);
-            return new { ok = true };
+            return RunAdminAction(() => new AdminPortalService().SetUserStatus(userId, status));
         }
 
         [WebMethod(EnableSession = true)]
         public static object UpdateUser(AdminUserSaveRequest request)
         {
+            return RunAdminAction(() => new AdminPortalService().UpdateUser(request));
+        }
+
+        private static object RunAdminAction(Action action)
+        {
+            try
+            {
+                EnsureAdmin();
+                action();
+                return new { ok = true };
+            }
+            catch (Exception ex)
+            {
+                return new { ok = false, message = ex.Message };
+            }
+        }
+
+        // Emails the selected user a password reset link, reusing the same
+        // token + email services as the public "Forgot password" flow.
+        [WebMethod(EnableSession = true)]
+        public static object ResetUserPassword(string email)
+        {
             EnsureAdmin();
-            new AdminPortalService().UpdateUser(request);
+            if (string.IsNullOrWhiteSpace(email)) throw new ArgumentException("Missing user email.");
+            email = email.Trim();
+
+            var issued = PasswordResetService.CreateToken(email);
+            if (!issued.Found) throw new ArgumentException("No account found for this user.");
+
+            // Apply ToAbsolute to the path only (it rejects a query string), then append the token.
+            var resetPath = VirtualPathUtility.ToAbsolute("~/login/reset_password.aspx");
+            var resetUrl = new Uri(HttpContext.Current.Request.Url, resetPath).ToString()
+                + "?token=" + issued.RawToken;
+
+            var sent = EmailService.SendPasswordReset(email, issued.Username, resetUrl);
+            if (!sent.Success) throw new ApplicationException("Could not send the reset email.");
             return new { ok = true };
         }
 

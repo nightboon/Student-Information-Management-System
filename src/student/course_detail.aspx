@@ -210,7 +210,7 @@
 
         <%-- ==================== ASSIGNMENTS PANE ==================== --%>
         <div data-pane="assignments" class="hidden">
-            <asp:Panel ID="assignmentStatusPanel" runat="server" Visible="false" CssClass="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800" style="font-size:13px;font-weight:600">
+            <asp:Panel ID="assignmentStatusPanel" runat="server" Visible="false" data-assignment-status="true" CssClass="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800" style="font-size:13px;font-weight:600">
                 <asp:Literal ID="assignmentStatusMessage" runat="server" />
             </asp:Panel>
             <div class="grid gap-3">
@@ -233,7 +233,15 @@
                                 <p class="mt-1 inline-flex items-center gap-1 text-slate-500" style="font-size:12px">
                                     <span><%# Server.HtmlEncode(DueLabel(Eval("SubmissionStatus").ToString(), (System.DateTime)Eval("DueDate"))) %></span>
                                 </p>
-                                <%# (bool)Eval("HasSubmission") ? "<a class=\"mt-2 inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020]\" style=\"font-size:12px;font-weight:600\" href=\"" + ResolveUrl(Eval("SubmissionFileUrl").ToString()) + "\" target=\"_blank\" rel=\"noopener\"><i data-lucide=\"paperclip\" class=\"h-3.5 w-3.5\"></i>Submitted file</a>" : "" %>
+                                <asp:HyperLink runat="server"
+                                    Visible='<%# Convert.ToBoolean(Eval("HasSubmission")) %>'
+                                    NavigateUrl='<%# SubmissionUrl(Eval("SubmissionFileUrl")) %>'
+                                    Target="_blank"
+                                    CssClass="mt-2 inline-flex items-center gap-1 text-[#e0162b] hover:text-[#a01020]"
+                                    style="font-size:12px;font-weight:600">
+                                    <i data-lucide='<%# Convert.ToBoolean(Eval("IsLinkSubmission")) ? "video" : "paperclip" %>' class="h-3.5 w-3.5"></i>
+                                    <%# Convert.ToBoolean(Eval("IsLinkSubmission")) ? "Submitted Google Drive Link" : "Submitted file" %>
+                                </asp:HyperLink>
                                 <asp:Panel runat="server" Visible='<%# HasLecturerFeedback(Container.DataItem) %>' CssClass="mt-3">
                                     <details class="group/feedback rounded-lg border border-blue-100 bg-blue-50/60">
                                         <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-blue-800 hover:bg-blue-50">
@@ -257,11 +265,22 @@
                                     </details>
                                 </asp:Panel>
                             </div>
-                            <asp:Panel runat="server" Visible='<%# !IsQuiz(Container.DataItem) %>' CssClass="flex flex-col gap-2 sm:w-72">
+                            <asp:Panel runat="server" Visible='<%# Convert.ToBoolean(Eval("RequiresSubmission")) %>' CssClass="flex flex-col gap-2 sm:w-72">
                                 <%# Eval("Marks") != null ? "<span class=\"rounded-lg bg-emerald-50 px-3 py-1.5 text-emerald-700\" style=\"font-size:12.5px;font-weight:700\">" + System.Convert.ToDecimal(Eval("Marks")).ToString("0.#") + " / 100</span>" : "" %>
-                                <asp:FileUpload ID="submissionInput" runat="server" CssClass="block w-full rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-white file:px-3 file:py-1.5 file:text-slate-700" style="font-size:12px" />
+                                <asp:Panel runat="server" Visible='<%# Convert.ToBoolean(Eval("IsFileSubmission")) %>'>
+                                    <asp:FileUpload ID="submissionInput" runat="server" Enabled='<%# Convert.ToBoolean(Eval("CanSubmit")) %>' CssClass="block w-full rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-white file:px-3 file:py-1.5 file:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50" style="font-size:12px" />
+                                </asp:Panel>
+                                <asp:Panel runat="server" Visible='<%# Convert.ToBoolean(Eval("IsLinkSubmission")) %>'>
+                                    <asp:TextBox ID="submissionLinkInput" runat="server" TextMode="Url" Enabled='<%# Convert.ToBoolean(Eval("CanSubmit")) %>'
+                                        data-google-drive-link="true"
+                                        placeholder="https://drive.google.com/..."
+                                        CssClass="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-slate-700 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                                        style="font-size:12.5px" />
+                                    <p class="mt-1 text-slate-500" style="font-size:11.5px">Paste a shareable Google Drive video link.</p>
+                                </asp:Panel>
                                 <asp:LinkButton ID="submitAssignmentButton" runat="server" CommandName="SubmitAssignment" CommandArgument='<%# Eval("AssignmentId") %>'
-                                    CssClass="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-[#e0162b] px-3 text-white hover:bg-[#a01020]" style="font-size:12.5px;font-weight:600">
+                                    data-submit-assignment="true"
+                                    Enabled='<%# Convert.ToBoolean(Eval("CanSubmit")) %>' CssClass="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-[#e0162b] px-3 text-white hover:bg-[#a01020] disabled:cursor-not-allowed disabled:bg-slate-300" style="font-size:12.5px;font-weight:600">
                                     <i data-lucide="upload" class="h-4 w-4"></i>Submit
                                 </asp:LinkButton>
                             </asp:Panel>
@@ -391,5 +410,5 @@
 </asp:Content>
 
 <asp:Content ContentPlaceHolderID="ScriptsPlaceholder" runat="server">
-    <script src="<%= ResolveUrl("~/js/student/course-detail.js") %>?v=2"></script>
+    <script src="<%= ResolveUrl("~/js/student/course-detail.js") %>?v=4"></script>
 </asp:Content>

@@ -67,17 +67,27 @@ namespace src.admin
         [WebMethod(EnableSession = true)]
         public static object SaveAcademicSession(AdminAcademicSessionSaveRequest request)
         {
-            EnsureAdmin();
-            new AdminPortalService().SaveAcademicSession(request);
-            return new { ok = true };
+            return RunAdminAction(() => new AdminPortalService().SaveAcademicSession(request));
         }
 
         [WebMethod(EnableSession = true)]
         public static object DeleteAcademicSession(string sessionId)
         {
-            EnsureAdmin();
-            new AdminPortalService().DeleteAcademicSession(sessionId);
-            return new { ok = true };
+            return RunAdminAction(() => new AdminPortalService().DeleteAcademicSession(sessionId));
+        }
+
+        private static object RunAdminAction(Action action)
+        {
+            try
+            {
+                EnsureAdmin();
+                action();
+                return new { ok = true };
+            }
+            catch (Exception ex)
+            {
+                return new { ok = false, message = ex.Message };
+            }
         }
 
         private static void EnsureAdmin()

@@ -51,6 +51,15 @@ namespace src.admin
         protected global::System.Web.UI.WebControls.DropDownList ddlStatus;
 
         /// <summary>
+        /// ddlProgrammeStatus control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList ddlProgrammeStatus;
+
+        /// <summary>
         /// rptPreview control.
         /// </summary>
         /// <remarks>
@@ -67,6 +76,16 @@ namespace src.admin
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Literal litPreviewCount;
+
+        /// <summary>
+        /// btnStudentPrev control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.LinkButton btnStudentPrev;
+
+        /// <summary>
+        /// btnStudentNext control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.LinkButton btnStudentNext;
 
         /// <summary>
         /// emptyPreviewPanel control.
@@ -96,6 +115,16 @@ namespace src.admin
         protected global::System.Web.UI.WebControls.Literal litProgrammePreviewCount;
 
         /// <summary>
+        /// btnProgrammePrev control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.LinkButton btnProgrammePrev;
+
+        /// <summary>
+        /// btnProgrammeNext control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.LinkButton btnProgrammeNext;
+
+        /// <summary>
         /// emptyProgrammePreviewPanel control.
         /// </summary>
         /// <remarks>
@@ -121,6 +150,16 @@ namespace src.admin
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Literal litCoursePreviewCount;
+
+        /// <summary>
+        /// btnCoursePrev control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.LinkButton btnCoursePrev;
+
+        /// <summary>
+        /// btnCourseNext control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.LinkButton btnCourseNext;
 
         /// <summary>
         /// emptyCoursePreviewPanel control.
@@ -150,6 +189,16 @@ namespace src.admin
         protected global::System.Web.UI.WebControls.Literal litAttendancePreviewCount;
 
         /// <summary>
+        /// btnAttendancePrev control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.LinkButton btnAttendancePrev;
+
+        /// <summary>
+        /// btnAttendanceNext control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.LinkButton btnAttendanceNext;
+
+        /// <summary>
         /// emptyAttendancePreviewPanel control.
         /// </summary>
         /// <remarks>
@@ -175,6 +224,16 @@ namespace src.admin
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Literal litAtRiskPreviewCount;
+
+        /// <summary>
+        /// btnAtRiskPrev control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.LinkButton btnAtRiskPrev;
+
+        /// <summary>
+        /// btnAtRiskNext control.
+        /// </summary>
+        protected global::System.Web.UI.WebControls.LinkButton btnAtRiskNext;
 
         /// <summary>
         /// emptyAtRiskPreviewPanel control.

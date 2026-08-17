@@ -15,6 +15,7 @@ namespace src.admin
         protected string CourseRowsHtml { get; private set; }
         protected string AssignmentRowsHtml { get; private set; }
         protected string ProgrammeOptionsHtml { get; private set; }
+        protected string DepartmentOptionsHtml { get; private set; }
         protected string EducationLevelOptionsHtml { get; private set; }
         protected string ProgrammeStatusOptionsHtml { get; private set; }
         protected string CourseStatusOptionsHtml { get; private set; }
@@ -33,6 +34,7 @@ namespace src.admin
             AssignmentRowsHtml = BuildAssignmentRows();
             var lookups = service.GetLookups();
             ProgrammeOptionsHtml = AdminPortalService.RenderOptions(lookups.Programmes, null);
+            DepartmentOptionsHtml = AdminPortalService.RenderOptions(lookups.Departments, null);
             EducationLevelOptionsHtml = AdminPortalService.RenderOptions(lookups.EducationLevels, null);
             ProgrammeStatusOptionsHtml = AdminPortalService.RenderOptions(lookups.ProgrammeStatuses, null);
             CourseStatusOptionsHtml = AdminPortalService.RenderOptions(lookups.CourseStatuses, null);
@@ -95,7 +97,7 @@ namespace src.admin
             var html = new StringBuilder();
             foreach (var p in service.GetProgrammes())
             {
-                html.Append("<tr data-row data-code=\"").Append(Attr(p.Code)).Append("\" data-name=\"").Append(Attr(p.Name)).Append("\" data-level=\"").Append(Attr(p.Level)).Append("\" data-duration=\"").Append(Attr(p.Duration)).Append("\" data-semesters=\"").Append(p.Semesters).Append("\" data-search=\"").Append(Attr((p.Code + " " + p.Name).ToLowerInvariant())).Append("\" data-status=\"").Append(Attr(p.Status)).Append("\" class=\"border-b border-slate-100 hover:bg-slate-50/60\">");
+                html.Append("<tr data-row data-code=\"").Append(Attr(p.Code)).Append("\" data-department=\"").Append(Attr(p.DepartmentId)).Append("\" data-name=\"").Append(Attr(p.Name)).Append("\" data-level=\"").Append(Attr(p.Level)).Append("\" data-duration=\"").Append(Attr(p.Duration)).Append("\" data-semesters=\"").Append(p.Semesters).Append("\" data-search=\"").Append(Attr((p.Code + " " + p.Name).ToLowerInvariant())).Append("\" data-status=\"").Append(Attr(p.Status)).Append("\" class=\"border-b border-slate-100 hover:bg-slate-50/60\">");
                 html.Append("<td class=\"px-6 py-3\" style=\"font-size:12.5px\"><span class=\"text-slate-900 font-medium\">").Append(Html(p.Code)).Append("</span></td>");
                 html.Append("<td class=\"px-6 py-3 text-slate-700\" style=\"font-size:12.5px\">").Append(Html(p.Name)).Append("</td>");
                 html.Append("<td class=\"px-6 py-3 text-slate-700\" style=\"font-size:12.5px\">").Append(Html(p.Level)).Append("</td>");
@@ -135,9 +137,9 @@ namespace src.admin
             foreach (var c in service.GetCourseMetrics())
             {
                 html.Append("<tr data-row data-offer-id=\"").Append(c.OfferId).Append("\" data-programme=\"").Append(Attr(c.Programme)).Append("\" data-session-id=\"").Append(Attr(c.SessionId)).Append("\" data-semester=\"").Append(Attr(c.OfferingSemester)).Append("\" data-course-code=\"").Append(Attr(c.Code)).Append("\" data-title=\"").Append(Attr(c.Title)).Append("\" data-credit=\"").Append(c.CreditHours).Append("\" data-lecturer=\"").Append(Attr(c.Lecturer)).Append("\" data-search=\"").Append(Attr((c.Programme + " " + c.Code + " " + c.Title + " " + c.Lecturer).ToLowerInvariant())).Append("\" class=\"border-b border-slate-100 hover:bg-slate-50/60\">");
-                html.Append("<td class=\"px-6 py-3\" style=\"font-size:12.5px\"><span class=\"inline-flex items-center gap-1 rounded-full border px-2 py-0.5 bg-slate-100 text-slate-600 border-slate-200\" style=\"font-size:11.5px;font-weight:600\">").Append(Html(c.Programme)).Append("</span></td>");
-                html.Append("<td class=\"px-6 py-3 text-slate-700\" style=\"font-size:12.5px\">").Append(Html(c.OfferingSemester)).Append("</td>");
                 html.Append("<td class=\"px-6 py-3\" style=\"font-size:12.5px\"><span class=\"text-slate-900 font-medium\">").Append(Html(c.Code)).Append("</span></td>");
+                html.Append("<td class=\"px-6 py-3 text-slate-700\" style=\"font-size:12.5px\">").Append(Html(c.OfferingSemester)).Append("</td>");
+                html.Append("<td class=\"px-6 py-3\" style=\"font-size:12.5px\"><span class=\"inline-flex items-center gap-1 rounded-full border px-2 py-0.5 bg-slate-100 text-slate-600 border-slate-200\" style=\"font-size:11.5px;font-weight:600\">").Append(Html(c.Programme)).Append("</span></td>");
                 html.Append("<td class=\"px-6 py-3 text-slate-700\" style=\"font-size:12.5px\">").Append(Html(c.Title)).Append("</td>");
                 html.Append("<td class=\"px-6 py-3 text-slate-700 text-right\" style=\"font-size:12.5px\">").Append(c.CreditHours).Append("</td>");
                 html.Append("<td class=\"px-6 py-3 text-slate-700\" style=\"font-size:12.5px\">").Append(Html(c.Lecturer)).Append("</td>");
@@ -157,65 +159,63 @@ namespace src.admin
         [WebMethod(EnableSession = true)]
         public static object SaveProgramme(AdminProgrammeSaveRequest request)
         {
-            EnsureAdmin();
-            new AdminPortalService().SaveProgramme(request);
-            return new { ok = true };
+            return RunAdminAction(() => new AdminPortalService().SaveProgramme(request));
         }
 
         [WebMethod(EnableSession = true)]
         public static object SaveDepartment(AdminDepartmentSaveRequest request)
         {
-            EnsureAdmin();
-            new AdminPortalService().SaveDepartment(request);
-            return new { ok = true };
+            return RunAdminAction(() => new AdminPortalService().SaveDepartment(request));
         }
 
         [WebMethod(EnableSession = true)]
         public static object SaveCourse(AdminCourseSaveRequest request)
         {
-            EnsureAdmin();
-            new AdminPortalService().SaveCourse(request);
-            return new { ok = true };
+            return RunAdminAction(() => new AdminPortalService().SaveCourse(request));
         }
 
         [WebMethod(EnableSession = true)]
         public static object DeleteProgramme(string code)
         {
-            EnsureAdmin();
-            new AdminPortalService().DeleteProgramme(code);
-            return new { ok = true };
+            return RunAdminAction(() => new AdminPortalService().DeleteProgramme(code));
         }
 
         [WebMethod(EnableSession = true)]
         public static object DeleteDepartment(string id)
         {
-            EnsureAdmin();
-            new AdminPortalService().DeleteDepartment(id);
-            return new { ok = true };
+            return RunAdminAction(() => new AdminPortalService().DeleteDepartment(id));
         }
 
         [WebMethod(EnableSession = true)]
         public static object DeleteCourse(string code)
         {
-            EnsureAdmin();
-            new AdminPortalService().DeleteCourse(code);
-            return new { ok = true };
+            return RunAdminAction(() => new AdminPortalService().DeleteCourse(code));
         }
 
         [WebMethod(EnableSession = true)]
         public static object SaveCourseAssignment(AdminCourseAssignmentSaveRequest request)
         {
-            EnsureAdmin();
-            new AdminPortalService().SaveCourseAssignment(request);
-            return new { ok = true };
+            return RunAdminAction(() => new AdminPortalService().SaveCourseAssignment(request));
         }
 
         [WebMethod(EnableSession = true)]
         public static object DeleteCourseAssignment(int offerId)
         {
-            EnsureAdmin();
-            new AdminPortalService().DeleteCourseAssignment(offerId);
-            return new { ok = true };
+            return RunAdminAction(() => new AdminPortalService().DeleteCourseAssignment(offerId));
+        }
+
+        private static object RunAdminAction(Action action)
+        {
+            try
+            {
+                EnsureAdmin();
+                action();
+                return new { ok = true };
+            }
+            catch (Exception ex)
+            {
+                return new { ok = false, message = ex.Message };
+            }
         }
 
         private static void EnsureAdmin()

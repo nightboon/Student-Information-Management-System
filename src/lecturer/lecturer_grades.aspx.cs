@@ -101,8 +101,18 @@ namespace student_information_management_system
 
             var user = UserContextFactory.FromSession(Session);
             LecturerPortalService.SaveGradeMarks(user, _assessmentId, marksBySubmission);
-            LecturerPortalService.PublishGrades(user, _assessmentId);
-            ShowStatus("Marks saved and final course grades published to students.", true);
+            var emailResult = LecturerPortalService.PublishGrades(user, _assessmentId);
+            if (!emailResult.Success)
+            {
+                ShowStatus("Marks, feedback, and final course grades were published, but one or more grade emails could not be sent. Please try again later.", false);
+                LoadRows();
+                return;
+            }
+
+            string emailMessage = emailResult.SentCount > 0
+                ? " Grade email sent to " + emailResult.SentCount.ToString(CultureInfo.InvariantCulture) + " student" + (emailResult.SentCount == 1 ? "." : "s.")
+                : "";
+            ShowStatus("Marks, feedback, and final course grades published to students." + emailMessage, true);
             LoadRows();
         }
 
@@ -116,18 +126,65 @@ namespace student_information_management_system
             marksInput.Attributes["min"] = "0";
             marksInput.Attributes["max"] = "100";
             marksInput.Attributes["step"] = "1";
+
+            var extensionDate = e.Item.FindControl("extensionDateInput") as TextBox;
+            var extensionTime = e.Item.FindControl("extensionTimeInput") as TextBox;
+            if (extensionDate != null)
+            {
+                extensionDate.Attributes["min"] = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                if (string.IsNullOrWhiteSpace(extensionDate.Text))
+                    extensionDate.Text = DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            }
+            if (extensionTime != null && string.IsNullOrWhiteSpace(extensionTime.Text))
+                extensionTime.Text = "23:59";
         }
 
         protected void gradeRepeater_ItemCommand(object source, RepeaterCommandEventArgs e)
         {
-            if (e.CommandName != "SaveReview") return;
-
             int submissionId;
             if (!int.TryParse(Convert.ToString(e.CommandArgument), out submissionId) || submissionId <= 0)
             {
                 ShowStatus("The submission could not be identified.", false);
                 return;
             }
+
+            if (e.CommandName == "GrantExtension")
+            {
+                var dateInput = e.Item.FindControl("extensionDateInput") as TextBox;
+                var timeInput = e.Item.FindControl("extensionTimeInput") as TextBox;
+                DateTime date;
+                TimeSpan time;
+                if (dateInput == null || timeInput == null ||
+                    !DateTime.TryParseExact(dateInput.Text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out date) ||
+                    !TimeSpan.TryParse(timeInput.Text, CultureInfo.InvariantCulture, out time))
+                {
+                    ShowStatus("Choose a valid extension date and time.", false);
+                    LoadRows();
+                    return;
+                }
+                var deadline = date.Date.Add(time);
+                var now = DateTime.Now;
+                var earliestDeadline = new DateTime(
+                    now.Year, now.Month, now.Day, now.Hour, now.Minute, 0).AddMinutes(1);
+                if (deadline < earliestDeadline)
+                {
+                    ShowStatus(
+                        "Choose a deadline of at least " +
+                        earliestDeadline.ToString("d MMM yyyy, HH:mm", CultureInfo.InvariantCulture) + ".",
+                        false);
+                    LoadRows();
+                    return;
+                }
+                bool granted = LecturerPortalService.GrantSubmissionExtension(
+                    UserContextFactory.FromSession(Session), submissionId, deadline);
+                ShowStatus(granted
+                    ? "One-time late-submission deadline granted until " + deadline.ToString("d MMM yyyy, HH:mm", CultureInfo.InvariantCulture) + "."
+                    : "The extension could not be granted. It may already have been used or the deadline is invalid.", granted);
+                LoadRows();
+                return;
+            }
+
+            if (e.CommandName != "SaveReview") return;
 
             var feedbackInput = e.Item.FindControl("reviewFeedbackInput") as TextBox;
             var annotatedUpload = e.Item.FindControl("annotatedFileInput") as FileUpload;
@@ -162,7 +219,7 @@ namespace student_information_management_system
             if (!saved && !string.IsNullOrWhiteSpace(annotatedFileUrl))
                 TryDeleteAnnotatedFile(annotatedFileUrl);
 
-            ShowStatus(saved ? "Submission feedback saved." : "Submission feedback could not be saved.", saved);
+            ShowStatus(saved ? "Submission feedback saved as draft." : "Submission feedback could not be saved.", saved);
             LoadRows();
         }
 
@@ -197,6 +254,23 @@ namespace student_information_management_system
             {
                 success = saved,
                 message = saved ? "Annotation progress saved." : "Annotation progress could not be saved."
+            };
+        }
+
+        [WebMethod(EnableSession = true)]
+        [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+        public static object ExpireSubmissionExtension(int submissionId)
+        {
+            var context = HttpContext.Current;
+            var user = context == null ? null : UserContextFactory.FromSession(context.Session);
+            if (user == null || !user.IsLecturer)
+                return new { success = false, message = "Your lecturer session has expired." };
+
+            bool expired = LecturerPortalService.ExpireSubmissionExtension(user, submissionId);
+            return new
+            {
+                success = expired,
+                message = expired ? "" : "The extension could not be expired."
             };
         }
 
@@ -331,16 +405,13 @@ namespace student_information_management_system
                 : "text-slate-400";
         }
 
-        protected string MarkStatusClass(object isMissing, object hasMarks)
+        protected string MarkStatusClass(object statusValue)
         {
-            if (Convert.ToBoolean(isMissing)) return "text-[#e0162b]";
-            return Convert.ToBoolean(hasMarks) ? "text-emerald-700" : "text-amber-700";
-        }
-
-        protected string MarkStatusText(object isMissing, object hasMarks)
-        {
-            if (Convert.ToBoolean(isMissing)) return "Missing";
-            return Convert.ToBoolean(hasMarks) ? "Ready" : "Draft";
+            string status = Convert.ToString(statusValue);
+            if (status.StartsWith("Missing", StringComparison.OrdinalIgnoreCase)) return "text-[#e0162b]";
+            if (status.Equals("Published", StringComparison.OrdinalIgnoreCase)) return "text-emerald-700";
+            if (status.Equals("Ready to publish", StringComparison.OrdinalIgnoreCase)) return "text-blue-700";
+            return "text-amber-700";
         }
 
         private void ShowStatus(string message, bool success)
@@ -356,6 +427,18 @@ namespace student_information_management_system
         {
             string id = value == null || value == DBNull.Value ? "0" : value.ToString();
             return "submission-review-" + Html(id);
+        }
+
+        protected string ExtensionDialogId(object value)
+        {
+            string id = value == null || value == DBNull.Value ? "0" : value.ToString();
+            return "submission-extension-" + Html(id);
+        }
+
+        protected string ExtensionDeadlineValue(object value)
+        {
+            if (value == null || value == DBNull.Value) return "";
+            return Convert.ToDateTime(value).ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
         }
 
         protected string SubmissionPreviewUrl(object value)
